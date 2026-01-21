@@ -99,7 +99,7 @@ A selection of fine-tuned models is available on my **Hugging Face** account. Yo
 - **MNLI**: [bert-base-uncased-finetuned-LoRA-MNLI](https://huggingface.co/rambodazimi/bert-base-uncased-finetuned-LoRA-MNLI)
 - **RTE**: [bert-base-uncased-finetuned-LoRA-RTE](https://huggingface.co/rambodazimi/bert-base-uncased-finetuned-LoRA-RTE)
 - **SST-2**: [bert-base-uncased-finetuned-LoRA-SST2](https://huggingface.co/rambodazimi/bert-base-uncased-finetuned-LoRA-SST2)
-- **WNLI**: [bert-base-uncased-finetuned-LoRA-WNLI](https://huggingface.co/rambodazimi/distilbert-base-uncased-finetuned-LoRA-WNLI)
+- **WNLI**: [bert-base-uncased-finetuned-LoRA-WNLI](https://huggingface.co/rambodazimi/bert-base-uncased-finetuned-LoRA-WNLI)
 
 #### DeBERTa V3 Base Fine-Tuned with FFT on GLUE Tasks
 
