@@ -54,13 +54,6 @@ def main(args):
         train_dataset = tokenized_teacher_dataset["train"].shuffle(seed=42)
         eval_dataset = tokenized_teacher_dataset["validation"].shuffle(seed=42)
 
-    # Define trainer for teacher model
-    # teacher_trainer = Trainer(
-    #     model=teacher_model,
-    #     args=teacher_training_args,
-    #     train_dataset=tokenized_teacher_dataset["train"],
-    #     eval_dataset=tokenized_teacher_dataset["validation"]
-    # )
     epochs = []
     memory_allocated = []
     memory_reserved = []
@@ -94,7 +87,7 @@ def main(args):
             callbacks=[MemoryTrackingCallback()]
         )
 
-    # teacher_trainer.train()
+    teacher_trainer.train()
 
     # Save teacher model predictions (logits) as soft labels
     teacher_logits = teacher_trainer.predict(tokenized_teacher_dataset["train"]).predictions
@@ -133,6 +126,7 @@ def main(args):
         per_device_train_batch_size=args.train_batch_size,
         num_train_epochs=args.num_train_epochs,
         weight_decay=0.01,
+        remove_unused_columns=False,
     )
 
     def distillation_loss(student_logits, teacher_logits, labels, temperature=2.0, alpha=0.5):
