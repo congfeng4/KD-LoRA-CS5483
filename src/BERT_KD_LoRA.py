@@ -1,19 +1,37 @@
 import argparse
 import torch
-from datasets import load_from_disk
+from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
 from peft import LoraConfig, get_peft_model, TaskType
-import numpy as np
-from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
-from scipy.stats import pearsonr, spearmanr
 import torch.nn.functional as F
+from utils import glue_tasks, compute_metrics, tokenize_function, get_num_labels
 
 
 def main(args):
+    # Print out the configuration for tracking and debugging
+    print(f"Dataset path: {args.dataset_path}")
+    print(f"Dir Name: {args.dir_name}")
+    print(f"Model name: {args.teacher_model_name}")
+    print(f"Model name: {args.student_model_name}")
+    print(f"Learning rate: 5e-4")
+    print(f"Number of training epochs: {args.num_train_epochs}")
+    print(f"Rank: {args.rank}")
+    print(f"LoRA Alpha: {args.lora_alpha}")
+    print(f"LoRA Dropout: {args.lora_dropout}")
+
+    # Determine the number of labels based on the GLUE task
+    num_labels = get_num_labels(args)
+
     # Step 1: Fine-tune a Teacher Model
     print(f"Fine-tuning the teacher model: {args.teacher_model_name}")
-    teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name, num_labels=args.num_labels)
+    # teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name, num_labels=num_labels)
     teacher_tokenizer = AutoTokenizer.from_pretrained(args.teacher_model_name)
+
+    if args.task == "stsb" or args.task == "mnli":
+        # Set 'ignore_mismatched_sizes' to True for STS-B and MNLI tasks
+        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels, ignore_mismatched_sizes=True)
+    else:
+        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels)
 
     teacher_training_args = TrainingArguments(
         output_dir="./teacher_results",
@@ -23,19 +41,58 @@ def main(args):
         weight_decay=0.01,
     )
 
-    teacher_dataset = load_from_disk(args.dataset_path)
-    tokenized_teacher_dataset = teacher_dataset.map(
-        lambda x: teacher_tokenizer(x["sentence1"], x["sentence2"], padding="max_length", truncation=True),
-        batched=True
-    )
+    teacher_dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
+    tokenized_teacher_dataset = teacher_dataset.map(tokenize_function(args, teacher_tokenizer), batched=True)
+
+    if args.task == "mnli":
+        # MNLI requires two separate validation sets
+        train_dataset = tokenized_teacher_dataset["train"].shuffle(seed=42)
+        eval_matched_dataset = tokenized_teacher_dataset["validation_matched"].shuffle(seed=42)
+        eval_mismatched_dataset = tokenized_teacher_dataset["validation_mismatched"].shuffle(seed=42)
+    else:
+        # Standard split for other tasks
+        train_dataset = tokenized_teacher_dataset["train"].shuffle(seed=42)
+        eval_dataset = tokenized_teacher_dataset["validation"].shuffle(seed=42)
 
     # Define trainer for teacher model
-    teacher_trainer = Trainer(
-        model=teacher_model,
-        args=teacher_training_args,
-        train_dataset=tokenized_teacher_dataset["train"],
-        eval_dataset=tokenized_teacher_dataset["validation"]
-    )
+    # teacher_trainer = Trainer(
+    #     model=teacher_model,
+    #     args=teacher_training_args,
+    #     train_dataset=tokenized_teacher_dataset["train"],
+    #     eval_dataset=tokenized_teacher_dataset["validation"]
+    # )
+    epochs = []
+    memory_allocated = []
+    memory_reserved = []
+
+    # Callback class to track and log GPU memory usage
+    class MemoryTrackingCallback(TrainerCallback):
+        def on_epoch_end(self, args, state, control, **kwargs):
+            allocated_memory = torch.cuda.memory_allocated() / 1e6  # Convert to MB
+            reserved_memory = torch.cuda.memory_reserved() / 1e6  # Convert to MB
+            epochs.append(state.epoch)
+            memory_allocated.append(allocated_memory)
+            memory_reserved.append(reserved_memory)
+            print(f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
+
+    if args.task == "mnli":
+        teacher_trainer = Trainer(
+            model=teacher_model,
+            args=teacher_training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_matched_dataset,
+            compute_metrics=compute_metrics(args),
+            callbacks=[MemoryTrackingCallback()]
+        )
+    else:
+        teacher_trainer = Trainer(
+            model=teacher_model,
+            args=teacher_training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            compute_metrics=compute_metrics(args),
+            callbacks=[MemoryTrackingCallback()]
+        )
 
     teacher_trainer.train()
 
@@ -45,13 +102,14 @@ def main(args):
 
     # Step 2: Initialize a Smaller Student Model with LoRA
     print(f"Initializing student model: {args.student_model_name} with LoRA")
-    student_model = AutoModelForSequenceClassification.from_pretrained(args.student_model_name, num_labels=args.num_labels)
+    student_model = AutoModelForSequenceClassification.from_pretrained(args.student_model_name, num_labels=num_labels)
     student_tokenizer = AutoTokenizer.from_pretrained(args.student_model_name)
 
     lora_config = LoraConfig(
         r=args.rank,
         lora_alpha=args.lora_alpha,
-        target_modules=["query", "value"],
+        target_modules=["q_lin", "v_lin"],
+        # target_modules=["query", "value"],
         lora_dropout=args.lora_dropout,
         bias="none",
         task_type="SEQ_CLS"
@@ -89,33 +147,83 @@ def main(args):
 
     # Define a custom training loop for distillation
     class DistillationTrainer(Trainer):
-        def compute_loss(self, model, inputs, return_outputs=False):
+        def compute_loss(self, model, inputs, return_outputs=False, **kwds):
+            global save_inputs
+            save_inputs = inputs.copy()
+
             labels = inputs.pop("labels")
+            idx = inputs.pop('idx').long().cpu()
             outputs = model(**inputs)
             student_logits = outputs.logits
-            teacher_logits = teacher_soft_labels[inputs["input_ids"].shape[0]]  # Align teacher logits with batch size
+            teacher_logits = teacher_soft_labels[idx]  # Align teacher logits with batch size
+            # teacher_logits = teacher_soft_labels[inputs["input_ids"].shape[0]]  # Align teacher logits with batch size
+            teacher_logits = teacher_logits.to(student_logits.device)
             loss = distillation_loss(student_logits, teacher_logits, labels)
             return (loss, outputs) if return_outputs else loss
 
     # Tokenize student dataset
-    tokenized_student_dataset = teacher_dataset.map(
-        lambda x: student_tokenizer(x["sentence1"], x["sentence2"], padding="max_length", truncation=True),
-        batched=True
-    )
+    tokenized_student_dataset = teacher_dataset.map(tokenize_function(args, student_tokenizer, with_indices=True), 
+                                with_indices=True, batched=True)
 
     # Initialize Distillation Trainer
-    student_trainer = DistillationTrainer(
-        model=student_model,
-        args=student_training_args,
-        train_dataset=tokenized_student_dataset["train"],
-        eval_dataset=tokenized_student_dataset["validation"]
-    )
+    # student_trainer = DistillationTrainer(
+    #     model=student_model,
+    #     args=student_training_args,
+    #     train_dataset=tokenized_student_dataset["train"],
+    #     eval_dataset=tokenized_student_dataset["validation"]
+    # )
+    if args.task == "mnli":
+        # MNLI requires two separate validation sets
+        train_dataset = tokenized_student_dataset["train"].shuffle(seed=42)
+        eval_matched_dataset = tokenized_student_dataset["validation_matched"].shuffle(seed=42)
+        eval_mismatched_dataset = tokenized_student_dataset["validation_mismatched"].shuffle(seed=42)
+    else:
+        # Standard split for other tasks
+        train_dataset = tokenized_student_dataset["train"].shuffle(seed=42)
+        eval_dataset = tokenized_student_dataset["validation"].shuffle(seed=42)
+
+    if args.task == "mnli":
+        student_trainer = DistillationTrainer(
+            model=student_model,
+            args=student_training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_matched_dataset,
+            compute_metrics=compute_metrics(args),
+            callbacks=[MemoryTrackingCallback()]
+        )
+    else:
+        student_trainer = DistillationTrainer(
+            model=student_model,
+            args=student_training_args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            compute_metrics=compute_metrics(args),
+            callbacks=[MemoryTrackingCallback()]
+        )
+
+    # print(tokenized_student_dataset['train'][0]['idx'])
 
     # Train student model with knowledge distillation
     student_trainer.train()
 
     # Evaluate student model
-    student_trainer.evaluate()
+    if args.task == "mnli":
+        eval_results_matched = student_trainer.evaluate(eval_dataset=eval_matched_dataset)
+        print(f"Evaluation results (matched): {eval_results_matched}")
+
+        eval_results_mismatched = student_trainer.evaluate(eval_dataset=eval_mismatched_dataset)
+        print(f"Evaluation results (mismatched): {eval_results_mismatched}")
+
+        # Combine evaluation results for matched and mismatched datasets
+        combined_results = {
+            "matched_accuracy": eval_results_matched["eval_accuracy"],
+            "mismatched_accuracy": eval_results_mismatched["eval_accuracy"]
+        }
+        print(f"Combined evaluation results: {combined_results}")
+    else:    
+        # Evaluate on single validation set for other tasks
+        eval_results = student_trainer.evaluate(eval_dataset=eval_dataset)
+        print(f"Combined evaluation results: {eval_results}")
 
     # Save the fine-tuned LoRA student model
     output_dir = "./fine_tuned_student_model"
@@ -127,14 +235,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
     # Model arguments
-    parser.add_argument("--teacher_model_name", type=str, default="bert-large-uncased", help="Name of the teacher model")
-    parser.add_argument("--student_model_name", type=str, default="bert-base-uncased", help="Name of the student model")
+    parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased", help="Name of the teacher model")
+    parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased", help="Name of the student model")
 
     # Dataset and training parameters
-    parser.add_argument("--dataset_path", type=str, required=True, help="Path to the dataset")
-    parser.add_argument("--num_labels", type=int, default=2, help="Number of labels for the classification task")
+    parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
+    # parser.add_argument("--num_labels", type=int, default=2, help="Number of labels for the classification task")
     parser.add_argument("--train_batch_size", type=int, default=16, help="Training batch size")
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--dir_name", type=str, default="./finetuned", help="Directory name for saving models")
 
     # LoRA parameters
     parser.add_argument("--rank", type=int, default=8, help="Rank of LoRA matrices")
@@ -144,6 +253,7 @@ if __name__ == "__main__":
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
     parser.add_argument("--student_learning_rate", type=float, default=5e-5, help="Learning rate for the student model")
+    parser.add_argument('--task', type=str, default="wnli", choices=tuple(glue_tasks))
 
     args = parser.parse_args()
     main(args)
