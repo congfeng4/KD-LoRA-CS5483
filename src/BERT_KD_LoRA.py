@@ -29,9 +29,9 @@ def main(args):
 
     if args.task == "stsb" or args.task == "mnli":
         # Set 'ignore_mismatched_sizes' to True for STS-B and MNLI tasks
-        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels, ignore_mismatched_sizes=True)
+        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name, num_labels=num_labels, ignore_mismatched_sizes=True)
     else:
-        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels)
+        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name, num_labels=num_labels)
 
     teacher_training_args = TrainingArguments(
         output_dir="./teacher_results",
@@ -94,7 +94,7 @@ def main(args):
             callbacks=[MemoryTrackingCallback()]
         )
 
-    teacher_trainer.train()
+    # teacher_trainer.train()
 
     # Save teacher model predictions (logits) as soft labels
     teacher_logits = teacher_trainer.predict(tokenized_teacher_dataset["train"]).predictions
@@ -164,6 +164,7 @@ def main(args):
     # Tokenize student dataset
     tokenized_student_dataset = teacher_dataset.map(tokenize_function(args, student_tokenizer, with_indices=True), 
                                 with_indices=True, batched=True)
+    print(tokenized_student_dataset['train'][0]['idx'])
 
     # Initialize Distillation Trainer
     # student_trainer = DistillationTrainer(

@@ -8,17 +8,6 @@ glue_tasks = [
     "mnli", "qnli", "rte", "wnli",
 ]
 
-    # Callback class to track and log GPU memory usage
-    class MemoryTrackingCallback(TrainerCallback):
-        def on_epoch_end(self, args, state, control, **kwargs):
-            allocated_memory = torch.cuda.memory_allocated() / 1e6  # Convert to MB
-            reserved_memory = torch.cuda.memory_reserved() / 1e6  # Convert to MB
-            epochs.append(state.epoch)
-            memory_allocated.append(allocated_memory)
-            memory_reserved.append(reserved_memory)
-            print(f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
-
-
 def get_num_labels(args):
     # Determine the number of labels based on the GLUE task
     if args.task == "stsb":
