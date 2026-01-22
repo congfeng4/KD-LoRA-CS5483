@@ -1,11 +1,16 @@
 import argparse
 import torch
-from datasets import load_from_disk
+from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
 from peft import LoraConfig, get_peft_model, TaskType
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from scipy.stats import pearsonr, spearmanr
+
+glue_tasks = [
+    "cola", "sst2", "mrpc", "qqp", "stsb",
+    "mnli", "qnli", "rte", "wnli",
+]
 
 def main(args):
     # Print out the configuration for tracking and debugging
@@ -19,15 +24,15 @@ def main(args):
     print(f"LoRA Dropout: {args.lora_dropout}")
 
     # Determine the number of labels based on the GLUE task
-    if args.dataset_path == "./glue/stsb_dataset":
+    if args.task == "stsb":
         num_labels = 1  # Regression task for STS-B
-    elif args.dataset_path == "./glue/mnli_dataset":
+    elif args.task == "mnli":
         num_labels = 3  # Multi-class classification for MNLI
     else:
         num_labels = 2  # Default binary classification
 
     # Load dataset from disk and display its features for reference
-    dataset = load_from_disk(args.dataset_path)
+    dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
     print(dataset)
     print(dataset["train"].features)
 
@@ -37,30 +42,30 @@ def main(args):
     # Define a function to tokenize the input data according to each task
     def tokenize_function(examples):
         # Tokenize based on dataset-specific requirements
-        if args.dataset_path == "./glue/mrpc_dataset":
+        if args.task == "mrpc":
             return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True)
-        if args.dataset_path == "./glue/cola_dataset":
+        if args.task == "cola":
             return tokenizer(examples["sentence"], truncation=True, padding="max_length")
-        if args.dataset_path == "./glue/sst2_dataset":
+        if args.task == "sst2":
             return tokenizer(examples["sentence"], truncation=True, padding="max_length")
-        if args.dataset_path == "./glue/wnli_dataset":
+        if args.task == "wnli":
             return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True)
-        if args.dataset_path == "./glue/rte_dataset":
+        if args.task == "rte":
             return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True)
-        if args.dataset_path == "./glue/qqp_dataset":
+        if args.task == "qqp":
             return tokenizer(examples["question1"], examples["question2"], padding="max_length", truncation=True)
-        if args.dataset_path == "./glue/stsb_dataset":
+        if args.task == "stsb":
             return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True)
-        if args.dataset_path == "./glue/qnli_dataset":
+        if args.task == "qnli":
             return tokenizer(examples["question"], examples["sentence"], padding="max_length", truncation=True)
-        if args.dataset_path == "./glue/mnli_dataset":
+        if args.task == "mnli":
             return tokenizer(examples["premise"], examples["hypothesis"], padding="max_length", truncation=True)
 
     # Apply tokenization to the dataset
     tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
     # Split dataset into training and evaluation sets
-    if args.dataset_path == "./glue/mnli_dataset":
+    if args.task == "mnli":
         # MNLI requires two separate validation sets
         train_dataset = tokenized_datasets["train"].shuffle(seed=42)
         eval_matched_dataset = tokenized_datasets["validation_matched"].shuffle(seed=42)
@@ -71,7 +76,7 @@ def main(args):
         eval_dataset = tokenized_datasets["validation"].shuffle(seed=42)
 
     # Load the model for sequence classification
-    if args.dataset_path == "./glue/stsb_dataset" or args.dataset_path == "./glue/mnli_dataset":
+    if args.task == "stsb" or args.task == "mnli":
         # Set 'ignore_mismatched_sizes' to True for STS-B and MNLI tasks
         model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels, ignore_mismatched_sizes=True)
     else:
@@ -124,41 +129,41 @@ def main(args):
     def compute_metrics(p):
         predictionss, labels = p
         predictions = np.argmax(predictionss, axis=1)
-        if args.dataset_path == "./glue/mrpc_dataset":
+        if args.task == "mrpc":
             accuracy = accuracy_score(labels, predictions)
             f1 = f1_score(labels, predictions, average="binary")
             return {"accuracy": accuracy, "f1": f1}
-        if args.dataset_path == "./glue/cola_dataset":
+        if args.task == "cola":
             mcc = matthews_corrcoef(labels, predictions)
             return {"matthews_correlation": mcc}
-        if args.dataset_path == "./glue/sst2_dataset":
+        if args.task == "sst2":
             accuracy = accuracy_score(labels, predictions)
             return {"accuracy": accuracy}
-        if args.dataset_path == "./glue/wnli_dataset":
+        if args.task == "wnli":
             accuracy = accuracy_score(labels, predictions)
             return {"accuracy": accuracy}
-        if args.dataset_path == "./glue/rte_dataset":
+        if args.task == "rte":
             accuracy = accuracy_score(labels, predictions)
             return {"accuracy": accuracy}
-        if args.dataset_path == "./glue/qqp_dataset":
+        if args.task == "qqp":
             accuracy = accuracy_score(labels, predictions)
             f1 = f1_score(labels, predictions, average="binary")
             return {"accuracy": accuracy, "f1": f1}
-        if args.dataset_path == "./glue/stsb_dataset":
+        if args.task == "stsb":
             preds = predictionss.squeeze().tolist()
             labels = labels.tolist()
             pearson_corr, _ = pearsonr(preds, labels)
             spearman_corr, _ = spearmanr(preds, labels)
             return {'pearson': pearson_corr, 'spearman': spearman_corr}
-        if args.dataset_path == "./glue/qnli_dataset":
+        if args.task == "qnli":
             accuracy = accuracy_score(labels, predictions)
             return {"accuracy": accuracy}
-        if args.dataset_path == "./glue/mnli_dataset":
+        if args.task == "mnli":
             accuracy = accuracy_score(labels, predictions)
             return {"accuracy": accuracy}
 
     # Initialize Trainer with LoRA model, training arguments, datasets, and memory tracking
-    if args.dataset_path == "./glue/mnli_dataset":
+    if args.task == "mnli":
         trainer = Trainer(
             model=model_lora,
             args=training_args,
@@ -181,7 +186,7 @@ def main(args):
     trainer.train()
 
     # Evaluate model on validation datasets for MNLI
-    if args.dataset_path == "./glue/mnli_dataset":
+    if args.task == "mnli":
         eval_results_matched = trainer.evaluate(eval_dataset=eval_matched_dataset)
         print(f"Evaluation results (matched): {eval_results_matched}")
 
@@ -196,7 +201,8 @@ def main(args):
         print(f"Combined evaluation results: {combined_results}")
     else:    
         # Evaluate on single validation set for other tasks
-        trainer.evaluate()
+        eval_results = trainer.evaluate(eval_dataset=eval_dataset)
+        print(f"Combined evaluation results: {eval_results}")
 
     # Optionally save the fine-tuned model and tokenizer
     # output_dir = "./fine_tuned_model"
@@ -207,13 +213,14 @@ if __name__ == "__main__":
     # Set up argument parsing for customizable inputs
     parser = argparse.ArgumentParser(description="Fine-tune BERT model on GLUE benchmark and recording memory usage")
 
-    parser.add_argument("--dataset_path", type=str, default="./glue/mrpc_dataset", help="Path to the dataset")
+    parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
     parser.add_argument("--dir_name", type=str, default="./finetuned", help="Directory name for saving models")
-    parser.add_argument("--model_name", type=str, default="./bert-base-uncased", help="Model name or path")
+    parser.add_argument("--model_name", type=str, default="./models/bert-base-uncased", help="Model name or path")
     parser.add_argument("--rank", type=int, default=8, help="LoRA rank")
     parser.add_argument("--lora_alpha", type=int, default=16, help="LoRA alpha parameter")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout rate")
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument('--task', type=str, default="wnli", choices=tuple(glue_tasks))
 
     args = parser.parse_args()
     main(args)

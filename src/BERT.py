@@ -173,7 +173,8 @@ def main(args):
 
         print(f"Combined evaluation results: {combined_results}")
     else:
-        trainer.evaluate()
+        eval_results = trainer.evaluate(eval_dataset=eval_dataset)
+        print(f"Combined evaluation results: {eval_results}")
 
     # Uncomment to save fine-tuned model and tokenizer
     # output_dir = "./fine_tuned_model"
