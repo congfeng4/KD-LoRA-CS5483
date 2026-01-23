@@ -1,11 +1,7 @@
 import argparse
-import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
-# Import Mr. LoRA components
-from peft import MrLoraConfig, MrLoraModel, MrLoraConfig
-
-
+from peft import MrLoraModel, MrLoraConfig
 from utils import *
 
 def main(args):
