@@ -142,9 +142,6 @@ def main(args):
     # Define a custom training loop for distillation
     class DistillationTrainer(Trainer):
         def compute_loss(self, model, inputs, return_outputs=False, **kwds):
-            global save_inputs
-            save_inputs = inputs.copy()
-
             labels = inputs.pop("labels")
             idx = inputs.pop('idx').long().cpu()
             outputs = model(**inputs)
@@ -226,12 +223,14 @@ def main(args):
     student_tokenizer.save_pretrained(output_dir)
     print(f"Student model saved to {output_dir}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
     # Model arguments
     parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased", help="Name of the teacher model")
     parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased", help="Name of the student model")
+    output_dir = "./results",
 
     # Dataset and training parameters
     parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
