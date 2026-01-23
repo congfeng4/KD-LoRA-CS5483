@@ -1,71 +1,50 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-from peft.tuners.tuners_utils import BaseTunerLayer
+from peft.tuners.lora import LoraLayer
 
 
-class MrLoraLayer(BaseTunerLayer):
-    """
-    你的 LoRA 层实现
-    """
+class MrLoraLayer(nn.Module, LoraLayer):
+    def __init__(self, in_features, out_features, ranks, lora_alpha, lora_dropout, **kwargs):
+        nn.Module.__init__(self)
+        LoraLayer.__init__(self, base_layer=kwargs.get("base_layer"))
 
-    def __init__(self, base_layer: nn.Module, **kwargs):
-        super().__init__()
-        self.base_layer = base_layer
-        self.r = kwargs.get("r", 8)
-        self.lora_alpha = kwargs.get("lora_alpha", 16)
-        self.scaling = self.lora_alpha / self.r
+        self.ranks = ranks
+        self.lora_alpha = lora_alpha
+        self.scaling = lora_alpha / max(ranks)  # Scaling relative to max rank
 
-        # 初始化你的低秩矩阵
-        in_features = base_layer.in_features
-        out_features = base_layer.out_features
+        # Multi-rank components
+        self.lora_A = nn.ModuleList([nn.Linear(in_features, r, bias=False) for r in ranks])
+        self.lora_B = nn.ModuleList([nn.Linear(r, out_features, bias=False) for r in ranks])
+        # Learnable coefficients alpha_i
+        self.alphas = nn.Parameter(torch.randn(len(ranks)))
 
-        # 标准 LoRA: W' = W + alpha/r * B*A
-        # 你的创新可以在这里修改
-        self.lora_A = nn.Parameter(torch.zeros(in_features, self.r))
-        self.lora_B = nn.Parameter(torch.zeros(self.r, out_features))
+        self.lora_dropout = nn.Dropout(p=lora_dropout) if lora_dropout > 0 else nn.Identity()
+        self.reset_mr_parameters()
 
-        # 初始化
-        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-        nn.init.zeros_(self.lora_B)
+    def reset_mr_parameters(self):
+        for a in self.lora_A:
+            nn.init.kaiming_uniform_(a.weight, a=5 ** 0.5)
+        for b in self.lora_B:
+            nn.init.zeros_(b.weight)
+        nn.init.normal_(self.alphas)
 
-        # 如果有 dropout
-        self.lora_dropout = nn.Dropout(kwargs.get("lora_dropout", 0.0))
+    def forward(self, x: torch.Tensor, *args, **kwargs):
+        # Base model forward
+        result = self.get_base_layer()(x, *args, **kwargs)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # 基础输出
-        base_output = self.base_layer(x)
+        # Mr. LoRA forward: sum(alpha_i * B_i(A_i(x)))
+        x = x.to(self.lora_A[0].weight.dtype)
 
-        # LoRA 分支
-        x = self.lora_dropout(x)
-        lora_output = (x @ self.lora_A @ self.lora_B) * self.scaling
+        mr_adapter = 0
+        for i in range(len(self.ranks)):
+            out = self.lora_B[i](self.lora_A[i](self.lora_dropout(x)))
+            mr_adapter += self.alphas[i] * out
 
-        return base_output + lora_output
-
-    def merge(self) -> None:
-        """合并权重到基础层（用于推理优化）"""
-        if self.merged:
-            return
-
-        # 计算合并后的权重
-        delta_weight = (self.lora_B @ self.lora_A.T) * self.scaling
-        self.base_layer.weight.data += delta_weight.T
-        self.merged = True
-
-    def unmerge(self) -> None:
-        """解除合并"""
-        if not self.merged:
-            return
-        # 恢复原始权重...
-        self.merged = False
+        return result + mr_adapter * self.scaling
 
 
-class Linear(MyLoraLayer, nn.Linear):
-    """具体的 Linear 层实现"""
-
-    def __init__(self, base_layer: nn.Linear, **kwargs):
-        # 初始化父类
-        MyLoraLayer.__init__(self, base_layer, **kwargs)
-        # 保持 Linear 的接口
-        nn.Linear.__init__(self, base_layer.in_features, base_layer.out_features)
+class MrLoraLinear(MrLoraLayer):
+    def __init__(self, base_layer, ranks, lora_alpha, lora_dropout, **kwargs):
+        super().__init__(base_layer.in_features, base_layer.out_features, ranks, lora_alpha, lora_dropout,
+                         base_layer=base_layer)

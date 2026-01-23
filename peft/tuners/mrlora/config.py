@@ -1,34 +1,16 @@
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Union
 from peft.config import PeftConfig
-from peft.utils import PeftType
 
 
 @dataclass
 class MrLoraConfig(PeftConfig):
-    """
-    你的新 LoRA 方法配置
-    """
-    # 继承的基础配置
-    auto_mapping: Optional[dict] = field(
-        default=None,
-        metadata={"help": "Auto mapping for model conversion"}
-    )
-
-    # 你的特定参数
-    r: int = field(default=8, metadata={"help": "LoRA rank"})
-    lora_alpha: int = field(default=16, metadata={"help": "LoRA alpha"})
-    target_modules: Optional[List[str]] = field(
-        default=None,
-        metadata={"help": "Target modules to apply LoRA"}
-    )
-    lora_dropout: float = field(default=0.0, metadata={"help": "Dropout rate"})
-    bias: str = field(default="none", metadata={"help": "Bias type"})
-
-    # 你的创新参数（如果有）
-    my_new_param: float = field(default=0.1, metadata={"help": "你的新参数"})
+    ranks: List[int] = field(default_factory=lambda: [32, 16, 8, 4, 2], metadata={"help": "List of ranks for multi-rank adaptation"})
+    target_modules: Optional[Union[List[str], str]] = field(default=None, metadata={"help": "List of module names to apply Mr. LoRA to"})
+    lora_alpha: int = field(default=16, metadata={"help": "The alpha parameter for LoRA scaling"})
+    lora_dropout: float = field(default=0.0, metadata={"help": "The dropout probability for LoRA layers"})
+    bias: str = field(default="none", metadata={"help": "Bias type for LoRA. Can be 'none', 'all' or 'lora_only'"})
+    modules_to_save: Optional[List[str]] = field(default=None, metadata={"help": "List of modules apart from LoRA layers to be set as trainable"})
 
     def __post_init__(self):
-        # 必须指定 PEFT 类型
-        self.peft_type = PeftType.MY_LORA  # 需要添加到 PeftType 枚举
-        super().__post_init__()
+        self.peft_type = "MR_LORA"
