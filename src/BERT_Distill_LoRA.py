@@ -29,6 +29,9 @@ class BertDistillPipeline:
         print(f"Rank: {args.rank}")
         print(f"LoRA Alpha: {args.lora_alpha}")
         print(f"LoRA Dropout: {args.lora_dropout}")
+        print(f'PEFT method: {args.peft}')
+        print(f'Task: {args.task}')
+
         self.num_labels = get_num_labels(args)
         self.dir = Path(args.dir_name)
         self.results = self.args.copy()
@@ -71,7 +74,7 @@ class BertDistillPipeline:
     def load_dataset(self):
         args = self.args
         teacher_dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
-        print('Loaded dataset', teacher_dataset, 'task', self.args.task)
+        print('Loaded dataset', teacher_dataset)
         return teacher_dataset
 
     def load_pretrained_model(self, model_name):
