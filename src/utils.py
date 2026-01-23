@@ -12,8 +12,9 @@ print('Using this peft', peft)
 
 
 GLUE_TASKS = [
-    "cola", "sst2", "mrpc", "qqp", "stsb",
-    "mnli", "qnli", "rte", "wnli",
+    "wnli", "rte", "qnli", 
+    "mrpc", "qqp", "stsb",
+    "mnli", "cola", "sst2",
 ]
 
 MODEL_FAMILY = {
@@ -57,11 +58,11 @@ def get_target_modules(model_name):
     return target_modules
 
 
-def get_peft_config(args, peft_method):
+def get_peft_config(args, model_name, peft_method):
     lora_config = LoraConfig(
         r=args.rank,
         lora_alpha=args.lora_alpha,
-        target_modules=get_target_modules(args.model_name),
+        target_modules=get_target_modules(model_name),
         # target_modules=["query", "value"],
         lora_dropout=args.lora_dropout,
         bias="none",
@@ -255,3 +256,12 @@ def tokenize_function(args, tokenizer, with_indices=False):
         return func2
 
     return func
+
+
+import torch
+import gc
+
+def clear_gpu_memory():
+    gc.collect()
+    torch.cuda.empty_cache()
+    print("GPU memory cleared.")
