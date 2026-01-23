@@ -53,13 +53,17 @@ class BertDistillPipeline:
         print(f"Results written to {self.result_path}")
 
     @property
+    def ckpt_dir(self):
+        return self.dir / 'ckpt'
+    
+    @property
     def result_path(self):
         args = self.args
         config_name = f'{args.task}_{args.model_family}/' + \
                       f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
                       f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
         print(f"config_name: {config_name}")
-        result_file = self.dir / config_name
+        result_file = self.dir / 'metric' / config_name
         result_file.parent.mkdir(parents=True, exist_ok=True)
         return result_file
 
@@ -134,7 +138,7 @@ class BertDistillPipeline:
         args = self.args
         # Define training arguments
         training_args = TrainingArguments(
-            output_dir=str(self.dir / "lora"),
+            output_dir=str(self.ckpt_dir / "lora"),
             learning_rate=args.student_learning_rate,
             **self.training_params,
         )
@@ -156,7 +160,7 @@ class BertDistillPipeline:
     def train_distill_lora(self, student_model, train_dataset, eval_dataset, teacher_soft_labels):
         args = self.args
         student_training_args = TrainingArguments(
-            output_dir=str(self.dir / "distill_lora"),
+            output_dir=str(self.ckpt_dir / "distill_lora"),
             learning_rate=args.student_learning_rate,
             remove_unused_columns=False,
             **self.training_params,
@@ -180,7 +184,7 @@ class BertDistillPipeline:
     def train_fft(self, model, train_dataset, eval_dataset):
         args = self.args
         training_args = TrainingArguments(
-            output_dir=str(self.dir / "fft"),
+            output_dir=str(self.ckpt_dir / "fft"),
             learning_rate=args.teacher_learning_rate,
             **self.training_params,
         )
@@ -244,11 +248,14 @@ class BertDistillPipeline:
         teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
         teacher_fft_results['train'] = train_metrics
         print(f"teacher fft results: {teacher_fft_results}")
+        teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
+        teacher_model.to('cpu')
+        del teacher_model
+        clear_gpu_memory()
 
         # 2. Student Distill + LoRA
         print("Begin Student Distill + LoRA...")
-        peft_config = get_peft_config(args, args.peft)
-        teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
+        peft_config = get_peft_config(args, args.student_model_name, args.peft)
         tokenized_student_dataset = self.tokenize_student_dataset(teacher_dataset)
         student_model = self.load_pretrained_model_lora(args.student_model_name, lora_config=peft_config)
         student_train_dataset, student_eval_dataset = self.split_dataset(tokenized_student_dataset)
@@ -258,15 +265,22 @@ class BertDistillPipeline:
         student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
         student_lora_results['train'] = train_metrics
         print(f"student lora results: {student_lora_results}")
+        student_model.to('cpu')
+        del student_model
+        clear_gpu_memory()
 
         # 3. Teacher LoRA
         print("Begin Teacher LoRA...")
+        peft_config = get_peft_config(args, args.teacher_model_name, args.peft)
         teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name, lora_config=peft_config)
         teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
                                                               teacher_eval_dataset)
         teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
         teacher_lora_results['train'] = train_metrics
         print(f"teacher lora results: {teacher_lora_results}")
+        teacher_lora_model.to('cpu')
+        del teacher_lora_model
+        clear_gpu_memory()
 
         results.update(teacher_fft_results=teacher_fft_results, teacher_lora_results=teacher_lora_results,
                        student_lora_results=student_lora_results)
@@ -322,4 +336,4 @@ if __name__ == "__main__":
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
 
-    main_single(parser.parse_args())
+    main(parser.parse_args())
