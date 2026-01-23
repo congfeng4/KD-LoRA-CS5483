@@ -148,6 +148,7 @@ def main(args):
         num_train_epochs=args.num_train_epochs,
         weight_decay=0.01,
         remove_unused_columns=False,
+        eval_strategy="epoch",
     )
 
     def distillation_loss(student_logits, teacher_logits, labels, temperature=2.0, alpha=0.5):

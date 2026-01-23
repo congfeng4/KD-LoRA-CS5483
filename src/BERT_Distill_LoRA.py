@@ -31,6 +31,17 @@ class BertDistillPipeline:
         self.num_labels = get_num_labels(args)
         self.dir = Path(args.dir_name)
         self.results = self.args.copy()
+        self.training_params = dict(
+            eval_strategy = "epoch",  # Enable evaluation every epoch
+            logging_strategy = "steps",  # Enable logging
+            logging_steps = 100,  # Log every 100 steps
+            save_steps=0, # Don't save.
+            save_total_limit=0, # Don't save.
+            per_device_train_batch_size=args.train_batch_size,
+            per_device_eval_batch_size=args.eval_batch_size,
+            num_train_epochs=args.num_train_epochs,
+            weight_decay=args.weight_decay,
+        )
 
     def get_args(self):
         return self.args.copy()
@@ -85,11 +96,11 @@ class BertDistillPipeline:
         # Apply LoRA configuration to the student model
         student_model = get_peft_model(student_model, lora_config)
         # Freeze all layers except LoRA parameters
-        for param in student_model.parameters():
-            param.requires_grad = False
-        for name, param in student_model.named_parameters():
-            if "lora_" in name:
-                param.requires_grad = True  # Only LoRA weights are trainable
+        # for param in student_model.parameters():
+        #     param.requires_grad = False
+        # for name, param in student_model.named_parameters():
+        #     if "lora_" in name:
+        #         param.requires_grad = True  # Only LoRA weights are trainable
         print("Loaded pretrained model with LoRA", model_name)
         return student_model
 
@@ -130,16 +141,8 @@ class BertDistillPipeline:
         # Define training arguments
         training_args = TrainingArguments(
             output_dir=str(self.dir / "lora"),
-            eval_strategy="epoch",
             learning_rate=args.student_learning_rate,
-            per_device_train_batch_size=args.train_batch_size,
-            per_device_eval_batch_size=args.eval_batch_size,
-            num_train_epochs=args.num_train_epochs,
-            weight_decay=args.weight_decay,
-            save_steps=0,
-            save_total_limit=0,
-            logging_steps=0,
-            logging_strategy="no"
+            **self.training_params,
         )
         if args.task == "mnli":
             eval_dataset = eval_dataset[0]
@@ -161,11 +164,8 @@ class BertDistillPipeline:
         student_training_args = TrainingArguments(
             output_dir=str(self.dir / "distill_lora"),
             learning_rate=args.student_learning_rate,
-            per_device_train_batch_size=args.train_batch_size,
-            per_device_eval_batch_size=args.eval_batch_size,
-            num_train_epochs=args.num_train_epochs,
-            weight_decay=args.weight_decay,
             remove_unused_columns=False,
+            **self.training_params,
         )
         if args.task == "mnli":
             eval_dataset = eval_dataset[0]
@@ -187,16 +187,8 @@ class BertDistillPipeline:
         args = self.args
         training_args = TrainingArguments(
             output_dir=str(self.dir / "fft"),
-            eval_strategy="epoch",
             learning_rate=args.teacher_learning_rate,
-            per_device_train_batch_size=args.train_batch_size,
-            per_device_eval_batch_size=args.eval_batch_size,
-            num_train_epochs=args.num_train_epochs,
-            weight_decay=args.weight_decay,
-            save_steps=0,
-            save_total_limit=0,
-            logging_steps=0,
-            logging_strategy="no"
+            **self.training_params,
         )
         if args.task == "mnli":
             eval_dataset = eval_dataset[0]
