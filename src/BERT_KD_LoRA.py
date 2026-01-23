@@ -29,9 +29,12 @@ def main(args):
 
     if args.task == "stsb" or args.task == "mnli":
         # Set 'ignore_mismatched_sizes' to True for STS-B and MNLI tasks
-        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name, num_labels=num_labels, ignore_mismatched_sizes=True)
+        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name,
+                                                                           num_labels=num_labels,
+                                                                           ignore_mismatched_sizes=True)
     else:
-        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name, num_labels=num_labels)
+        teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name,
+                                                                           num_labels=num_labels)
 
     teacher_training_args = TrainingArguments(
         output_dir="./teacher_results",
@@ -66,7 +69,8 @@ def main(args):
             epochs.append(state.epoch)
             memory_allocated.append(allocated_memory)
             memory_reserved.append(reserved_memory)
-            print(f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
+            print(
+                f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
 
     if args.task == "mnli":
         teacher_trainer = Trainer(
@@ -153,8 +157,8 @@ def main(args):
             return (loss, outputs) if return_outputs else loss
 
     # Tokenize student dataset
-    tokenized_student_dataset = teacher_dataset.map(tokenize_function(args, student_tokenizer, with_indices=True), 
-                                with_indices=True, batched=True)
+    tokenized_student_dataset = teacher_dataset.map(tokenize_function(args, student_tokenizer, with_indices=True),
+                                                    with_indices=True, batched=True)
     print(tokenized_student_dataset['train'][0]['idx'])
 
     # Initialize Distillation Trainer
@@ -212,7 +216,7 @@ def main(args):
             "mismatched_accuracy": eval_results_mismatched["eval_accuracy"]
         }
         print(f"Combined evaluation results: {combined_results}")
-    else:    
+    else:
         # Evaluate on single validation set for other tasks
         eval_results = student_trainer.evaluate(eval_dataset=eval_dataset)
         print(f"Combined evaluation results: {eval_results}")
@@ -228,8 +232,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
     # Model arguments
-    parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased", help="Name of the teacher model")
-    parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased", help="Name of the student model")
+    parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased",
+                        help="Name of the teacher model")
+    parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased",
+                        help="Name of the student model")
     output_dir = "./results",
 
     # Dataset and training parameters

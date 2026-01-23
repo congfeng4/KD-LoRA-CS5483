@@ -8,7 +8,6 @@ from transformers import Trainer, TrainerCallback
 import torch
 import torch.nn.functional as F
 
-
 GLUE_TASKS = [
     "cola", "sst2", "mrpc", "qqp", "stsb",
     "mnli", "qnli", "rte", "wnli",
@@ -30,11 +29,11 @@ MODEL_FAMILY = {
 }
 
 PEFT_FAMILY = [
-    "lora", # Vanilla lora
-    "olora", # orthonormal lora
-    "dora", # weight decomposed lora
-    "adalora", # Adaptive lora
-    "rslora", # Rank stablized lora
+    "lora",  # Vanilla lora
+    "olora",  # orthonormal lora
+    "dora",  # weight decomposed lora
+    "adalora",  # Adaptive lora
+    "rslora",  # Rank stablized lora
 ]
 
 
@@ -139,7 +138,8 @@ class MemoryTrackingCallback(TrainerCallback):
         self.epochs.append(state.epoch)
         self.memory_allocated.append(allocated_memory)
         self.memory_reserved.append(reserved_memory)
-        print(f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
+        print(
+            f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
 
 
 def check_model_family():
@@ -147,6 +147,7 @@ def check_model_family():
         print('checking model', model)
         assert os.path.exists("./models/" + model['teacher'])
         assert os.path.exists("./models/" + model['student'])
+
 
 def add_models(model_family, config: dict):
     param = MODEL_FAMILY[model_family]
@@ -177,7 +178,6 @@ def get_num_labels(args):
 
 # Define a function to compute evaluation metrics based on the task
 def compute_metrics(args):
-
     def func(p):
         predictionss, labels = p
         predictions = np.argmax(predictionss, axis=1)
@@ -213,7 +213,7 @@ def compute_metrics(args):
         if args.task == "mnli":
             accuracy = accuracy_score(labels, predictions)
             return {"accuracy": accuracy}
-        
+
     return func
 
 
@@ -240,10 +240,11 @@ def tokenize_function(args, tokenizer, with_indices=False):
             return tokenizer(examples["question"], examples["sentence"], padding="max_length", truncation=True)
         if args.task == "mnli":
             return tokenizer(examples["premise"], examples["hypothesis"], padding="max_length", truncation=True)
-    
+
     if with_indices:
         def func2(examples, idx):
             return {**func(examples), 'idx': idx}
+
         return func2
 
     return func

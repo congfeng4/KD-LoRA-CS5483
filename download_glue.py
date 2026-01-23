@@ -7,13 +7,14 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 # 2. GLUE 榜单包含的所有子任务名
 # 注意：mnli 包含 matched 和 mismatched 两个验证集
 glue_tasks = [
-    "cola", "sst2", "mrpc", "qqp", "stsb", 
+    "cola", "sst2", "mrpc", "qqp", "stsb",
     "mnli", "qnli", "rte", "wnli", "ax"
 ]
 
+
 def download_all_glue():
     print(f"开始下载 GLUE 数据集，共 {len(glue_tasks)} 个任务...\n")
-    
+
     for task in glue_tasks:
         print(f"--- 正在下载任务: {task.upper()} ---")
         try:
@@ -26,6 +27,7 @@ def download_all_glue():
         print("-" * 30)
 
     print("\n所有任务下载尝试已完成！")
+
 
 if __name__ == "__main__":
     download_all_glue()

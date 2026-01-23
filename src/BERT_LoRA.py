@@ -46,7 +46,8 @@ def main(args):
     # Load the model for sequence classification
     if args.task == "stsb" or args.task == "mnli":
         # Set 'ignore_mismatched_sizes' to True for STS-B and MNLI tasks
-        model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels, ignore_mismatched_sizes=True)
+        model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels,
+                                                                   ignore_mismatched_sizes=True)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels)
 
@@ -76,7 +77,8 @@ def main(args):
             epochs.append(state.epoch)
             memory_allocated.append(allocated_memory)
             memory_reserved.append(reserved_memory)
-            print(f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
+            print(
+                f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
 
     # Define training arguments
     training_args = TrainingArguments(
@@ -130,7 +132,7 @@ def main(args):
             "mismatched_accuracy": eval_results_mismatched["eval_accuracy"]
         }
         print(f"Combined evaluation results: {combined_results}")
-    else:    
+    else:
         # Evaluate on single validation set for other tasks
         eval_results = trainer.evaluate(eval_dataset=eval_dataset)
         print(f"Combined evaluation results: {eval_results}")
@@ -139,6 +141,7 @@ def main(args):
     # output_dir = "./fine_tuned_model"
     # model.save_pretrained(output_dir)
     # tokenizer.save_pretrained(output_dir)
+
 
 if __name__ == "__main__":
     # Set up argument parsing for customizable inputs

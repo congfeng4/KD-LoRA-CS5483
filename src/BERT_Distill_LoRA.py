@@ -14,6 +14,7 @@ class BertDistillPipeline:
     """
     BERT Distillation Pipeline.
     """
+
     def __init__(self, **kwargs):
         args = Addict(kwargs)
         self.args = args
@@ -39,7 +40,7 @@ class BertDistillPipeline:
             print('Warning: Results overwritten')
         self.result_path.write_text(json.dumps(self.results, indent=4))
         print(f"Results written to {self.result_path}")
-        
+
     @property
     def result_path(self):
         args = self.args
@@ -50,7 +51,7 @@ class BertDistillPipeline:
         result_file = self.dir / config_name
         result_file.parent.mkdir(parents=True, exist_ok=True)
         return result_file
-    
+
     def load_dataset(self):
         args = self.args
         teacher_dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
@@ -304,8 +305,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
     # Model arguments
-    parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased", help="Name of the teacher model")
-    parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased", help="Name of the student model")
+    parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased",
+                        help="Name of the teacher model")
+    parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased",
+                        help="Name of the student model")
 
     # Dataset and training parameters
     parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")

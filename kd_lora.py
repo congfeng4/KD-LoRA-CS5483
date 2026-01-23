@@ -9,15 +9,17 @@ from scipy.stats import pearsonr, spearmanr
 import torch.nn.functional as F
 
 glue_tasks = [
-    "cola", "sst2", "mrpc", "qqp", "stsb", 
+    "cola", "sst2", "mrpc", "qqp", "stsb",
     "mnli", "qnli", "rte", "wnli", "ax"
 ]
 
 parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
 # Model arguments
-parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased", help="Name of the teacher model")
-parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased", help="Name of the student model")
+parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased",
+                    help="Name of the teacher model")
+parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased",
+                    help="Name of the student model")
 
 # Dataset and training parameters
 parser.add_argument("--dataset_path", type=str, default='./dataset', help="Path to the dataset")
@@ -46,7 +48,6 @@ print(f"Fine-tuning the teacher model: {args.teacher_model_name}")
 teacher_model = AutoModelForSequenceClassification.from_pretrained(args.teacher_model_name, num_labels=args.num_labels)
 teacher_tokenizer = AutoTokenizer.from_pretrained(args.teacher_model_name)
 
-
 # %%
 teacher_training_args = TrainingArguments(
     output_dir="./teacher_results/" + args.task,
@@ -63,7 +64,6 @@ from datasets import load_dataset
 
 # 下载并加载 GLUE 的 WNLI 子集
 teacher_dataset = load_dataset("glue", args.task, cache_dir=args.dataset_path)
-
 
 # %%
 teacher_dataset
@@ -90,7 +90,6 @@ teacher_trainer.train()
 teacher_logits = teacher_trainer.predict(tokenized_teacher_dataset["train"]).predictions
 teacher_soft_labels = torch.tensor(teacher_logits)
 
-
 # %%
 teacher_model.save_pretrained('./pretrained/bert-base-uncased-FFT-wnli')
 
@@ -102,7 +101,6 @@ teacher_soft_labels.shape
 print(f"Initializing student model: {args.student_model_name} with LoRA")
 student_model = AutoModelForSequenceClassification.from_pretrained(args.student_model_name, num_labels=args.num_labels)
 student_tokenizer = AutoTokenizer.from_pretrained(args.student_model_name)
-
 
 # %%
 lora_config = LoraConfig(
@@ -123,7 +121,6 @@ for name, module in student_model.named_modules():
 # Apply LoRA configuration to the student model
 student_model = get_peft_model(student_model, lora_config)
 
-
 # %%
 student_model
 
@@ -134,7 +131,6 @@ for param in student_model.parameters():
 for name, param in student_model.named_parameters():
     if "lora_" in name:
         param.requires_grad = True  # Only LoRA weights are trainable
-
 
 # %%
 # Step 3: Distillation from Teacher to Student
@@ -148,6 +144,7 @@ student_training_args = TrainingArguments(
     remove_unused_columns=False,
 )
 
+
 # %%
 def distillation_loss(student_logits, teacher_logits, labels, temperature=2.0, alpha=0.5):
     # Compute the distillation loss with temperature scaling
@@ -158,6 +155,7 @@ def distillation_loss(student_logits, teacher_logits, labels, temperature=2.0, a
     ) * (temperature ** 2)
     hard_loss = F.cross_entropy(student_logits, labels)
     return alpha * soft_loss + (1 - alpha) * hard_loss
+
 
 # Define a custom training loop for distillation
 class DistillationTrainer(Trainer):
@@ -176,10 +174,10 @@ class DistillationTrainer(Trainer):
 # %%
 # Tokenize student dataset
 tokenized_student_dataset = teacher_dataset.map(
-    lambda x, idx: {**student_tokenizer(x["sentence1"], x["sentence2"], padding="max_length", truncation=True), 'idx': idx},
+    lambda x, idx: {**student_tokenizer(x["sentence1"], x["sentence2"], padding="max_length", truncation=True),
+                    'idx': idx},
     batched=True, with_indices=True
 )
-
 
 # %%
 tokenized_student_dataset['train'][0]['idx']
@@ -200,7 +198,6 @@ student_trainer.train()
 # Evaluate student model
 student_trainer.evaluate()
 
-
 # %%
 # Save the fine-tuned LoRA student model
 output_dir = "./fine_tuned_student_model"
@@ -216,15 +213,16 @@ from peft import PeftModel
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-
 # %%
-test_data = teacher_dataset['validation'] # 如果要生成提交文件，请换成 dataset["test"]
+test_data = teacher_dataset['validation']  # 如果要生成提交文件，请换成 dataset["test"]
 model = student_model
+
 
 # 4. 预处理函数
 def preprocess_function(examples):
-    return student_tokenizer(examples["sentence1"], examples["sentence2"], 
-                     truncation=True, padding="max_length", max_length=128)
+    return student_tokenizer(examples["sentence1"], examples["sentence2"],
+                             truncation=True, padding="max_length", max_length=128)
+
 
 tokenized_test = test_data.map(preprocess_function, batched=True)
 tokenized_test.set_format(type="torch", columns=["input_ids", "attention_mask", "label"])
@@ -240,7 +238,7 @@ for batch in tqdm(dataloader):
     inputs = {k: v.to(model.device) for k, v in batch.items() if k != "label"}
     with torch.no_grad():
         outputs = model(**inputs)
-    
+
     logits = outputs.logits
     preds = torch.argmax(logits, dim=-1)
     predictions.extend(preds.cpu().numpy())

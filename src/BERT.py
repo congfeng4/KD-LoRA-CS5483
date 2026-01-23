@@ -43,7 +43,8 @@ def main(args):
     # Load model for sequence classification with appropriate number of labels
     if args.task == "stsb" or args.task == "mnli":
         # Ignore mismatched sizes for STS-B and MNLI tasks
-        model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels, ignore_mismatched_sizes=True)
+        model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels,
+                                                                   ignore_mismatched_sizes=True)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels)
 
@@ -105,6 +106,7 @@ def main(args):
     # output_dir = "./fine_tuned_model"
     # model.save_pretrained(output_dir)
     # tokenizer.save_pretrained(output_dir)
+
 
 if __name__ == "__main__":
     # Parse command-line arguments
