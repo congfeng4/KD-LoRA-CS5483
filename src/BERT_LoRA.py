@@ -4,7 +4,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
 from peft import LoraConfig, get_peft_model, TaskType
 
-from utils import glue_tasks, compute_metrics, tokenize_function, get_num_labels
+from utils import GLUE_TASKS, compute_metrics, tokenize_function, get_num_labels
 
 
 def main(args):
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("--lora_alpha", type=int, default=16, help="LoRA alpha parameter")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="LoRA dropout rate")
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
-    parser.add_argument('--task', type=str, default="wnli", choices=tuple(glue_tasks))
+    parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS))
 
     args = parser.parse_args()
     main(args)

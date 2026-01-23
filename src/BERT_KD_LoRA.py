@@ -4,7 +4,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
 from peft import LoraConfig, get_peft_model, TaskType
 import torch.nn.functional as F
-from utils import glue_tasks, compute_metrics, tokenize_function, get_num_labels
+from utils import GLUE_TASKS, compute_metrics, tokenize_function, get_num_labels
 
 
 def main(args):
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
     parser.add_argument("--student_learning_rate", type=float, default=5e-5, help="Learning rate for the student model")
-    parser.add_argument('--task', type=str, default="wnli", choices=tuple(glue_tasks))
+    parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS))
 
     args = parser.parse_args()
     main(args)

@@ -29,10 +29,26 @@ class BertDistillPipeline:
         print(f"LoRA Dropout: {args.lora_dropout}")
         self.num_labels = get_num_labels(args)
         self.dir = Path(args.dir_name)
+        self.results = self.args.copy()
 
     def get_args(self):
-        return self.args.__dict__.copy()
+        return self.args.copy()
 
+    def save_results(self):
+        if self.result_path.exists():
+            print('Warning: Results overwritten')
+        self.result_path.write_text(json.dumps(self.results, indent=4))
+        print(f"Results written to {self.result_path}")
+        
+    @property
+    def result_path(self):
+        config_name = f'{args.task}_{MODEL_FAMILY}/' + \
+                      f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
+                      f'{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
+        print(f"config_name: {config_name}")
+        result_file = self.dir / config_name
+        return result_file
+    
     def load_dataset(self):
         teacher_dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
         print('Loaded dataset', teacher_dataset, 'task', self.args.task)
@@ -215,55 +231,60 @@ class BertDistillPipeline:
         eval_results['log_history'] = deepcopy(trainer.state.log_history)
         return eval_results
 
+    def run(self):
+        if self.result_path.exists():
+            print(f"Result file already exists: {self.result_path}")
+            return
+
+        results = self.results
+        results['model_family'] = MODEL_FAMILY
+        teacher_dataset = self.load_dataset()
+
+        # 1. Teacher FFT
+        teacher_model = self.load_pretrained_model(args.teacher_model_name)
+        tokenized_teacher_dataset = self.tokenize_teacher_dataset(teacher_dataset)
+        teacher_train_dataset, teacher_eval_dataset = self.split_dataset(tokenized_teacher_dataset)
+
+        teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset)
+        teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
+        teacher_fft_results['train'] = train_metrics
+        print(f"teacher fft results: {teacher_fft_results}")
+
+        # 2. Student Distill + LoRA
+        teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
+        tokenized_student_dataset = self.tokenize_student_dataset(teacher_dataset)
+        student_model = self.load_pretrained_model_lora(args.student_model_name, lora_config=None)
+        student_train_dataset, student_eval_dataset = self.split_dataset(tokenized_student_dataset)
+        student_trainer, train_metrics = self.train_distill_lora(student_model, teacher_train_dataset,
+                                                                 teacher_eval_dataset,
+                                                                 teacher_soft_labels)
+        student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
+        student_lora_results['train'] = train_metrics
+        print(f"student lora results: {student_lora_results}")
+
+        # 3. Teacher LoRA
+        teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name)
+        teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
+                                                              teacher_eval_dataset)
+        teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
+        teacher_lora_results['train'] = train_metrics
+        print(f"teacher lora results: {teacher_lora_results}")
+
+        results.update(teacher_fft_results=teacher_fft_results, teacher_lora_results=teacher_lora_results,
+                       student_lora_results=student_lora_results)
+        self.save_results()
+        print('Finish!!')
+
 
 def main(args):
-    model_family = Path(args.teacher_model_name).name
-    config_name = f'{args.task}_{model_family}/{args.train_batch_size}_{args.teacher_learning_rate}/' + \
-        f'{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
-    print(f"config_name: {config_name}")
-
-    pipe = BertDistillPipeline(**args.__dict__)
-    result_file = pipe.dir / config_name
-    if result_file.exists():
-        print(f"Result file already exists: {result_file}")
-        return
-
-    results = pipe.get_args()
-    results['model_family'] = model_family
-    teacher_dataset = pipe.load_dataset()
-
-    # 1. Teacher FFT
-    teacher_model = pipe.load_pretrained_model(args.teacher_model_name)
-    tokenized_teacher_dataset = pipe.tokenize_teacher_dataset(teacher_dataset)
-    teacher_train_dataset, teacher_eval_dataset = pipe.split_dataset(tokenized_teacher_dataset)
-
-    teacher_trainer, train_metrics = pipe.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset)
-    teacher_fft_results = pipe.evaluate_model(teacher_trainer, teacher_eval_dataset)
-    teacher_fft_results['train'] = train_metrics
-    print(f"teacher fft results: {teacher_fft_results}")
-
-    # 2. Student Distill + LoRA
-    teacher_soft_labels = pipe.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
-    tokenized_student_dataset = pipe.tokenize_student_dataset(teacher_dataset)
-    student_model = pipe.load_pretrained_model_lora(args.student_model_name, lora_config=None)
-    student_train_dataset, student_eval_dataset = pipe.split_dataset(tokenized_student_dataset)
-    student_trainer, train_metrics = pipe.train_distill_lora(student_model, teacher_train_dataset, teacher_eval_dataset,
-                                              teacher_soft_labels)
-    student_lora_results = pipe.evaluate_model(student_trainer, student_eval_dataset)
-    student_lora_results['train'] = train_metrics
-    print(f"student lora results: {student_lora_results}")
-
-    # 3. Teacher LoRA
-    teacher_lora_model = pipe.load_pretrained_model_lora(args.teacher_model_name)
-    teacher_lora_trainer, train_metrics = pipe.train_lora(teacher_lora_model, teacher_train_dataset, teacher_eval_dataset)
-    teacher_lora_results = pipe.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
-    teacher_lora_results['train'] = train_metrics
-    print(f"teacher lora results: {teacher_lora_results}")
-
-    results.update(teacher_fft_results=teacher_fft_results, teacher_lora_results=teacher_lora_results,
-                   student_lora_results=student_lora_results)
-    result_file.write_text(json.dumps(results, indent=4))
-    print(f"Results written to {result_file}")
+    # args serves as default.
+    for model_family in MODEL_FAMILY.keys():
+        for task in GLUE_TASKS:
+            config = args.__dict__.copy()
+            config['task'] = task
+            add_models(model_family, config)
+            pipe = BertDistillPipeline(**config)
+            pipe.run()
 
 
 if __name__ == "__main__":
@@ -290,7 +311,7 @@ if __name__ == "__main__":
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
     parser.add_argument("--student_learning_rate", type=float, default=5e-5, help="Learning rate for the student model")
-    parser.add_argument('--task', type=str, default="wnli", choices=tuple(glue_tasks))
+    parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS))
 
     args = parser.parse_args()
     main(args)

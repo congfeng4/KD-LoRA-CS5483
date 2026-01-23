@@ -2,7 +2,7 @@ import argparse
 import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
-from utils import glue_tasks, compute_metrics, tokenize_function, get_num_labels
+from utils import GLUE_TASKS, compute_metrics, tokenize_function, get_num_labels
 
 
 def main(args):
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_batch_size", type=int, default=32, help="Evaluation batch size")
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
-    parser.add_argument('--task', type=str, default="wnli", choices=tuple(glue_tasks))
+    parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS))
 
     args = parser.parse_args()
     main(args)

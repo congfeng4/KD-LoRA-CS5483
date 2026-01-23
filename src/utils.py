@@ -8,12 +8,12 @@ import torch
 import torch.nn.functional as F
 
 
-glue_tasks = [
+GLUE_TASKS = [
     "cola", "sst2", "mrpc", "qqp", "stsb",
     "mnli", "qnli", "rte", "wnli",
 ]
 
-model_family = {
+MODEL_FAMILY = {
     'bert': {
         'teacher': 'bert-base-uncased',
         'student': 'distilbert-base-uncased',
@@ -73,10 +73,18 @@ class MemoryTrackingCallback(TrainerCallback):
 
 
 def check_model_family():
-    for model in model_family.values():
+    for model in MODEL_FAMILY.values():
         print('checking model', model)
         assert os.path.exists("./models/" + model['teacher'])
         assert os.path.exists("./models/" + model['student'])
+
+def add_models(model_family, config: dict):
+    param = MODEL_FAMILY[model_family]
+    teacher = param['teacher']
+    student = param['student']
+    config['student_model_name'] = "./models/" + student
+    config['teacher_model_name'] = "./models/" + teacher
+    config['model_family'] = model_family
 
 
 def get_train_metrics(trainer_output, model, callback: MemoryTrackingCallback):
