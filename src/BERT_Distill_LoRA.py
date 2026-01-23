@@ -131,7 +131,7 @@ class BertDistillPipeline:
         training_args = TrainingArguments(
             output_dir=str(self.dir / "lora"),
             eval_strategy="epoch",
-            learning_rate=args.teacher_learning_rate,
+            learning_rate=args.student_learning_rate,
             per_device_train_batch_size=args.train_batch_size,
             per_device_eval_batch_size=args.eval_batch_size,
             num_train_epochs=args.num_train_epochs,
@@ -261,9 +261,10 @@ class BertDistillPipeline:
 
         # 2. Student Distill + LoRA
         print("Begin Student Distill + LoRA...")
+        peft_config = get_peft_config(args, args.peft)
         teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
         tokenized_student_dataset = self.tokenize_student_dataset(teacher_dataset)
-        student_model = self.load_pretrained_model_lora(args.student_model_name, lora_config=None)
+        student_model = self.load_pretrained_model_lora(args.student_model_name, lora_config=peft_config)
         student_train_dataset, student_eval_dataset = self.split_dataset(tokenized_student_dataset)
         student_trainer, train_metrics = self.train_distill_lora(student_model, student_train_dataset,
                                                                  student_eval_dataset,
@@ -274,7 +275,7 @@ class BertDistillPipeline:
 
         # 3. Teacher LoRA
         print("Begin Teacher LoRA...")
-        teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name)
+        teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name, lora_config=peft_config)
         teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
                                                               teacher_eval_dataset)
         teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
@@ -295,7 +296,7 @@ def main(args):
                 config = args.__dict__.copy()
                 config['model_family'] = model_family
                 config['task'] = task
-                config['peft_method'] = peft_method
+                config['peft'] = peft_method
                 add_models(model_family, config)
                 pipe = BertDistillPipeline(**config)
                 pipe.run()
@@ -326,7 +327,7 @@ if __name__ == "__main__":
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
-    parser.add_argument("--student_learning_rate", type=float, default=5e-5, help="Learning rate for the student model")
+    parser.add_argument("--student_learning_rate", type=float, default=5e-4, help="Learning rate for the student model")
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
 

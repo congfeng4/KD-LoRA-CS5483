@@ -92,6 +92,23 @@ def main(args):
         )
 
     teacher_trainer.train()
+    print('Teacher training results:')
+    if args.task == "mnli":
+        eval_results_matched = teacher_trainer.evaluate(eval_dataset=eval_matched_dataset)
+        print(f"Evaluation results (matched): {eval_results_matched}")
+
+        eval_results_mismatched = teacher_trainer.evaluate(eval_dataset=eval_mismatched_dataset)
+        print(f"Evaluation results (mismatched): {eval_results_mismatched}")
+
+        combined_results = {
+            "matched_accuracy": eval_results_matched["eval_accuracy"],
+            "mismatched_accuracy": eval_results_mismatched["eval_accuracy"]
+        }
+
+        print(f"Combined evaluation results: {combined_results}")
+    else:
+        eval_results = teacher_trainer.evaluate(eval_dataset=eval_dataset)
+        print(f"Combined evaluation results: {eval_results}")
 
     # Save teacher model predictions (logits) as soft labels
     teacher_logits = teacher_trainer.predict(tokenized_teacher_dataset["train"]).predictions
