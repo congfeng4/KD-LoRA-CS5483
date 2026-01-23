@@ -318,9 +318,9 @@ if __name__ == "__main__":
 
     # Dataset and training parameters
     parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
-    parser.add_argument("--train_batch_size", type=int, default=16, help="Training batch size")
-    parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--train_batch_size", type=int, default=32, help="Training batch size")
     parser.add_argument("--eval_batch_size", type=int, default=32, help="Evaluation batch size")
+    parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
 
     parser.add_argument("--dir_name", type=str, default="./results", help="Directory name for saving models")
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     # LoRA parameters
     parser.add_argument("--rank", type=int, default=8, help="Rank of LoRA matrices")
     parser.add_argument("--lora_alpha", type=int, default=16, help="LoRA alpha scaling factor")
-    parser.add_argument("--lora_dropout", type=float, default=0.1, help="Dropout rate for LoRA layers")
+    parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
