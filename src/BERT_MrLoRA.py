@@ -38,7 +38,7 @@ def main(args):
         learning_rate=5e-4,
         per_device_train_batch_size=32,
         num_train_epochs=args.num_train_epochs,
-        logging_strategy="steps", # Changed from "no" to see progress
+        logging_strategy="steps",  # Changed from "no" to see progress
         logging_steps=10
     )
 
@@ -52,6 +52,7 @@ def main(args):
     )
 
     trainer.train()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

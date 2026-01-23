@@ -9,7 +9,7 @@ class MrLoraModel(BaseTuner):
         """设置当前激活的适配器。对于 MrLoRA，我们目前假设只有一个。"""
         if isinstance(adapter_names, str):
             adapter_names = [adapter_names]
-        
+
         for module in self.model.modules():
             if isinstance(module, MrLoraLinear):
                 # 这里可以扩展多适配器逻辑，目前简单处理
@@ -22,9 +22,9 @@ class MrLoraModel(BaseTuner):
         # Replace Linear with MrLoRALinear
         if isinstance(target, torch.nn.Linear):
             new_module = MrLoraLinear(
-                target, 
-                ranks=peft_config.ranks, 
-                lora_alpha=peft_config.lora_alpha, 
+                target,
+                ranks=peft_config.ranks,
+                lora_alpha=peft_config.lora_alpha,
                 lora_dropout=peft_config.lora_dropout
             )
             self._replace_module(parent, target_name, new_module, target)
@@ -49,14 +49,14 @@ class MrLoraModel(BaseTuner):
         # 1. Freeze everything first
         for p in model.parameters():
             p.requires_grad = False
-            
+
         # 2. Unfreeze MrLoRA specific weights and the classification head
         config = self.peft_config[self.active_adapter]
         for n, p in model.named_parameters():
             # Unfreeze if it's part of our Multi-Rank adapters
             if "lora_" in n or "alphas" in n:
                 p.requires_grad = True
-            
+
             # Unfreeze modules_to_save (e.g., ['classifier'])
             if config.modules_to_save and any(m in n for m in config.modules_to_save):
                 p.requires_grad = True

@@ -8,11 +8,11 @@ from transformers import Trainer, TrainerCallback
 import torch
 import torch.nn.functional as F
 import peft
+
 print('Using this peft', peft)
 
-
 GLUE_TASKS = [
-    "wnli", "rte", "qnli", 
+    "wnli", "rte", "qnli",
     "mrpc", "qqp", "stsb",
     "mnli", "cola", "sst2",
 ]
@@ -42,7 +42,7 @@ PEFT_FAMILY = [
 
 
 def get_trainable_param_count(model):
-    return get_model_param_count(model, trainable_only=True) / 1e6 # M
+    return get_model_param_count(model, trainable_only=True) / 1e6  # M
 
 
 def get_target_modules(model_name):
@@ -260,6 +260,7 @@ def tokenize_function(args, tokenizer, with_indices=False):
 
 import torch
 import gc
+
 
 def clear_gpu_memory():
     gc.collect()
