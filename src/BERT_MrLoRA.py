@@ -2,7 +2,7 @@ import argparse
 from datasets import load_dataset
 from peft import get_peft_model
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
-from mrlora import MrLoraModel, MrLoraConfig
+from mrlora import MrLoraConfig
 from utils import *
 
 
@@ -20,9 +20,8 @@ def main(args):
     model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels)
 
     # 1. Define Mr. LoRA Config instead of standard LoraConfig
-    # Setting ranks as 32, 16, 8, 4, 2 per your requirement
     mr_lora_config = MrLoraConfig(
-        ranks=[32, 16, 8, 4, 2],
+        ranks=args.ranks,
         lora_alpha=args.lora_alpha,
         target_modules=["query", "value"],
         lora_dropout=args.lora_dropout,
@@ -51,7 +50,7 @@ def main(args):
         args=training_args,
         train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["validation"],
-        compute_metrics=compute_metrics(args)
+        compute_metrics=compute_metrics(args),
     )
 
     trainer.train()
@@ -65,4 +64,6 @@ if __name__ == "__main__":
     parser.add_argument("--lora_dropout", type=float, default=0.05)
     parser.add_argument("--num_train_epochs", type=int, default=3)
     parser.add_argument('--task', type=str, default="wnli")
+    parser.add_argument('--ranks', type=int, nargs='+', default=[32, 16, 8, 4, 2])
+
     main(parser.parse_args())

@@ -37,6 +37,7 @@ PEFT_FAMILY = [
     "dora",  # weight decomposed lora
     "adalora",  # Adaptive lora
     "rslora",  # Rank stablized lora
+    "mrlora", # Multi-Rank lora
 ]
 
 
@@ -99,6 +100,14 @@ def get_peft_config(args, model_name, peft_method):
             lora_dropout=args.lora_dropout,
         )
         return adalora_config
+
+    if peft_method == 'mrlora':
+        from mrlora import MrLoraConfig
+        mrlora_config = MrLoraConfig(
+            lora_alpha=args.lora_alpha,
+            lora_dropout=args.lora_dropout,
+        )
+        return mrlora_config
 
     print('Unknown peft method', peft_method)
     return lora_config
