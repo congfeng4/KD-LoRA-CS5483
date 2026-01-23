@@ -44,7 +44,7 @@ class BertDistillPipeline:
     def result_path(self):
         config_name = f'{args.task}_{MODEL_FAMILY}/' + \
                       f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
-                      f'{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
+                      f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
         print(f"config_name: {config_name}")
         result_file = self.dir / config_name
         return result_file
@@ -237,7 +237,6 @@ class BertDistillPipeline:
             return
 
         results = self.results
-        results['model_family'] = MODEL_FAMILY
         teacher_dataset = self.load_dataset()
 
         # 1. Teacher FFT
@@ -279,12 +278,14 @@ class BertDistillPipeline:
 def main(args):
     # args serves as default.
     for model_family in MODEL_FAMILY.keys():
-        for task in GLUE_TASKS:
-            config = args.__dict__.copy()
-            config['task'] = task
-            add_models(model_family, config)
-            pipe = BertDistillPipeline(**config)
-            pipe.run()
+        for peft_method in PEFT_FAMILY:
+            for task in GLUE_TASKS:
+                config = args.__dict__.copy()
+                config['task'] = task
+                config['peft_method'] = peft_method
+                add_models(model_family, config)
+                pipe = BertDistillPipeline(**config)
+                pipe.run()
 
 
 if __name__ == "__main__":
@@ -311,7 +312,8 @@ if __name__ == "__main__":
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
     parser.add_argument("--student_learning_rate", type=float, default=5e-5, help="Learning rate for the student model")
-    parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS))
+    parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
+    parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
 
     args = parser.parse_args()
     main(args)

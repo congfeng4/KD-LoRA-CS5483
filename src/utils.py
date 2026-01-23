@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from peft import LoraConfig
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from scipy.stats import pearsonr, spearmanr
 from transformers.trainer_pt_utils import get_model_param_count
@@ -27,6 +28,61 @@ MODEL_FAMILY = {
         'student': 'deberta-v3-small',
     }
 }
+
+PEFT_FAMILY = [
+    "lora", # Vanilla lora
+    "olora", # orthonormal lora
+    "dora", # weight decomposed lora
+    "adalora", # Adaptive lora
+    "rslora", # Rank stablized lora
+]
+
+def get_peft_config(args, peft_method):
+    lora_config = LoraConfig(
+        r=args.rank,
+        lora_alpha=args.lora_alpha,
+        target_modules=["q_lin", "v_lin"],
+        # target_modules=["query", "value"],
+        lora_dropout=args.lora_dropout,
+        bias="none",
+        task_type="SEQ_CLS"
+    )
+    if peft_method == 'lora':
+        return lora_config
+
+    if peft_method == 'olora':
+        # https://github.com/huggingface/peft/blob/main/examples/olora_finetuning/README.md
+        lora_config.init_lora_weights = 'olora'
+        return lora_config
+
+    if peft_method == 'dora':
+        # https://github.com/huggingface/peft/tree/main/examples/dora_finetuning
+        lora_config.use_dora = True
+        return lora_config
+
+    if peft_method == 'rslora':
+        lora_config.use_rslora = True
+        return lora_config
+
+    if peft_method == 'adalora':
+        from peft import AdaLoraConfig
+        adalora_config = AdaLoraConfig(
+            peft_type="ADALORA",
+            task_type="SEQ_CLS",
+            r=8,  # 初始 Rank
+            target_r=4,  # 最终平均 Rank 目标
+            tinit=200,  # 初始逐步剪枝前的步数
+            tfinal=1000,  # 停止剪枝前的步数
+            deltaT=10,  # 每隔多少步计算一次重要性并剪枝
+            lora_alpha=args.lora_alpha,
+            target_modules=["q_lin", "v_lin"],
+            lora_dropout=args.lora_dropout,
+        )
+        return adalora_config
+
+    print('Unknown peft method', peft_method)
+    return lora_config
+
 
 def distillation_loss(student_logits, teacher_logits, labels, temperature=2.0, alpha=0.5):
     # Compute the distillation loss with temperature scaling
