@@ -14,8 +14,8 @@ class MrLoraLayer(nn.Module, LoraLayer):
         self.scaling = lora_alpha / max(ranks)  # Scaling relative to max rank
 
         # Multi-rank components
-        self.lora_A = nn.ModuleList([nn.Linear(in_features, r, bias=False) for r in ranks])
-        self.lora_B = nn.ModuleList([nn.Linear(r, out_features, bias=False) for r in ranks])
+        self.lora_A = nn.ModuleDict({str(r): nn.Linear(in_features, r, bias=False) for r in ranks})
+        self.lora_B = nn.ModuleDict({str(r): nn.Linear(in_features, r, bias=False) for r in ranks})
         # Learnable coefficients alpha_i
         self.alphas = nn.Parameter(torch.randn(len(ranks)))
 
@@ -23,9 +23,9 @@ class MrLoraLayer(nn.Module, LoraLayer):
         self.reset_mr_parameters()
 
     def reset_mr_parameters(self):
-        for a in self.lora_A:
+        for a in self.lora_A.values():
             nn.init.kaiming_uniform_(a.weight, a=5 ** 0.5)
-        for b in self.lora_B:
+        for b in self.lora_B.values():
             nn.init.zeros_(b.weight)
         nn.init.normal_(self.alphas)
 
@@ -34,11 +34,12 @@ class MrLoraLayer(nn.Module, LoraLayer):
         result = self.get_base_layer()(x, *args, **kwargs)
 
         # Mr. LoRA forward: sum(alpha_i * B_i(A_i(x)))
-        x = x.to(self.lora_A[0].weight.dtype)
+        x = x.to(self.lora_A['0'].weight.dtype)
 
         mr_adapter = 0
         for i in range(len(self.ranks)):
-            out = self.lora_B[i](self.lora_A[i](self.lora_dropout(x)))
+            s = str(i)
+            out = self.lora_B[s](self.lora_A[s](self.lora_dropout(x)))
             mr_adapter += self.alphas[i] * out
 
         return result + mr_adapter * self.scaling

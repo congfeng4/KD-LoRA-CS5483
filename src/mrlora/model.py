@@ -1,19 +1,14 @@
+from typing import Union
+
 import torch
 from peft.tuners.tuners_utils import BaseTuner
 from .layer import MrLoraLinear, MrLoraLayer
 
 
 class MrLoraModel(BaseTuner):
-
-    def set_adapter(self, adapter_names):
-        """设置当前激活的适配器。对于 MrLoRA，我们目前假设只有一个。"""
-        if isinstance(adapter_names, str):
-            adapter_names = [adapter_names]
-
-        for module in self.model.modules():
-            if isinstance(module, MrLoraLinear):
-                # 这里可以扩展多适配器逻辑，目前简单处理
-                module.active_adapter = adapter_names[0]
+    # Required class attributes for BaseTuner
+    prefix: str = "mrlora_"  # Prefix for your adapter parameters
+    tuner_layer_cls = MrLoraLayer  # <-- THIS IS THE MISSING ATTRIBUTE
 
     def _prepare_adapter_config(self, peft_config, model_config):
         return peft_config
@@ -51,7 +46,10 @@ class MrLoraModel(BaseTuner):
             p.requires_grad = False
 
         # 2. Unfreeze MrLoRA specific weights and the classification head
-        config = self.peft_config[self.active_adapter]
+        print('self.active_adapter', self.active_adapter)
+        print('self.peft_config', self.peft_config)
+
+        config = self.peft_config[self.active_adapter[0]]
         for n, p in model.named_parameters():
             # Unfreeze if it's part of our Multi-Rank adapters
             if "lora_" in n or "alphas" in n:
@@ -72,3 +70,10 @@ class MrLoraModel(BaseTuner):
         for module in self.model.modules():
             if isinstance(module, MrLoraLinear):
                 module.disable_adapters = False
+
+    def forward(self, *args, **kwargs):
+        # Remove the argument that BERT doesn't understand
+        kwargs.pop("num_items_in_batch", None)
+
+        # Now pass the cleaned kwargs to the model
+        return self.model(*args, **kwargs)

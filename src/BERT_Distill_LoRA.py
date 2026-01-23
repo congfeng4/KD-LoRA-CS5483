@@ -294,13 +294,16 @@ def main(args):
     for model_family in MODEL_FAMILY.keys():
         for peft_method in PEFT_FAMILY:
             for task in GLUE_TASKS:
-                config = args.__dict__.copy()
-                config['model_family'] = model_family
-                config['task'] = task
-                config['peft'] = peft_method
-                add_models(model_family, config)
-                pipe = BertDistillPipeline(**config)
-                pipe.run()
+                for seed in [42, 123, 2024]:
+                    set_seed(seed)
+                    config = args.__dict__.copy()
+                    config['model_family'] = model_family
+                    config['task'] = task
+                    config['peft'] = peft_method
+                    config['seed'] = seed
+                    add_models(model_family, config)
+                    pipe = BertDistillPipeline(**config)
+                    pipe.run()
 
 
 def main_single(args):
