@@ -83,7 +83,7 @@ def main(args):
 
     # Train the model
     trainer.train()
-    print("Trainable parameters:", get_model_param_count(model, trainable_only=True))
+    print("Trainable parameters:", get_trainable_param_count(model))
 
     # Evaluate model and print results, handling MNLI separately
     if args.task == "mnli":

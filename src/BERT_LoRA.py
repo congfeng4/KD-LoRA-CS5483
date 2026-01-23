@@ -115,7 +115,7 @@ def main(args):
             callbacks=[MemoryTrackingCallback()]
         )
 
-    print('Trainable parameters:', get_model_param_count(model, trainable_only=True))
+    print('Trainable parameters:', get_trainable_param_count(model))
     # Train the model
     trainer.train()
 

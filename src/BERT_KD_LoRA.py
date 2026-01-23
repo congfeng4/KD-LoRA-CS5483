@@ -90,7 +90,7 @@ def main(args):
             compute_metrics=compute_metrics(args),
             callbacks=[MemoryTrackingCallback()]
         )
-    print('Teacher trainable parameters:', get_model_param_count(teacher_model, trainable_only=True))
+    print('Teacher trainable parameters:', get_trainable_param_count(teacher_model))
 
     teacher_trainer.train()
     print('Teacher training results:')
@@ -132,7 +132,7 @@ def main(args):
 
     # Apply LoRA configuration to the student model
     student_model = get_peft_model(student_model, lora_config)
-    print('Student trainable parameters:', get_model_param_count(student_model, trainable_only=True))
+    print('Student trainable parameters:', get_trainable_param_count(student_model))
 
     # Step 3: Distillation from Teacher to Student
     print("Starting knowledge distillation from teacher to student")

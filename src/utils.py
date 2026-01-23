@@ -37,6 +37,10 @@ PEFT_FAMILY = [
 ]
 
 
+def get_trainable_param_count(model):
+    return get_model_param_count(model, trainable_only=True) / 1e6 # M
+
+
 def get_target_modules(model_name):
     # 动态匹配 target_modules
     model_name_lower = model_name.lower()
@@ -159,7 +163,7 @@ def add_models(model_family, config: dict):
 
 
 def get_train_metrics(trainer_output, model, callback: MemoryTrackingCallback):
-    trainable_params_count = get_model_param_count(model, trainable_only=True)
+    trainable_params_count = get_trainable_param_count(model)
     train_time = trainer_output.metrics['train_runtime']
     return dict(train_time=train_time, trainable_params_count=trainable_params_count,
                 memory_allocated=callback.memory_allocated, memory_reserved=callback.memory_reserved)
