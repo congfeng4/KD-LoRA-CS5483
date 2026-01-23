@@ -48,6 +48,7 @@ class BertDistillPipeline:
                       f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
         print(f"config_name: {config_name}")
         result_file = self.dir / config_name
+        result_file.parent.mkdir(parents=True, exist_ok=True)
         return result_file
     
     def load_dataset(self):
