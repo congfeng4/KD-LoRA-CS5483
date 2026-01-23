@@ -1,14 +1,14 @@
 import argparse
+from copy import deepcopy
 from pathlib import Path
+import time
 
 import torch
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback, \
-    AutoModel
-from peft import LoraConfig, get_peft_model, TaskType
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
+from peft import LoraConfig, get_peft_model
 import torch.nn.functional as F
 
-from kd_lora import tokenized_student_dataset
 from utils import glue_tasks, compute_metrics, tokenize_function, get_num_labels
 
 
@@ -154,10 +154,10 @@ class BertDistillPipeline:
             output_dir=str(self.dir / "lora"),
             eval_strategy="epoch",
             learning_rate=args.teacher_learning_rate,
-            per_device_train_batch_size=32,
-            per_device_eval_batch_size=32,
+            per_device_train_batch_size=args.train_batch_size,
+            per_device_eval_batch_size=args.eval_batch_size,
             num_train_epochs=args.num_train_epochs,
-            weight_decay=0.01,
+            weight_decay=args.weight_decay,
             save_steps=0,
             save_total_limit=0,
             logging_steps=0,
@@ -184,8 +184,9 @@ class BertDistillPipeline:
             output_dir=str(self.dir / "distill_lora"),
             learning_rate=args.student_learning_rate,
             per_device_train_batch_size=args.train_batch_size,
+            per_device_eval_batch_size=args.eval_batch_size,
             num_train_epochs=args.num_train_epochs,
-            weight_decay=0.01,
+            weight_decay=args.weight_decay,
             remove_unused_columns=False,
         )
         if args.task == "mnli":
@@ -201,14 +202,14 @@ class BertDistillPipeline:
         student_trainer.teacher_soft_labels = teacher_soft_labels
         student_trainer.train()
         print("Finished Training")
-        return student_trainer, student_model
+        return student_trainer
 
     def train_fft(self, model, train_dataset, eval_dataset):
         args = self.args
         training_args = TrainingArguments(
             output_dir=str(self.dir / "fft"),
             eval_strategy="epoch",
-            learning_rate=args.learning_rate,
+            learning_rate=args.teacher_learning_rate,
             per_device_train_batch_size=args.train_batch_size,
             per_device_eval_batch_size=args.eval_batch_size,
             num_train_epochs=args.num_train_epochs,
@@ -252,13 +253,24 @@ class BertDistillPipeline:
         else:
             eval_results = trainer.evaluate(eval_dataset=eval_dataset)
         print(f"Combined evaluation results: {eval_results}")
+        eval_results['log_history'] = deepcopy(trainer.state.log_history)
         return eval_results
 
 
 def main(args):
+    model_family = Path(args.teacher_model_name).name
+    config_name = f'{args.task}_{model_family}/{args.train_batch_size}_{args.teacher_learning_rate}/' + \
+        f'{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
+    print(f"config_name: {config_name}")
+
     pipe = BertDistillPipeline(args)
+    result_file = pipe.dir / config_name
+    if result_file.exists():
+        print(f"Result file already exists: {result_file}")
+        return
 
     results = pipe.get_args()
+    results['model_family'] = model_family
     teacher_dataset = pipe.load_dataset()
 
     # 1. Teacher FFT
@@ -268,6 +280,7 @@ def main(args):
 
     teacher_trainer = pipe.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset)
     teacher_fft_results = pipe.evaluate_model(teacher_trainer, teacher_eval_dataset)
+    print(f"teacher fft results: {teacher_fft_results}")
 
     # 2. Student Distill + LoRA
     teacher_soft_labels = pipe.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
@@ -277,11 +290,13 @@ def main(args):
     student_trainer = pipe.train_distill_lora(student_model, teacher_train_dataset, teacher_eval_dataset,
                                               teacher_soft_labels)
     student_lora_results = pipe.evaluate_model(student_trainer, student_eval_dataset)
+    print(f"student lora results: {student_lora_results}")
 
     # 3. Teacher LoRA
     teacher_lora_model = pipe.load_pretrained_model_lora(args.teacher_model_name)
-    teacher_lora_trainer = pipe.train_lora(teacher_model, teacher_train_dataset, teacher_eval_dataset)
+    teacher_lora_trainer = pipe.train_lora(teacher_lora_model, teacher_train_dataset, teacher_eval_dataset)
     teacher_lora_results = pipe.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
+    print(f"teacher lora results: {teacher_lora_results}")
 
     results.update(teacher_fft_results=teacher_fft_results, teacher_lora_results=teacher_lora_results,
                    student_lora_results=student_lora_results)
@@ -298,6 +313,9 @@ if __name__ == "__main__":
     parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
     parser.add_argument("--train_batch_size", type=int, default=16, help="Training batch size")
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--eval_batch_size", type=int, default=32, help="Evaluation batch size")
+    parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
+
     parser.add_argument("--dir_name", type=str, default="./results", help="Directory name for saving models")
 
     # LoRA parameters
