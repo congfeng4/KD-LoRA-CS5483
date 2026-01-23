@@ -133,11 +133,11 @@ def main(args):
     student_model = get_peft_model(student_model, lora_config)
 
     # Freeze all layers except LoRA parameters
-    for param in student_model.parameters():
-        param.requires_grad = False
-    for name, param in student_model.named_parameters():
-        if "lora_" in name:
-            param.requires_grad = True  # Only LoRA weights are trainable
+    # for param in student_model.parameters():
+    #     param.requires_grad = False
+    # for name, param in student_model.named_parameters():
+    #     if "lora_" in name:
+    #         param.requires_grad = True  # Only LoRA weights are trainable
 
     # Step 3: Distillation from Teacher to Student
     print("Starting knowledge distillation from teacher to student")
@@ -180,12 +180,6 @@ def main(args):
     print(tokenized_student_dataset['train'][0]['idx'])
 
     # Initialize Distillation Trainer
-    # student_trainer = DistillationTrainer(
-    #     model=student_model,
-    #     args=student_training_args,
-    #     train_dataset=tokenized_student_dataset["train"],
-    #     eval_dataset=tokenized_student_dataset["validation"]
-    # )
     if args.task == "mnli":
         # MNLI requires two separate validation sets
         train_dataset = tokenized_student_dataset["train"].shuffle(seed=42)
@@ -270,7 +264,7 @@ if __name__ == "__main__":
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
-    parser.add_argument("--student_learning_rate", type=float, default=5e-5, help="Learning rate for the student model")
+    parser.add_argument("--student_learning_rate", type=float, default=5e-4, help="Learning rate for the student model")
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS))
 
     args = parser.parse_args()
