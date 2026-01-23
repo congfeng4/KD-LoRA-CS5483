@@ -1,66 +1,21 @@
 import argparse
+import json
+from addict import Addict
 from copy import deepcopy
 from pathlib import Path
-import time
 
-import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
 from peft import LoraConfig, get_peft_model
-import torch.nn.functional as F
-
-from utils import glue_tasks, compute_metrics, tokenize_function, get_num_labels
-
-
-def distillation_loss(student_logits, teacher_logits, labels, temperature=2.0, alpha=0.5):
-    # Compute the distillation loss with temperature scaling
-    soft_loss = F.kl_div(
-        F.log_softmax(student_logits / temperature, dim=-1),
-        F.softmax(teacher_logits / temperature, dim=-1),
-        reduction="batchmean"
-    ) * (temperature ** 2)
-    hard_loss = F.cross_entropy(student_logits, labels)
-    return alpha * soft_loss + (1 - alpha) * hard_loss
-
-
-# Define a custom training loop for distillation
-class DistillationTrainer(Trainer):
-    teacher_soft_labels: torch.Tensor
-
-    def compute_loss(self, model, inputs, return_outputs=False, **kwds):
-        labels = inputs.pop("labels")
-        idx = inputs.pop('idx').long().cpu()
-        outputs = model(**inputs)
-        student_logits = outputs.logits
-        teacher_logits = self.teacher_soft_labels[idx]  # Align teacher logits with batch size
-        # teacher_logits = teacher_soft_labels[inputs["input_ids"].shape[0]]  # Align teacher logits with batch size
-        teacher_logits = teacher_logits.to(student_logits.device)
-        loss = distillation_loss(student_logits, teacher_logits, labels)
-        return (loss, outputs) if return_outputs else loss
-
-
-# Callback class to track and log GPU memory usage
-class MemoryTrackingCallback(TrainerCallback):
-    def __init__(self):
-        super().__init__()
-        self.epochs = []
-        self.memory_allocated = []
-        self.memory_reserved = []
-
-    def on_epoch_end(self, args, state, control, **kwargs):
-        allocated_memory = torch.cuda.memory_allocated() / 1e6  # Convert to MB
-        reserved_memory = torch.cuda.memory_reserved() / 1e6  # Convert to MB
-        self.epochs.append(state.epoch)
-        self.memory_allocated.append(allocated_memory)
-        self.memory_reserved.append(reserved_memory)
-        print(f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
+from utils import *
 
 
 class BertDistillPipeline:
     """
     BERT Distillation Pipeline.
     """
-    def __init__(self, args):
+    def __init__(self, **kwargs):
+        args = Addict(kwargs)
         self.args = args
         # Print out the configuration for tracking and debugging
         print(f"Dataset path: {args.dataset_path}")
@@ -165,18 +120,18 @@ class BertDistillPipeline:
         )
         if args.task == "mnli":
             eval_dataset = eval_dataset[0]
-        # callback = MemoryTrackingCallback()
+        callback = MemoryTrackingCallback()
         trainer = Trainer(
             model=model,
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics(args),
-            # callbacks=[callback],
+            callbacks=[callback],
         )
-        trainer.train()
+        train_output = trainer.train()
         print("Finished Training")
-        return trainer
+        return trainer, get_train_metrics(train_output, model, callback)
 
     def train_distill_lora(self, student_model, train_dataset, eval_dataset, teacher_soft_labels):
         args = self.args
@@ -191,18 +146,19 @@ class BertDistillPipeline:
         )
         if args.task == "mnli":
             eval_dataset = eval_dataset[0]
+        callback = MemoryTrackingCallback()
         student_trainer = DistillationTrainer(
             model=student_model,
             args=student_training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics(args),
-            # callbacks=[MemoryTrackingCallback()]
+            callbacks=[callback],
         )
         student_trainer.teacher_soft_labels = teacher_soft_labels
-        student_trainer.train()
+        train_output = student_trainer.train()
         print("Finished Training")
-        return student_trainer
+        return student_trainer, get_train_metrics(train_output, student_model, callback)
 
     def train_fft(self, model, train_dataset, eval_dataset):
         args = self.args
@@ -221,17 +177,19 @@ class BertDistillPipeline:
         )
         if args.task == "mnli":
             eval_dataset = eval_dataset[0]
+        callback = MemoryTrackingCallback()
         trainer = Trainer(
             model=model,
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics(args),
+            callbacks=[callback],
         )
         # Train the model
-        trainer.train()
+        train_output = trainer.train()
         print("Finished Training")
-        return trainer
+        return trainer, get_train_metrics(train_output, model, callback)
 
     def get_teacher_soft_labels(self, teacher_trainer, tokenized_teacher_dataset):
         teacher_logits = teacher_trainer.predict(tokenized_teacher_dataset["train"]).predictions
@@ -252,6 +210,7 @@ class BertDistillPipeline:
             }
         else:
             eval_results = trainer.evaluate(eval_dataset=eval_dataset)
+
         print(f"Combined evaluation results: {eval_results}")
         eval_results['log_history'] = deepcopy(trainer.state.log_history)
         return eval_results
@@ -263,7 +222,7 @@ def main(args):
         f'{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
     print(f"config_name: {config_name}")
 
-    pipe = BertDistillPipeline(args)
+    pipe = BertDistillPipeline(**args.__dict__)
     result_file = pipe.dir / config_name
     if result_file.exists():
         print(f"Result file already exists: {result_file}")
@@ -278,8 +237,9 @@ def main(args):
     tokenized_teacher_dataset = pipe.tokenize_teacher_dataset(teacher_dataset)
     teacher_train_dataset, teacher_eval_dataset = pipe.split_dataset(tokenized_teacher_dataset)
 
-    teacher_trainer = pipe.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset)
+    teacher_trainer, train_metrics = pipe.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset)
     teacher_fft_results = pipe.evaluate_model(teacher_trainer, teacher_eval_dataset)
+    teacher_fft_results['train'] = train_metrics
     print(f"teacher fft results: {teacher_fft_results}")
 
     # 2. Student Distill + LoRA
@@ -287,19 +247,23 @@ def main(args):
     tokenized_student_dataset = pipe.tokenize_student_dataset(teacher_dataset)
     student_model = pipe.load_pretrained_model_lora(args.student_model_name, lora_config=None)
     student_train_dataset, student_eval_dataset = pipe.split_dataset(tokenized_student_dataset)
-    student_trainer = pipe.train_distill_lora(student_model, teacher_train_dataset, teacher_eval_dataset,
+    student_trainer, train_metrics = pipe.train_distill_lora(student_model, teacher_train_dataset, teacher_eval_dataset,
                                               teacher_soft_labels)
     student_lora_results = pipe.evaluate_model(student_trainer, student_eval_dataset)
+    student_lora_results['train'] = train_metrics
     print(f"student lora results: {student_lora_results}")
 
     # 3. Teacher LoRA
     teacher_lora_model = pipe.load_pretrained_model_lora(args.teacher_model_name)
-    teacher_lora_trainer = pipe.train_lora(teacher_lora_model, teacher_train_dataset, teacher_eval_dataset)
+    teacher_lora_trainer, train_metrics = pipe.train_lora(teacher_lora_model, teacher_train_dataset, teacher_eval_dataset)
     teacher_lora_results = pipe.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
+    teacher_lora_results['train'] = train_metrics
     print(f"teacher lora results: {teacher_lora_results}")
 
     results.update(teacher_fft_results=teacher_fft_results, teacher_lora_results=teacher_lora_results,
                    student_lora_results=student_lora_results)
+    result_file.write_text(json.dumps(results, indent=4))
+    print(f"Results written to {result_file}")
 
 
 if __name__ == "__main__":
