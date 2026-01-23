@@ -5,8 +5,8 @@ from copy import deepcopy
 from pathlib import Path
 
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
-from peft import LoraConfig, get_peft_model
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments
+from peft import get_peft_model
 from utils import *
 
 
@@ -42,7 +42,8 @@ class BertDistillPipeline:
         
     @property
     def result_path(self):
-        config_name = f'{args.task}_{MODEL_FAMILY}/' + \
+        args = self.args
+        config_name = f'{args.task}_{args.model_family}/' + \
                       f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
                       f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
         print(f"config_name: {config_name}")
@@ -50,6 +51,7 @@ class BertDistillPipeline:
         return result_file
     
     def load_dataset(self):
+        args = self.args
         teacher_dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
         print('Loaded dataset', teacher_dataset, 'task', self.args.task)
         return teacher_dataset
@@ -68,12 +70,12 @@ class BertDistillPipeline:
 
     def load_pretrained_model_lora(self, model_name, lora_config=None):
         student_model = self.load_pretrained_model(model_name)
+        args = self.args
         if lora_config is None:
             lora_config = LoraConfig(
                 r=args.rank,
                 lora_alpha=args.lora_alpha,
-                target_modules=["q_lin", "v_lin"],
-                # target_modules=["query", "value"],
+                target_modules=get_target_modules(model_name),
                 lora_dropout=args.lora_dropout,
                 bias="none",
                 task_type="SEQ_CLS"
@@ -86,15 +88,17 @@ class BertDistillPipeline:
         for name, param in student_model.named_parameters():
             if "lora_" in name:
                 param.requires_grad = True  # Only LoRA weights are trainable
-        print("Loaded pretrained model with LoRA", student_model)
+        print("Loaded pretrained model with LoRA", model_name)
         return student_model
 
     def tokenize_teacher_dataset(self, teacher_dataset):
+        args = self.args
         teacher_tokenizer = AutoTokenizer.from_pretrained(args.teacher_model_name)
         tokenized_teacher_dataset = teacher_dataset.map(tokenize_function(args, teacher_tokenizer), batched=True)
         return tokenized_teacher_dataset
 
     def tokenize_student_dataset(self, teacher_dataset):
+        args = self.args
         student_tokenizer = AutoTokenizer.from_pretrained(args.student_model_name)
         tokenized_student_dataset = teacher_dataset.map(tokenize_function(args, student_tokenizer, with_indices=True),
                                                         with_indices=True, batched=True)
@@ -106,6 +110,7 @@ class BertDistillPipeline:
         :param tokenized_datasets:
         :return:
         """
+        args = self.args
         if args.task == "mnli":
             # MNLI requires evaluation on both matched and mismatched datasets
             train_dataset = tokenized_datasets["train"].shuffle(seed=42)
@@ -213,6 +218,7 @@ class BertDistillPipeline:
         return teacher_soft_labels
 
     def evaluate_model(self, trainer, eval_dataset):
+        args = self.args
         if args.task == "mnli":
             eval_matched_dataset, eval_mismatched_dataset = eval_dataset
             eval_results_matched = trainer.evaluate(eval_dataset=eval_matched_dataset)
@@ -238,8 +244,10 @@ class BertDistillPipeline:
 
         results = self.results
         teacher_dataset = self.load_dataset()
+        args = self.args
 
         # 1. Teacher FFT
+        print('Begin Teacher FFT...')
         teacher_model = self.load_pretrained_model(args.teacher_model_name)
         tokenized_teacher_dataset = self.tokenize_teacher_dataset(teacher_dataset)
         teacher_train_dataset, teacher_eval_dataset = self.split_dataset(tokenized_teacher_dataset)
@@ -250,18 +258,20 @@ class BertDistillPipeline:
         print(f"teacher fft results: {teacher_fft_results}")
 
         # 2. Student Distill + LoRA
+        print("Begin Student Distill + LoRA...")
         teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
         tokenized_student_dataset = self.tokenize_student_dataset(teacher_dataset)
         student_model = self.load_pretrained_model_lora(args.student_model_name, lora_config=None)
         student_train_dataset, student_eval_dataset = self.split_dataset(tokenized_student_dataset)
-        student_trainer, train_metrics = self.train_distill_lora(student_model, teacher_train_dataset,
-                                                                 teacher_eval_dataset,
+        student_trainer, train_metrics = self.train_distill_lora(student_model, student_train_dataset,
+                                                                 student_eval_dataset,
                                                                  teacher_soft_labels)
         student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
         student_lora_results['train'] = train_metrics
         print(f"student lora results: {student_lora_results}")
 
         # 3. Teacher LoRA
+        print("Begin Teacher LoRA...")
         teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name)
         teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
                                                               teacher_eval_dataset)
@@ -281,6 +291,7 @@ def main(args):
         for peft_method in PEFT_FAMILY:
             for task in GLUE_TASKS:
                 config = args.__dict__.copy()
+                config['model_family'] = model_family
                 config['task'] = task
                 config['peft_method'] = peft_method
                 add_models(model_family, config)
@@ -315,5 +326,4 @@ if __name__ == "__main__":
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
 
-    args = parser.parse_args()
-    main(args)
+    main(parser.parse_args())

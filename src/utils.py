@@ -37,11 +37,25 @@ PEFT_FAMILY = [
     "rslora", # Rank stablized lora
 ]
 
+
+def get_target_modules(model_name):
+    # 动态匹配 target_modules
+    model_name_lower = model_name.lower()
+    if "distilbert" in model_name_lower:
+        target_modules = ["q_lin", "v_lin"]
+    elif "deberta" in model_name_lower:
+        target_modules = ["query_proj", "value_proj"]
+    else:
+        # 适用于 BERT, RoBERTa, DistilRoBERTa
+        target_modules = ["query", "value"]
+    return target_modules
+
+
 def get_peft_config(args, peft_method):
     lora_config = LoraConfig(
         r=args.rank,
         lora_alpha=args.lora_alpha,
-        target_modules=["q_lin", "v_lin"],
+        target_modules=get_target_modules(args.model_name),
         # target_modules=["query", "value"],
         lora_dropout=args.lora_dropout,
         bias="none",
