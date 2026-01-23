@@ -55,6 +55,7 @@ teacher_training_args = TrainingArguments(
     per_device_train_batch_size=args.train_batch_size,
     num_train_epochs=args.num_train_epochs,
     weight_decay=0.01,
+    eval_strategy="epoch",
 )
 
 # %%
@@ -142,6 +143,7 @@ student_training_args = TrainingArguments(
     num_train_epochs=args.num_train_epochs,
     weight_decay=0.01,
     remove_unused_columns=False,
+    eval_strategy="epoch",
 )
 
 

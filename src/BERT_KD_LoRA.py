@@ -42,6 +42,7 @@ def main(args):
         per_device_train_batch_size=args.train_batch_size,
         num_train_epochs=args.num_train_epochs,
         weight_decay=0.01,
+        eval_strategy="epoch",
     )
 
     teacher_dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)

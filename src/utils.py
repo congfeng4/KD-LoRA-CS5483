@@ -7,6 +7,9 @@ from transformers.trainer_pt_utils import get_model_param_count
 from transformers import Trainer, TrainerCallback
 import torch
 import torch.nn.functional as F
+import peft
+print('Using this peft', peft)
+
 
 GLUE_TASKS = [
     "cola", "sst2", "mrpc", "qqp", "stsb",

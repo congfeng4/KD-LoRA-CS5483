@@ -288,6 +288,11 @@ def main(args):
                 pipe.run()
 
 
+def main_single(args):
+    pipe = BertDistillPipeline(**args.__dict__)
+    pipe.run()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
@@ -317,4 +322,4 @@ if __name__ == "__main__":
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
 
-    main(parser.parse_args())
+    main_single(parser.parse_args())

@@ -60,7 +60,7 @@ def main(args):
         save_steps=0,
         save_total_limit=0,
         logging_steps=0,
-        logging_strategy="no"
+        logging_strategy="no",
     )
 
     # Set up Trainer with model, training arguments, datasets, and metrics
