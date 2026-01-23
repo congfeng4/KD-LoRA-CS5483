@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "src/BERT_MrLoRA.py", line 68, in <module>
+    main(parser.parse_args())
+  File "src/BERT_MrLoRA.py", line 57, in main
+    trainer.train()
+  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+    return inner_training_loop(
+  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2548, in _inner_training_loop
+    self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
+  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3007, in _maybe_log_save_evaluate
+    self._save_checkpoint(model, trial, metrics=metrics)
+  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3097, in _save_checkpoint
+    self.save_model(output_dir, _internal_call=True)
+  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3730, in save_model
+    self._save(output_dir)
+  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3834, in _save
+    self.model.save_pretrained(
+  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/peft/peft_model.py", line 331, in save_pretrained
+    output_state_dict = get_peft_model_state_dict(
+  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/peft/utils/save_and_load.py", line 211, in get_peft_model_state_dict
+    raise ValueError(f"Unknown PEFT type passed: {config.peft_type}")
+ValueError: Unknown PEFT type passed: MR_LORA
