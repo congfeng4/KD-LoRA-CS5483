@@ -1,8 +1,9 @@
 import argparse
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
-from peft import MrLoraModel, MrLoraConfig
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
+from mrlora import MrLoraModel, MrLoraConfig
 from utils import *
+
 
 def main(args):
     # Determine labels
