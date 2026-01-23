@@ -1,11 +1,11 @@
 from .config import MrLoraConfig
 from .layer import MrLoraLayer, MrLoraLinear
 from .model import MrLoraModel
-
-# from peft.utils import register_peft_method
+from peft.peft_model import PEFT_TYPE_TO_MODEL_MAPPING
+from peft.mapping import PEFT_TYPE_TO_CONFIG_MAPPING, PEFT_TYPE_TO_TUNER_MAPPING
 
 __all__ = ["MrLoraConfig", "MrLoraLayer", "MrLoraModel", "MrLoraLinear"]
 
-# register_peft_method(
-#     name="mrlora", config_cls=MrLoraConfig, model_cls=MrLoraModel, prefix="mrlora_", is_mixed_compatible=False
-# )
+PEFT_TYPE_TO_MODEL_MAPPING['MR_LORA'] = MrLoraModel
+PEFT_TYPE_TO_CONFIG_MAPPING['MR_LORA'] = MrLoraConfig
+PEFT_TYPE_TO_TUNER_MAPPING['MR_LORA'] = MrLoraModel

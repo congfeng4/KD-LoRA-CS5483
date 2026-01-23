@@ -2,6 +2,8 @@ from typing import Union
 
 import torch
 from peft.tuners.tuners_utils import BaseTuner
+
+from . import MrLoraConfig
 from .layer import MrLoraLinear, MrLoraLayer
 
 
@@ -10,8 +12,23 @@ class MrLoraModel(BaseTuner):
     prefix: str = "mrlora_"  # Prefix for your adapter parameters
     tuner_layer_cls = MrLoraLayer  # <-- THIS IS THE MISSING ATTRIBUTE
 
+    def __init__(self, model, config, adapter_name, low_cpu_mem_usage: bool = False) -> None:
+        super().__init__(model, config, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage)
+
+    def __getattr__(self, name: str):
+        """Forward missing attributes to the wrapped module."""
+        try:
+            return super().__getattr__(name)  # defer to nn.Module's logic
+        except AttributeError:
+            if name == "model":  # see #1892: prevent infinite recursion if class is not initialized
+                raise
+            return getattr(self.model, name)
+
     def _prepare_adapter_config(self, peft_config, model_config):
         return peft_config
+
+    def set_adapter(self, adapters):
+        self.active_adapter = adapters
 
     def _create_and_replace(self, peft_config, adapter_name, target, target_name, parent, **optional_kwargs):
         # Replace Linear with MrLoRALinear
@@ -70,10 +87,3 @@ class MrLoraModel(BaseTuner):
         for module in self.model.modules():
             if isinstance(module, MrLoraLinear):
                 module.disable_adapters = False
-
-    def forward(self, *args, **kwargs):
-        # Remove the argument that BERT doesn't understand
-        kwargs.pop("num_items_in_batch", None)
-
-        # Now pass the cleaned kwargs to the model
-        return self.model(*args, **kwargs)

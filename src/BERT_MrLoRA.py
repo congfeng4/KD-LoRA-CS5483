@@ -1,5 +1,6 @@
 import argparse
 from datasets import load_dataset
+from peft import get_peft_model
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
 from mrlora import MrLoraModel, MrLoraConfig
 from utils import *
@@ -13,6 +14,7 @@ def main(args):
     dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     tokenized_datasets = dataset.map(tokenize_function(args, tokenizer), batched=True)
+    print(tokenized_datasets)
 
     # Prepare model
     model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels)
@@ -29,7 +31,8 @@ def main(args):
 
     # 2. Apply Mr. LoRA
     # Using the custom tuner:
-    model_lora = MrLoraModel(model, mr_lora_config, "default")
+    # model_lora = MrLoraModel(model, mr_lora_config, "default")
+    model_lora = get_peft_model(model, mr_lora_config)
 
     # Define training arguments
     training_args = TrainingArguments(

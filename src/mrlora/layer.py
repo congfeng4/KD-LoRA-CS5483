@@ -15,7 +15,7 @@ class MrLoraLayer(nn.Module, LoraLayer):
 
         # Multi-rank components
         self.lora_A = nn.ModuleDict({str(r): nn.Linear(in_features, r, bias=False) for r in ranks})
-        self.lora_B = nn.ModuleDict({str(r): nn.Linear(in_features, r, bias=False) for r in ranks})
+        self.lora_B = nn.ModuleDict({str(r): nn.Linear(r, in_features, bias=False) for r in ranks})
         # Learnable coefficients alpha_i
         self.alphas = nn.Parameter(torch.randn(len(ranks)))
 
@@ -34,11 +34,11 @@ class MrLoraLayer(nn.Module, LoraLayer):
         result = self.get_base_layer()(x, *args, **kwargs)
 
         # Mr. LoRA forward: sum(alpha_i * B_i(A_i(x)))
-        x = x.to(self.lora_A['0'].weight.dtype)
+        # x = x.to(self.lora_A['0'].weight.dtype)
 
         mr_adapter = 0
-        for i in range(len(self.ranks)):
-            s = str(i)
+        for i, rank in enumerate(self.ranks):
+            s = str(rank)
             out = self.lora_B[s](self.lora_A[s](self.lora_dropout(x)))
             mr_adapter += self.alphas[i] * out
 
