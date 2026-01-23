@@ -2,7 +2,7 @@ import argparse
 import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
-from utils import GLUE_TASKS, compute_metrics, tokenize_function, get_num_labels
+from utils import *
 
 
 def main(args):
@@ -83,6 +83,7 @@ def main(args):
 
     # Train the model
     trainer.train()
+    print("Trainable parameters:", get_model_param_count(model, trainable_only=True))
 
     # Evaluate model and print results, handling MNLI separately
     if args.task == "mnli":

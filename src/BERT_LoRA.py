@@ -4,7 +4,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
 from peft import LoraConfig, get_peft_model, TaskType
 
-from utils import GLUE_TASKS, compute_metrics, tokenize_function, get_num_labels
+from utils import *
 
 
 def main(args):
@@ -115,6 +115,7 @@ def main(args):
             callbacks=[MemoryTrackingCallback()]
         )
 
+    print('Trainable parameters:', get_model_param_count(model, trainable_only=True))
     # Train the model
     trainer.train()
 

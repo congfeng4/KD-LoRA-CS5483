@@ -4,7 +4,7 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
 from peft import LoraConfig, get_peft_model, TaskType
 import torch.nn.functional as F
-from utils import GLUE_TASKS, compute_metrics, tokenize_function, get_num_labels
+from utils import *
 
 
 def main(args):
@@ -90,6 +90,7 @@ def main(args):
             compute_metrics=compute_metrics(args),
             callbacks=[MemoryTrackingCallback()]
         )
+    print('Teacher trainable parameters:', get_model_param_count(teacher_model, trainable_only=True))
 
     teacher_trainer.train()
     print('Teacher training results:')
@@ -131,13 +132,7 @@ def main(args):
 
     # Apply LoRA configuration to the student model
     student_model = get_peft_model(student_model, lora_config)
-
-    # Freeze all layers except LoRA parameters
-    # for param in student_model.parameters():
-    #     param.requires_grad = False
-    # for name, param in student_model.named_parameters():
-    #     if "lora_" in name:
-    #         param.requires_grad = True  # Only LoRA weights are trainable
+    print('Student trainable parameters:', get_model_param_count(student_model, trainable_only=True))
 
     # Step 3: Distillation from Teacher to Student
     print("Starting knowledge distillation from teacher to student")

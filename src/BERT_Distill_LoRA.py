@@ -95,12 +95,6 @@ class BertDistillPipeline:
             )
         # Apply LoRA configuration to the student model
         student_model = get_peft_model(student_model, lora_config)
-        # Freeze all layers except LoRA parameters
-        # for param in student_model.parameters():
-        #     param.requires_grad = False
-        # for name, param in student_model.named_parameters():
-        #     if "lora_" in name:
-        #         param.requires_grad = True  # Only LoRA weights are trainable
         print("Loaded pretrained model with LoRA", model_name)
         return student_model
 
