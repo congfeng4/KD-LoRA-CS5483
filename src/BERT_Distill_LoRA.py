@@ -231,6 +231,10 @@ class BertDistillPipeline:
     def student_lora_dir(self):
         return self.dir / 'kd-lora' / self.config_dir
 
+    @staticmethod
+    def patch_results(results, args, train, variant):
+        results.update(args=args, train=train, variant=variant)
+
     def run_teacher_fft(self):
         """
         Train, evaluate, and save teacher FFT model.
@@ -258,8 +262,7 @@ class BertDistillPipeline:
         teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
                                                         ckpt_dir)
         teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
-        teacher_fft_results['train'] = train_metrics
-        teacher_fft_results['args'] = args
+        self.patch_results(teacher_fft_results, args, teacher_trainer, 'fft')
         print(f"teacher fft results: {teacher_fft_results}")
         metrics_file.write_text(json.dumps(teacher_fft_results, indent=4))
 
@@ -294,8 +297,7 @@ class BertDistillPipeline:
                                                               teacher_eval_dataset, ckpt_dir)
 
         teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
-        teacher_lora_results['train'] = train_metrics
-        teacher_lora_results['args'] = args
+        self.patch_results(teacher_lora_results, args, train_metrics, 'lora')
         print(f"teacher lora results: {teacher_lora_results}")
         metrics_file.write_text(json.dumps(teacher_lora_results, indent=4))
 
@@ -329,8 +331,7 @@ class BertDistillPipeline:
                                                                  student_eval_dataset,
                                                                  teacher_soft_labels, ckpt_dir)
         student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
-        student_lora_results['train'] = train_metrics
-        student_lora_results['args'] = args
+        self.patch_results(student_lora_results, args, train_metrics, 'kd-lora')
         print(f"student lora results: {student_lora_results}")
         metrics_file.write_text(json.dumps(student_lora_results, indent=4))
 
