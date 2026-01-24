@@ -355,7 +355,10 @@ def main_teacher_fft(args):
                 config['seed'] = seed
                 add_model_name_to_config(model_family, config)
                 pipe = BertDistillPipeline(**config)
-                pipe.run_teacher_fft()
+                try:
+                    pipe.run_teacher_fft()
+                except Exception as e:
+                    print(e)
 
 
 def main_lora(args, is_student: bool):
