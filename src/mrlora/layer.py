@@ -9,7 +9,6 @@ class MrLoraLayer(nn.Module, LoraLayer):
         nn.Module.__init__(self)
         LoraLayer.__init__(self, base_layer=kwargs.get("base_layer"))
 
-        self.ranks = ranks
         self.lora_alpha = lora_alpha
         self.scaling = lora_alpha / max(ranks)  # Scaling relative to max rank
 
@@ -18,6 +17,7 @@ class MrLoraLayer(nn.Module, LoraLayer):
         self.lora_B = nn.ModuleDict({str(r): nn.Linear(r, in_features, bias=False) for r in ranks})
         # Learnable coefficients alpha_i
         self.alphas = nn.Parameter(torch.randn(len(ranks)))
+        self.ranks = list(map(str, ranks))
 
         self.lora_dropout = nn.Dropout(p=lora_dropout) if lora_dropout > 0 else nn.Identity()
         self.reset_mr_parameters()
@@ -37,9 +37,8 @@ class MrLoraLayer(nn.Module, LoraLayer):
         # x = x.to(self.lora_A['0'].weight.dtype)
 
         mr_adapter = 0
-        for i, rank in enumerate(self.ranks):
-            s = str(rank)
-            out = self.lora_B[s](self.lora_A[s](self.lora_dropout(x)))
+        for i, r in enumerate(self.ranks):
+            out = self.lora_B[r](self.lora_A[r](self.lora_dropout(x)))
             mr_adapter += self.alphas[i] * out
 
         return result + mr_adapter * self.scaling
