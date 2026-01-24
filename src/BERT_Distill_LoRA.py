@@ -1,5 +1,8 @@
 import argparse
 import json
+
+import safetensors.torch
+import torch
 from addict import Addict
 from copy import deepcopy
 from pathlib import Path
@@ -45,31 +48,11 @@ class BertDistillPipeline:
             per_device_eval_batch_size=args.eval_batch_size,
             num_train_epochs=args.num_train_epochs,
             weight_decay=args.weight_decay,
+            load_best_model_at_end=True,
         )
 
     def get_args(self):
         return self.args.copy()
-
-    def save_results(self):
-        if self.result_path.exists():
-            print('Warning: Results overwritten')
-        self.result_path.write_text(json.dumps(self.results, indent=4))
-        print(f"Results written to {self.result_path}")
-
-    @property
-    def ckpt_dir(self):
-        return self.dir / 'ckpt'
-
-    @property
-    def result_path(self):
-        args = self.args
-        config_name = f'{args.task}_{args.model_family}/' + \
-                      f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
-                      f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}.json'
-        print(f"config_name: {config_name}")
-        result_file = self.dir / 'metric' / config_name
-        result_file.parent.mkdir(parents=True, exist_ok=True)
-        return result_file
 
     def load_dataset(self):
         args = self.args
@@ -138,11 +121,11 @@ class BertDistillPipeline:
             eval_dataset = tokenized_datasets["validation"].shuffle(seed=42)
             return train_dataset, eval_dataset
 
-    def train_lora(self, model, train_dataset, eval_dataset):
+    def train_lora(self, model, train_dataset, eval_dataset, ckpt_dir):
         args = self.args
         # Define training arguments
         training_args = TrainingArguments(
-            output_dir=str(self.ckpt_dir / "lora"),
+            output_dir=str(ckpt_dir),
             learning_rate=args.student_learning_rate,
             **self.training_params,
         )
@@ -161,10 +144,10 @@ class BertDistillPipeline:
         print("Finished Training")
         return trainer, get_train_metrics(train_output, model, callback)
 
-    def train_distill_lora(self, student_model, train_dataset, eval_dataset, teacher_soft_labels):
+    def train_distill_lora(self, student_model, train_dataset, eval_dataset, teacher_soft_labels, ckpt_dir):
         args = self.args
         student_training_args = TrainingArguments(
-            output_dir=str(self.ckpt_dir / "distill_lora"),
+            output_dir=str(ckpt_dir),
             learning_rate=args.student_learning_rate,
             remove_unused_columns=False,
             **self.training_params,
@@ -185,10 +168,10 @@ class BertDistillPipeline:
         print("Finished Training")
         return student_trainer, get_train_metrics(train_output, student_model, callback)
 
-    def train_fft(self, model, train_dataset, eval_dataset):
+    def train_fft(self, model, train_dataset, eval_dataset, ckpt_dir):
         args = self.args
         training_args = TrainingArguments(
-            output_dir=str(self.ckpt_dir / "fft"),
+            output_dir=str(ckpt_dir),
             learning_rate=args.teacher_learning_rate,
             **self.training_params,
         )
@@ -233,67 +216,139 @@ class BertDistillPipeline:
         eval_results['log_history'] = deepcopy(trainer.state.log_history)
         return eval_results
 
-    def run(self):
-        if self.result_path.exists():
-            print(f"Result file already exists: {self.result_path}")
-            return
-
-        results = self.results
-        teacher_dataset = self.load_dataset()
+    @property
+    def config_dir(self):
         args = self.args
+        config_name = f'{args.task}_{args.model_family}/' + \
+                      f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
+                      f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}'
+        config_dir = self.dir / config_name
+        config_dir.mkdir(parents=True, exist_ok=True)
+        return config_dir
 
-        # 1. Teacher FFT
+    @property
+    def teacher_fft_dir(self):
+        return self.config_dir / 'fft'
+    @property
+    def teacher_lora_dir(self):
+        return self.config_dir / 'lora'
+    @property
+    def student_lora_dir(self):
+        return self.config_dir / 'kd-lora'
+
+    def run_teacher_fft(self):
+        """
+        Train, evaluate, and save teacher FFT model.
+        Save teacher-soft-labels.
+        :return:
+        """
+        args = self.args
         print('Begin Teacher FFT...')
+
+        teacher_fft_dir = self.teacher_fft_dir
+        teacher_fft_dir.mkdir(parents=True, exist_ok=True)
+        ckpt_dir = teacher_fft_dir / 'ckpt'
+
+        print('Preparing teacher FFT...')
+        teacher_dataset = self.load_dataset()
         teacher_model = self.load_pretrained_model(args.teacher_model_name)
         tokenized_teacher_dataset = self.tokenize_teacher_dataset(teacher_dataset)
         teacher_train_dataset, teacher_eval_dataset = self.split_dataset(tokenized_teacher_dataset)
+        print('Loaded dataset & model', '#train', len(teacher_train_dataset), '#eval', len(teacher_eval_dataset),
+              '#param', get_trainable_param_count(teacher_model))
 
-        teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset)
+        teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset, ckpt_dir)
         teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
         teacher_fft_results['train'] = train_metrics
         print(f"teacher fft results: {teacher_fft_results}")
+        metrics_file = teacher_fft_dir / 'metrics.json'
+        metrics_file.write_text(json.dumps(teacher_fft_results, indent=4))
+
         teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
+        torch.save(teacher_soft_labels.cpu(), str(teacher_fft_dir / 'teacher_soft_labels.pth'))
+        print('Saved teacher soft-labels.', teacher_soft_labels.shape)
+
         teacher_model.to('cpu')
         del teacher_model
         clear_gpu_memory()
+        print('Teacher FFT is done.', args.task, args.teacher_model_name)
 
-        # 2. Student Distill + LoRA
+    def run_teacher_lora(self):
+        teacher_lora_dir = self.teacher_lora_dir
+        args = self.args
+        ckpt_dir = teacher_lora_dir / 'ckpt'
+        # 3. Teacher LoRA
+        print("Begin Teacher LoRA...")
+        teacher_dataset = self.load_dataset()
+        tokenized_teacher_dataset = self.tokenize_teacher_dataset(teacher_dataset)
+        teacher_train_dataset, teacher_eval_dataset = self.split_dataset(tokenized_teacher_dataset)
+
+        peft_config = get_peft_config(args, args.teacher_model_name, args.peft)
+        teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name, lora_config=peft_config)
+        print('Loaded dataset & model', '#train', len(teacher_train_dataset), '#eval', len(teacher_eval_dataset),
+              '#param', get_trainable_param_count(teacher_lora_model))
+
+        teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
+                                                              teacher_eval_dataset, ckpt_dir)
+
+        teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
+        teacher_lora_results['train'] = train_metrics
+        print(f"teacher lora results: {teacher_lora_results}")
+        metrics_file = teacher_lora_dir / 'metrics.json'
+        metrics_file.write_text(json.dumps(teacher_lora_results, indent=4))
+
+        teacher_lora_model.to('cpu')
+        del teacher_lora_model
+        clear_gpu_memory()
+        print('Teacher LoRA is done.', args.task, args.teacher_model_name)
+
+    def run_student_lora(self):
         print("Begin Student Distill + LoRA...")
+        student_lora_dir = self.student_lora_dir
+        args = self.args
+        ckpt_dir = student_lora_dir / 'ckpt'
+        teacher_fft_dir = self.teacher_fft_dir
+        teacher_soft_labels = torch.load(str(teacher_fft_dir / 'teacher_soft_labels.pth'))
+        print('Loaded teacher soft-labels.', args.taks, teacher_soft_labels.shape)
+
+        teacher_dataset = self.load_dataset()
         peft_config = get_peft_config(args, args.student_model_name, args.peft)
         tokenized_student_dataset = self.tokenize_student_dataset(teacher_dataset)
         student_model = self.load_pretrained_model_lora(args.student_model_name, lora_config=peft_config)
         student_train_dataset, student_eval_dataset = self.split_dataset(tokenized_student_dataset)
+        print('Loaded dataset & model', '#train', len(student_train_dataset), '#eval', len(student_eval_dataset),
+              '#param', get_trainable_param_count(student_model))
+
         student_trainer, train_metrics = self.train_distill_lora(student_model, student_train_dataset,
                                                                  student_eval_dataset,
-                                                                 teacher_soft_labels)
+                                                                 teacher_soft_labels, ckpt_dir)
+
         student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
         student_lora_results['train'] = train_metrics
         print(f"student lora results: {student_lora_results}")
+        metrics_file = student_lora_dir / 'metrics.json'
+        metrics_file.write_text(json.dumps(student_lora_results, indent=4))
+
         student_model.to('cpu')
         del student_model
         clear_gpu_memory()
 
-        # 3. Teacher LoRA
-        print("Begin Teacher LoRA...")
-        peft_config = get_peft_config(args, args.teacher_model_name, args.peft)
-        teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name, lora_config=peft_config)
-        teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
-                                                              teacher_eval_dataset)
-        teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
-        teacher_lora_results['train'] = train_metrics
-        print(f"teacher lora results: {teacher_lora_results}")
-        teacher_lora_model.to('cpu')
-        del teacher_lora_model
-        clear_gpu_memory()
 
-        results.update(teacher_fft_results=teacher_fft_results, teacher_lora_results=teacher_lora_results,
-                       student_lora_results=student_lora_results)
-        self.save_results()
-        print('Finish!!')
+def main_teacher_fft(args):
+    for model_family in MODEL_FAMILY.keys():
+        for task in GLUE_TASKS:
+            for seed in [42]:
+                set_seed(seed)
+                config = args.__dict__.copy()
+                config['model_family'] = model_family
+                config['task'] = task
+                config['seed'] = seed
+                add_model_name_to_config(model_family, config)
+                pipe = BertDistillPipeline(**config)
+                pipe.run_teacher_fft()
 
 
-def main(args):
-    # args serves as default.
+def main_lora(args, is_student: bool):
     for model_family in MODEL_FAMILY.keys():
         for peft_method in PEFT_FAMILY:
             for task in GLUE_TASKS:
@@ -304,14 +359,12 @@ def main(args):
                     config['task'] = task
                     config['peft'] = peft_method
                     config['seed'] = seed
-                    add_models(model_family, config)
+                    add_model_name_to_config(model_family, config)
                     pipe = BertDistillPipeline(**config)
-                    pipe.run()
-
-
-def main_single(args):
-    pipe = BertDistillPipeline(**args.__dict__)
-    pipe.run()
+                    if is_student:
+                        pipe.run_student_lora()
+                    else:
+                        pipe.run_teacher_lora()
 
 
 if __name__ == "__main__":
@@ -342,5 +395,15 @@ if __name__ == "__main__":
     parser.add_argument("--student_learning_rate", type=float, default=5e-4, help="Learning rate for the student model")
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
+    parser.add_argument('--seed', type=int, default=42, help="Random seed")
+    parser.add_argument('--type', '-t', type=int, choices=(0,1,2), help='0 => fft, 1 => student-lora, 2 => teacher-lora')
 
-    main(parser.parse_args())
+    args_cmd = parser.parse_args()
+    if args_cmd.type == 0:
+        main_teacher_fft(args_cmd)
+    elif args_cmd.type == 1:
+        main_lora(args_cmd, is_student=True)
+    elif args_cmd.type == 2:
+        main_lora(args_cmd, is_student=False)
+    else:
+        raise ValueError(f"Unknown command {args_cmd.type}")

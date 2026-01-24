@@ -165,7 +165,7 @@ def check_model_family():
         assert os.path.exists("./models/" + model['student'])
 
 
-def add_models(model_family, config: dict):
+def add_model_name_to_config(model_family, config: dict):
     param = MODEL_FAMILY[model_family]
     teacher = param['teacher']
     student = param['student']
