@@ -217,7 +217,7 @@ class BertDistillPipeline:
     @property
     def config_dir(self):
         args = self.args
-        config_dir = f'task_{args.task}_{args.model_family}/' + \
+        config_dir = f'task_{args.task}_{args.model_family}_{args.seed}/' + \
                      f'base_{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
                      f'peft_{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}'
         return config_dir
