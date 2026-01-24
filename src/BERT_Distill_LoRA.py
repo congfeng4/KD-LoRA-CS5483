@@ -373,7 +373,7 @@ if __name__ == "__main__":
                         help="Name of the student model")
 
     # Dataset and training parameters
-    parser.add_argument("--dataset_path", type=str, default="./glue-dataset", help="Path to the dataset")
+    parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
     parser.add_argument("--train_batch_size", type=int, default=32, help="Training batch size")
     parser.add_argument("--eval_batch_size", type=int, default=32, help="Evaluation batch size")
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
