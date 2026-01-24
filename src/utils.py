@@ -113,6 +113,7 @@ def get_peft_config(args, model_name, peft_method):
     if peft_method == 'mrlora':
         from mrlora import MrLoraConfig
         mrlora_config = MrLoraConfig(
+            ranks=args.lora_ranks,
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
         )

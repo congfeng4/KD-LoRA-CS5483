@@ -1,5 +1,6 @@
 import argparse
 import json
+import shutil
 
 from addict import Addict
 from copy import deepcopy
@@ -262,7 +263,7 @@ class BertDistillPipeline:
         teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
                                                         ckpt_dir)
         teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
-        self.patch_results(teacher_fft_results, args, teacher_trainer, 'fft')
+        self.patch_results(teacher_fft_results, args, train_metrics, 'fft')
         print(f"teacher fft results: {teacher_fft_results}")
         metrics_file.write_text(json.dumps(teacher_fft_results, indent=4))
 
@@ -273,6 +274,7 @@ class BertDistillPipeline:
         teacher_model.to('cpu')
         del teacher_model
         clear_gpu_memory()
+        shutil.rmtree(ckpt_dir)
         print('Teacher FFT is done.', args.task, args.teacher_model_name)
 
     def run_teacher_lora(self):
@@ -304,6 +306,7 @@ class BertDistillPipeline:
         teacher_lora_model.to('cpu')
         del teacher_lora_model
         clear_gpu_memory()
+        shutil.rmtree(ckpt_dir)
         print('Teacher LoRA is done.', args.task, args.teacher_model_name)
 
     def run_student_lora(self):
@@ -338,12 +341,13 @@ class BertDistillPipeline:
         student_model.to('cpu')
         del student_model
         clear_gpu_memory()
-
+        shutil.rmtree(ckpt_dir)
+        print('Student LoRA is done.', args.task, args.student_model_name)
 
 def main_teacher_fft(args):
-    for model_family in MODEL_FAMILY.keys():
+    for seed in [42, 123, 2024]:
         for task in GLUE_TASKS:
-            for seed in [42]:
+            for model_family in MODEL_FAMILY.keys():
                 set_seed(seed)
                 config = args.__dict__.copy()
                 config['model_family'] = model_family
@@ -355,10 +359,10 @@ def main_teacher_fft(args):
 
 
 def main_lora(args, is_student: bool):
-    for model_family in MODEL_FAMILY.keys():
-        for peft_method in PEFT_FAMILY:
-            for task in GLUE_TASKS:
-                for seed in [42, 123, 2024]:
+    for seed in [42, 123, 2024]:
+        for task in GLUE_TASKS:
+            for model_family in MODEL_FAMILY.keys():
+                for peft_method in PEFT_FAMILY:
                     set_seed(seed)
                     config = args.__dict__.copy()
                     config['model_family'] = model_family
@@ -408,6 +412,7 @@ if __name__ == "__main__":
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
     parser.add_argument('--from_disk', type=int, default=1, help="If 1, use load_from_disk()")
+    parser.add_argument('--lora_ranks', type=int, default=(32, 16, 8, 4, 2), nargs='+', help="MrLora ranks")
 
     args_cmd = parser.parse_args()
     if args_cmd.type == 0:
