@@ -11,4 +11,11 @@ rsync -avz --progress \
 rsync -avz --progress \
       -e "ssh -p 22" \
     GPU25:/mnt/data2/congfeng/kd-lora/results \
-     /home/user/fc/kd-lora
+     /home/user/fc/kd-lora \
+     --exclude ckpt
+
+rsync -avz --progress \
+      -e "ssh -p 22" \
+      /home/user/fc/kd-lora/models \
+    GPU25:/mnt/data2/congfeng/kd-lora/
+
