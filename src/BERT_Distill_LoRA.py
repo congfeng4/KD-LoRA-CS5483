@@ -407,7 +407,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=42, help="Random seed")
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
-    parser.add_argument('--from_disk', type=int, default=0, help="If 1, use load_from_disk()")
+    parser.add_argument('--from_disk', type=int, default=1, help="If 1, use load_from_disk()")
 
     args_cmd = parser.parse_args()
     if args_cmd.type == 0:
