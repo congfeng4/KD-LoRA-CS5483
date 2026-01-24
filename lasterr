@@ -1,22 +1,137 @@
+         | 5/15 [00:01<00:03,  3.33it/s[rank2]: Traceback (most recent call last):                                                                                                            
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3111, in _save_checkpoint
+[rank2]:     metric_value = metrics[metric_to_check]
+[rank2]: KeyError: 'eval_loss'
+
+[rank2]: The above exception was the direct cause of the following exception:
+
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 427, in <module>
+[rank2]:     main_lora(args_cmd, is_student=False)
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 382, in main_lora
+[rank2]:     pipe.run_teacher_lora()
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 302, in run_teacher_lora
+[rank2]:     teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 139, in train_lora
+[rank2]:     train_output = trainer.train()
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank2]:     return inner_training_loop(
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
+[rank2]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3007, in _maybe_log_save_evaluate
+[rank2]:     self._save_checkpoint(model, trial, metrics=metrics)
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3113, in _save_checkpoint
+[rank2]:     raise KeyError(
+[rank2]: KeyError: "The `metric_for_best_model` training argument is set to 'eval_loss', which is not found in the evaluation metrics. The available evaluation metrics are: ['eval_runtime', 'eval_samples_per_second', 'eval_steps_per_second', 'epoch']. Please ensure that the `compute_metrics` function returns a dictionary that includes 'eval_loss' or consider changing the `metric_for_best_model` via the TrainingArguments."
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3111, in _save_checkpoint
+[rank1]:     metric_value = metrics[metric_to_check]
+[rank1]: KeyError: 'eval_loss'
+
+[rank1]: The above exception was the direct cause of the following exception:
+
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 427, in <module>
+[rank1]:     main_lora(args_cmd, is_student=False)
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 382, in main_lora
+[rank1]:     pipe.run_teacher_lora()
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 302, in run_teacher_lora
+[rank1]:     teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 139, in train_lora
+[rank1]:     train_output = trainer.train()
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank1]:     return inner_training_loop(
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
+[rank1]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3007, in _maybe_log_save_evaluate
+[rank1]:     self._save_checkpoint(model, trial, metrics=metrics)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3113, in _save_checkpoint
+[rank1]:     raise KeyError(
+[rank1]: KeyError: "The `metric_for_best_model` training argument is set to 'eval_loss', which is not found in the evaluation metrics. The available evaluation metrics are: ['eval_runtime', 'eval_samples_per_second', 'eval_steps_per_second', 'epoch']. Please ensure that the `compute_metrics` function returns a dictionary that includes 'eval_loss' or consider changing the `metric_for_best_model` via the TrainingArguments."
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3111, in _save_checkpoint
+[rank3]:     metric_value = metrics[metric_to_check]
+[rank3]: KeyError: 'eval_loss'
+
+[rank3]: The above exception was the direct cause of the following exception:
+
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 427, in <module>
+[rank3]:     main_lora(args_cmd, is_student=False)
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 382, in main_lora
+[rank3]:     pipe.run_teacher_lora()
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 302, in run_teacher_lora
+[rank3]:     teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 139, in train_lora
+[rank3]:     train_output = trainer.train()
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank3]:     return inner_training_loop(
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
+[rank3]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3007, in _maybe_log_save_evaluate
+[rank3]:     self._save_checkpoint(model, trial, metrics=metrics)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3113, in _save_checkpoint
+[rank3]:     raise KeyError(
+[rank3]: KeyError: "The `metric_for_best_model` training argument is set to 'eval_loss', which is not found in the evaluation metrics. The available evaluation metrics are: ['eval_runtime', 'eval_samples_per_second', 'eval_steps_per_second', 'epoch']. Please ensure that the `compute_metrics` function returns a dictionary that includes 'eval_loss' or consider changing the `metric_for_best_model` via the TrainingArguments."
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3111, in _save_checkpoint
+[rank0]:     metric_value = metrics[metric_to_check]
+[rank0]: KeyError: 'eval_loss'
+
+[rank0]: The above exception was the direct cause of the following exception:
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 427, in <module>
+[rank0]:     main_lora(args_cmd, is_student=False)
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 382, in main_lora
+[rank0]:     pipe.run_teacher_lora()
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 302, in run_teacher_lora
+[rank0]:     teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 139, in train_lora
+[rank0]:     train_output = trainer.train()
+[rank0]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank0]:     return inner_training_loop(
+[rank0]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
+[rank0]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
+[rank0]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3007, in _maybe_log_save_evaluate
+[rank0]:     self._save_checkpoint(model, trial, metrics=metrics)
+[rank0]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3113, in _save_checkpoint
+[rank0]:     raise KeyError(
+[rank0]: KeyError: "The `metric_for_best_model` training argument is set to 'eval_loss', which is not found in the evaluation metrics. The available evaluation metrics are: ['eval_runtime', 'eval_samples_per_second', 'eval_steps_per_second', 'epoch']. Please ensure that the `compute_metrics` function returns a dictionary that includes 'eval_loss' or consider changing the `metric_for_best_model` via the TrainingArguments."
+ 33%|██████████████████████████████████████                                                                            | 5/15 [00:02<00:04,  2.23it/s]
+W0124 21:13:49.202951 140082901071040 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 550624 closing signal SIGTERM
+W0124 21:13:49.203872 140082901071040 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 550627 closing signal SIGTERM
+W0124 21:13:49.204098 140082901071040 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 550628 closing signal SIGTERM
+E0124 21:13:49.368481 140082901071040 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 1 (pid: 550626) of binary: /home/user/anaconda3/envs/lora/bin/python
 Traceback (most recent call last):
-  File "src/BERT_MrLoRA.py", line 68, in <module>
-    main(parser.parse_args())
-  File "src/BERT_MrLoRA.py", line 57, in main
-    trainer.train()
-  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
-    return inner_training_loop(
-  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2548, in _inner_training_loop
-    self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
-  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3007, in _maybe_log_save_evaluate
-    self._save_checkpoint(model, trial, metrics=metrics)
-  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3097, in _save_checkpoint
-    self.save_model(output_dir, _internal_call=True)
-  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3730, in save_model
-    self._save(output_dir)
-  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3834, in _save
-    self.model.save_pretrained(
-  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/peft/peft_model.py", line 331, in save_pretrained
-    output_state_dict = get_peft_model_state_dict(
-  File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/peft/utils/save_and_load.py", line 211, in get_peft_model_state_dict
-    raise ValueError(f"Unknown PEFT type passed: {config.peft_type}")
-ValueError: Unknown PEFT type passed: MR_LORA
+  File "/home/user/anaconda3/envs/lora/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/accelerate_cli.py", line 48, in main
+    args.func(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/launch.py", line 1159, in launch_command
+    multi_gpu_launcher(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/launch.py", line 793, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/run.py", line 892, in run
+    elastic_launch(
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 133, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 264, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+src/BERT_Distill_LoRA.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-01-24_21:13:49
+  host      : user-Super-Server
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 550626)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+(lora) user@user-Super-Server:~/fc/kd-lora$ 
