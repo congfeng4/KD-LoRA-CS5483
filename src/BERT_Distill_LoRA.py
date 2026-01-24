@@ -318,7 +318,11 @@ class BertDistillPipeline:
         student_lora_dir = self.student_lora_dir
         args = self.args
         ckpt_dir = student_lora_dir / 'ckpt'
+
+        ori_peft = args.peft
+        args.peft = 'lora'
         teacher_fft_dir = self.teacher_fft_dir
+        args.peft = ori_peft
         metrics_file = student_lora_dir / 'metrics.json'
         if metrics_file.exists():
             return
