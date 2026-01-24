@@ -219,22 +219,22 @@ class BertDistillPipeline:
     @property
     def config_dir(self):
         args = self.args
-        config_name = f'{args.task}_{args.model_family}/' + \
-                      f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
-                      f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}'
-        config_dir = self.dir / config_name
-        config_dir.mkdir(parents=True, exist_ok=True)
+        config_dir = f'{args.task}_{args.model_family}/' + \
+                     f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
+                     f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}'
         return config_dir
 
     @property
     def teacher_fft_dir(self):
-        return self.config_dir / 'fft'
+        return self.dir / 'fft' / self.config_dir
+
     @property
     def teacher_lora_dir(self):
-        return self.config_dir / 'lora'
+        return self.dir / 'lora' / self.config_dir
+
     @property
     def student_lora_dir(self):
-        return self.config_dir / 'kd-lora'
+        return self.dir / 'kd-lora' / self.config_dir
 
     def run_teacher_fft(self):
         """
@@ -257,7 +257,8 @@ class BertDistillPipeline:
         print('Loaded dataset & model', '#train', len(teacher_train_dataset), '#eval', len(teacher_eval_dataset),
               '#param', get_trainable_param_count(teacher_model))
 
-        teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset, ckpt_dir)
+        teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
+                                                        ckpt_dir)
         teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
         teacher_fft_results['train'] = train_metrics
         print(f"teacher fft results: {teacher_fft_results}")
@@ -396,7 +397,8 @@ if __name__ == "__main__":
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
     parser.add_argument('--seed', type=int, default=42, help="Random seed")
-    parser.add_argument('--type', '-t', type=int, choices=(0,1,2), help='0 => fft, 1 => student-lora, 2 => teacher-lora')
+    parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
+                        help='0 => fft, 1 => student-lora, 2 => teacher-lora')
 
     args_cmd = parser.parse_args()
     if args_cmd.type == 0:
