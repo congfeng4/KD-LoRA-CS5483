@@ -243,6 +243,9 @@ class BertDistillPipeline:
         teacher_fft_dir = self.teacher_fft_dir
         teacher_fft_dir.mkdir(parents=True, exist_ok=True)
         ckpt_dir = teacher_fft_dir / 'ckpt'
+        metrics_file = teacher_fft_dir / 'metrics.json'
+        if metrics_file.exists():
+            return
 
         print('Preparing teacher FFT...')
         teacher_dataset = self.load_dataset()
@@ -258,7 +261,6 @@ class BertDistillPipeline:
         teacher_fft_results['train'] = train_metrics
         teacher_fft_results['args'] = args
         print(f"teacher fft results: {teacher_fft_results}")
-        metrics_file = teacher_fft_dir / 'metrics.json'
         metrics_file.write_text(json.dumps(teacher_fft_results, indent=4))
 
         teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
@@ -274,6 +276,9 @@ class BertDistillPipeline:
         teacher_lora_dir = self.teacher_lora_dir
         args = self.args
         ckpt_dir = teacher_lora_dir / 'ckpt'
+        metrics_file = teacher_lora_dir / 'metrics.json'
+        if metrics_file.exists():
+            return
         # 3. Teacher LoRA
         print("Begin Teacher LoRA...")
         teacher_dataset = self.load_dataset()
@@ -292,7 +297,6 @@ class BertDistillPipeline:
         teacher_lora_results['train'] = train_metrics
         teacher_lora_results['args'] = args
         print(f"teacher lora results: {teacher_lora_results}")
-        metrics_file = teacher_lora_dir / 'metrics.json'
         metrics_file.write_text(json.dumps(teacher_lora_results, indent=4))
 
         teacher_lora_model.to('cpu')
@@ -306,6 +310,10 @@ class BertDistillPipeline:
         args = self.args
         ckpt_dir = student_lora_dir / 'ckpt'
         teacher_fft_dir = self.teacher_fft_dir
+        metrics_file = student_lora_dir / 'metrics.json'
+        if metrics_file.exists():
+            return
+
         teacher_soft_labels = torch.load(str(teacher_fft_dir / 'teacher_soft_labels.pth'))
         print('Loaded teacher soft-labels.', args.taks, teacher_soft_labels.shape)
 
@@ -320,12 +328,10 @@ class BertDistillPipeline:
         student_trainer, train_metrics = self.train_distill_lora(student_model, student_train_dataset,
                                                                  student_eval_dataset,
                                                                  teacher_soft_labels, ckpt_dir)
-
         student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
         student_lora_results['train'] = train_metrics
         student_lora_results['args'] = args
         print(f"student lora results: {student_lora_results}")
-        metrics_file = student_lora_dir / 'metrics.json'
         metrics_file.write_text(json.dumps(student_lora_results, indent=4))
 
         student_model.to('cpu')
