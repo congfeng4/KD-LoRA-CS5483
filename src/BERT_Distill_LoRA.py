@@ -366,10 +366,13 @@ def main_lora(args, is_student: bool):
                     config['seed'] = seed
                     add_model_name_to_config(model_family, config)
                     pipe = BertDistillPipeline(**config)
-                    if is_student:
-                        pipe.run_student_lora()
-                    else:
-                        pipe.run_teacher_lora()
+                    try:
+                        if is_student:
+                            pipe.run_student_lora()
+                        else:
+                            pipe.run_teacher_lora()
+                    except FileNotFoundError as e:
+                        print(e)
 
 
 if __name__ == "__main__":
