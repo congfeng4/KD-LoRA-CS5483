@@ -41,9 +41,7 @@ class BertDistillPipeline:
         self.training_params = dict(
             eval_strategy="epoch",  # Enable evaluation every epoch
             logging_strategy="no",  # Enable logging
-            # logging_steps=100,  # Log every 100 steps
-            save_steps=0,  # Don't save.
-            save_total_limit=0,  # Don't save.
+            save_strategy="epoch",
             per_device_train_batch_size=args.train_batch_size,
             per_device_eval_batch_size=args.eval_batch_size,
             num_train_epochs=args.num_train_epochs,
@@ -219,9 +217,9 @@ class BertDistillPipeline:
     @property
     def config_dir(self):
         args = self.args
-        config_dir = f'{args.task}_{args.model_family}/' + \
-                     f'{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
-                     f'{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}'
+        config_dir = f'task_{args.task}_{args.model_family}/' + \
+                     f'base_{args.train_batch_size}_{args.teacher_learning_rate}_{args.weight_decay}/' + \
+                     f'peft_{args.peft}_{args.lora_alpha}_{args.lora_dropout}_{args.rank}'
         return config_dir
 
     @property
