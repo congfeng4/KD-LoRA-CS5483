@@ -37,8 +37,8 @@ class BertDistillPipeline:
         self.results = self.args.copy()
         self.training_params = dict(
             eval_strategy="epoch",  # Enable evaluation every epoch
-            logging_strategy="steps",  # Enable logging
-            logging_steps=100,  # Log every 100 steps
+            logging_strategy="no",  # Enable logging
+            # logging_steps=100,  # Log every 100 steps
             save_steps=0,  # Don't save.
             save_total_limit=0,  # Don't save.
             per_device_train_batch_size=args.train_batch_size,
