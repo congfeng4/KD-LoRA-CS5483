@@ -55,7 +55,6 @@ def get_trainable_param_count(model):
 
 
 def get_target_modules(model_name):
-    # 动态匹配 target_modules
     model_name_lower = model_name.lower()
     if "distilbert" in model_name_lower:
         target_modules = ["q_lin", "v_lin"]
@@ -64,15 +63,18 @@ def get_target_modules(model_name):
     else:
         # 适用于 BERT, RoBERTa, DistilRoBERTa
         target_modules = ["query", "value"]
+    # 动态匹配 target_modules
+    print('get_target_moduele model_name_lower', model_name_lower, 'target_modules', target_modules)
     return target_modules
 
 
 def get_peft_config(args, model_name, peft_method):
+    target_modules = get_target_modules(model_name)
+
     lora_config = LoraConfig(
         r=args.rank,
         lora_alpha=args.lora_alpha,
-        target_modules=get_target_modules(model_name),
-        # target_modules=["query", "value"],
+        target_modules=target_modules,
         lora_dropout=args.lora_dropout,
         bias="none",
         task_type="SEQ_CLS"
@@ -105,7 +107,7 @@ def get_peft_config(args, model_name, peft_method):
             tfinal=1000,  # 停止剪枝前的步数
             deltaT=10,  # 每隔多少步计算一次重要性并剪枝
             lora_alpha=args.lora_alpha,
-            target_modules=["q_lin", "v_lin"],
+            target_modules=target_modules,
             lora_dropout=args.lora_dropout,
         )
         return adalora_config
@@ -116,6 +118,7 @@ def get_peft_config(args, model_name, peft_method):
             ranks=args.lora_ranks,
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
+            target_modules=target_modules,
         )
         return mrlora_config
 
