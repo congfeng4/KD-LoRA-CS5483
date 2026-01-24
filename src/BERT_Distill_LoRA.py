@@ -1,13 +1,10 @@
 import argparse
 import json
 
-import safetensors.torch
-import torch
 from addict import Addict
 from copy import deepcopy
 from pathlib import Path
 
-from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments
 from peft import get_peft_model
 from utils import *
@@ -54,7 +51,7 @@ class BertDistillPipeline:
 
     def load_dataset(self):
         args = self.args
-        teacher_dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
+        teacher_dataset = load_glue_dataset(args.dataset_path, args.task, from_disk=bool(args.from_disk))
         print('Loaded dataset', teacher_dataset)
         return teacher_dataset
 
@@ -376,7 +373,7 @@ if __name__ == "__main__":
                         help="Name of the student model")
 
     # Dataset and training parameters
-    parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
+    parser.add_argument("--dataset_path", type=str, default="./glue-dataset", help="Path to the dataset")
     parser.add_argument("--train_batch_size", type=int, default=32, help="Training batch size")
     parser.add_argument("--eval_batch_size", type=int, default=32, help="Evaluation batch size")
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
@@ -397,6 +394,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=42, help="Random seed")
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
+    parser.add_argument('--from_disk', type=int, default=0, help="If 1, use load_from_disk()")
 
     args_cmd = parser.parse_args()
     if args_cmd.type == 0:

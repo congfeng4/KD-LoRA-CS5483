@@ -41,6 +41,15 @@ PEFT_FAMILY = [
 ]
 
 
+def load_glue_dataset(dataset_path, task, from_disk=True):
+    if from_disk:
+        from datasets import load_from_disk
+        return load_from_disk(os.path.join(dataset_path, task))
+    else:
+        from datasets import load_dataset
+        return load_dataset('glue', task, cache_dir=dataset_path)
+
+
 def get_trainable_param_count(model):
     return get_model_param_count(model, trainable_only=True) / 1e6  # M
 
