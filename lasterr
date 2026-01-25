@@ -183,3 +183,67 @@ Epoch 1.0: Allocated Memory: 467.16 MB, Reserved Memory: 11263.80 MB
 [rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
 [rank2]:     return forward_call(*args, **kwargs)
 [rank2]: TypeError: forward() got an unexpected keyword argument 'idx'
+
+
+Converting from Tiktoken failed, if a converter for SentencePiece is available, provide a model path with a SentencePiece tokenizer.model file.Currently available slow->fast convertors: ['AlbertTokenizer', 'BartTokenizer', 'BarthezTokenizer', 'BertTokenizer', 'BigBirdTokenizer', 'BlenderbotTokenizer', 'CamembertTokenizer', 'CLIPTokenizer', 'CodeGenTokenizer', 'ConvBertTokenizer', 'DebertaTokenizer', 'DebertaV2Tokenizer', 'DistilBertTokenizer', 'DPRReaderTokenizer', 'DPRQuestionEncoderTokenizer', 'DPRContextEncoderTokenizer', 'ElectraTokenizer', 'FNetTokenizer', 'FunnelTokenizer', 'GPT2Tokenizer', 'HerbertTokenizer', 'LayoutLMTokenizer', 'LayoutLMv2Tokenizer', 'LayoutLMv3Tokenizer', 'LayoutXLMTokenizer', 'LongformerTokenizer', 'LEDTokenizer', 'LxmertTokenizer', 'MarkupLMTokenizer', 'MBartTokenizer', 'MBart50Tokenizer', 'MPNetTokenizer', 'MobileBertTokenizer', 'MvpTokenizer', 'NllbTokenizer', 'OpenAIGPTTokenizer', 'PegasusTokenizer', 'Qwen2Tokenizer', 'RealmTokenizer', 'ReformerTokenizer', 'RemBertTokenizer', 'RetriBertTokenizer', 'RobertaTokenizer', 'RoFormerTokenizer', 'SeamlessM4TTokenizer', 'SqueezeBertTokenizer', 'T5Tokenizer', 'UdopTokenizer', 'WhisperTokenizer', 'XLMRobertaTokenizer', 'XLNetTokenizer', 'SplinterTokenizer', 'XGLMTokenizer', 'LlamaTokenizer', 'CodeLlamaTokenizer', 'GemmaTokenizer', 'Phi3Tokenizer']
+Traceback (most recent call last):
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/convert_slow_tokenizer.py", line 1633, in convert_slow_tokenizer
+    return TikTokenConverter(
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/convert_slow_tokenizer.py", line 1533, in converted
+    tokenizer = self.tokenizer()
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/convert_slow_tokenizer.py", line 1526, in tokenizer
+    vocab_scores, merges = self.extract_vocab_merges_from_model(self.vocab_file)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/convert_slow_tokenizer.py", line 1502, in extract_vocab_merges_from_model
+    bpe_ranks = load_tiktoken_bpe(tiktoken_url)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/tiktoken/load.py", line 147, in load_tiktoken_bpe
+    contents = read_file_cached(tiktoken_bpe_file, expected_hash)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/tiktoken/load.py", line 49, in read_file_cached
+    cache_key = hashlib.sha1(blobpath.encode()).hexdigest()
+AttributeError: 'NoneType' object has no attribute 'encode'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "src/BERT_Distill_LoRA.py", line 456, in <module>
+    main_lora(args_cmd, is_student=False)
+  File "src/BERT_Distill_LoRA.py", line 413, in main_lora
+    raise e
+  File "src/BERT_Distill_LoRA.py", line 410, in main_lora
+    pipe.run_teacher_lora()
+  File "src/BERT_Distill_LoRA.py", line 298, in run_teacher_lora
+    tokenized_teacher_dataset = self.tokenize_teacher_dataset(teacher_dataset)
+  File "src/BERT_Distill_LoRA.py", line 90, in tokenize_teacher_dataset
+    teacher_tokenizer = AutoTokenizer.from_pretrained(args.teacher_model_name)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/models/auto/tokenization_auto.py", line 939, in from_pretrained
+    return tokenizer_class_fast.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 2213, in from_pretrained
+    return cls._from_pretrained(
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 2447, in _from_pretrained
+    tokenizer = cls(*init_inputs, **init_kwargs)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/tokenization_deberta_v2_fast.py", line 103, in __init__
+    super().__init__(
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py", line 138, in __init__
+    fast_tokenizer = convert_slow_tokenizer(self, from_tiktoken=True)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/convert_slow_tokenizer.py", line 1638, in convert_slow_tokenizer
+    raise ValueError(
+ValueError: Converting from Tiktoken failed, if a converter for SentencePiece is available, provide a model path with a SentencePiece tokenizer.model file.Currently available slow->fast convertors: ['AlbertTokenizer', 'BartTokenizer', 'BarthezTokenizer', 'BertTokenizer', 'BigBirdTokenizer', 'BlenderbotTokenizer', 'CamembertTokenizer', 'CLIPTokenizer', 'CodeGenTokenizer', 'ConvBertTokenizer', 'DebertaTokenizer', 'DebertaV2Tokenizer', 'DistilBertTokenizer', 'DPRReaderTokenizer', 'DPRQuestionEncoderTokenizer', 'DPRContextEncoderTokenizer', 'ElectraTokenizer', 'FNetTokenizer', 'FunnelTokenizer', 'GPT2Tokenizer', 'HerbertTokenizer', 'LayoutLMTokenizer', 'LayoutLMv2Tokenizer', 'LayoutLMv3Tokenizer', 'LayoutXLMTokenizer', 'LongformerTokenizer', 'LEDTokenizer', 'LxmertTokenizer', 'MarkupLMTokenizer', 'MBartTokenizer', 'MBart50Tokenizer', 'MPNetTokenizer', 'MobileBertTokenizer', 'MvpTokenizer', 'NllbTokenizer', 'OpenAIGPTTokenizer', 'PegasusTokenizer', 'Qwen2Tokenizer', 'RealmTokenizer', 'ReformerTokenizer', 'RemBertTokenizer', 'RetriBertTokenizer', 'RobertaTokenizer', 'RoFormerTokenizer', 'SeamlessM4TTokenizer', 'SqueezeBertTokenizer', 'T5Tokenizer', 'UdopTokenizer', 'WhisperTokenizer', 'XLMRobertaTokenizer', 'XLNetTokenizer', 'SplinterTokenizer', 'XGLMTokenizer', 'LlamaTokenizer', 'CodeLlamaTokenizer', 'GemmaTokenizer', 'Phi3Tokenizer']
+W0125 14:35:08.840046 140527309575360 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1637332 closing signal SIGTERM
+W0125 14:35:08.841124 140527309575360 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1637339 closing signal SIGTERM
+E0125 14:35:08.956007 140527309575360 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 1 (pid: 1637338) of binary: /home/user/anaconda3/envs/lora/bin/python
+Traceback (most recent call last):
+  File "/home/user/anaconda3/envs/lora/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/accelerate_cli.py", line 48, in main
+    args.func(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/launch.py", line 1159, in launch_command
+    multi_gpu_launcher(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/launch.py", line 793, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/run.py", line 892, in run
+    elastic_launch(
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 133, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 264, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
