@@ -12,7 +12,7 @@ rsync -avz --progress \
       -e "ssh -p 22" \
     GPU25:/mnt/data2/congfeng/kd-lora/results \
      /home/user/fc/kd-lora \
-     --exclude ckpt
+     --exclude ckpt --exclude checkpoint
 
 rsync -avz --progress \
       -e "ssh -p 22" \
