@@ -391,7 +391,7 @@ def main_teacher_fft(args):
                     pipe.run_teacher_fft()
                 except Exception as e:
                     print(e)
-                    raise e
+                    # raise e
 
 
 def main_lora(args, is_student: bool):
@@ -416,7 +416,7 @@ def main_lora(args, is_student: bool):
                         print(e)
                     except Exception as e:
                         print(e)
-                        raise e
+                        # raise e
 
 
 if __name__ == "__main__":
