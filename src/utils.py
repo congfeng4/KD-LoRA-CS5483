@@ -251,23 +251,23 @@ def tokenize_function(args, tokenizer, with_indices=False):
 
         # Tokenize based on dataset-specific requirements
         if args.task == "mrpc":
-            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True)
+            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True, max_length=128)
         if args.task == "cola":
-            return tokenizer(examples["sentence"], truncation=True, padding="max_length")
+            return tokenizer(examples["sentence"], truncation=True, padding="max_length", max_length=128)
         if args.task == "sst2":
-            return tokenizer(examples["sentence"], truncation=True, padding="max_length")
+            return tokenizer(examples["sentence"], truncation=True, padding="max_length",max_length=128)
         if args.task == "wnli":
-            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True)
+            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True,max_length=128)
         if args.task == "rte":
-            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True)
+            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True,max_length=128)
         if args.task == "qqp":
-            return tokenizer(examples["question1"], examples["question2"], padding="max_length", truncation=True)
+            return tokenizer(examples["question1"], examples["question2"], padding="max_length", truncation=True,max_length=128)
         if args.task == "stsb":
-            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True)
+            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation=True,max_length=128)
         if args.task == "qnli":
-            return tokenizer(examples["question"], examples["sentence"], padding="max_length", truncation=True)
+            return tokenizer(examples["question"], examples["sentence"], padding="max_length", truncation=True,max_length=128)
         if args.task == "mnli":
-            return tokenizer(examples["premise"], examples["hypothesis"], padding="max_length", truncation=True)
+            return tokenizer(examples["premise"], examples["hypothesis"], padding="max_length", truncation=True,max_length=128)
 
     if with_indices:
         def func2(examples, idx):
