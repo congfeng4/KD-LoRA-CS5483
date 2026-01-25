@@ -53,9 +53,11 @@ def main(args):
         eval_dataset=tokenized_datasets["validation"],
         compute_metrics=compute_metrics(args),
     )
-
     trainer.train()
-    print(trainer.evaluate())
+    if hasattr(trainer, 'accelerator'):
+        trainer.accelerator.wait_for_everyone()
+    if trainer.is_world_process_zero():
+        print(trainer.evaluate())
 
 
 if __name__ == "__main__":
