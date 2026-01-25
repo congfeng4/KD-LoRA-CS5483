@@ -263,26 +263,26 @@ class BertDistillPipeline:
 
         teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
                                                         ckpt_dir)
-        # 2. 强制同步：确保所有 GPU 进程都到达了这个“终点线”
-        if hasattr(teacher_trainer, "accelerator"):
-            teacher_trainer.accelerator.wait_for_everyone()
+
+        teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
+        self.patch_results(teacher_fft_results, args, train_metrics, 'fft')
+        print(f"teacher fft results: {teacher_fft_results}")
+        teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
 
         if teacher_trainer.is_world_process_zero():
-            teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
-            self.patch_results(teacher_fft_results, args, train_metrics, 'fft')
-            print(f"teacher fft results: {teacher_fft_results}")
             with open(metrics_file, 'w', encoding='utf-8') as f:
                 json.dump(teacher_fft_results, f, indent=4, ensure_ascii=False)
-
-            teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
             torch.save(teacher_soft_labels.cpu(), str(teacher_fft_dir / 'teacher_soft_labels.pth'))
             print('Saved teacher soft-labels.', teacher_soft_labels.shape)
+            shutil.rmtree(ckpt_dir)
+            teacher_dataset.cleanup_cache_files()
+
+        if hasattr(teacher_trainer, "accelerator"):
+            teacher_trainer.accelerator.wait_for_everyone()
 
         teacher_model.to('cpu')
         del teacher_model
         clear_gpu_memory()
-        shutil.rmtree(ckpt_dir)
-        # teacher_dataset.cleanup_cache_files()
         print('Teacher FFT is done.', args.task, args.teacher_model_name)
 
     def run_teacher_lora(self):
@@ -310,21 +310,22 @@ class BertDistillPipeline:
         teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
                                                               teacher_eval_dataset, ckpt_dir)
 
-        if hasattr(teacher_lora_trainer, "accelerator"):
-            teacher_lora_trainer.accelerator.wait_for_everyone()
+        teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
+        self.patch_results(teacher_lora_results, args, train_metrics, 'lora')
+        print(f"teacher lora results: {teacher_lora_results}")
 
         if teacher_lora_trainer.is_world_process_zero():
-            print("All processes reached the end. Master process starts evaluating...")
-            student_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
-            self.patch_results(student_lora_results, args, train_metrics, 'kd-lora')
             with open(metrics_file, 'w', encoding='utf-8') as f:
-                json.dump(student_lora_results, f, indent=4, ensure_ascii=False)
+                json.dump(teacher_lora_results, f, indent=4, ensure_ascii=False)
+            shutil.rmtree(ckpt_dir)
+            teacher_dataset.cleanup_cache_files()
+
+        if hasattr(teacher_lora_trainer, "accelerator"):
+            teacher_lora_trainer.accelerator.wait_for_everyone()
 
         teacher_lora_model.to('cpu')
         del teacher_lora_model
         clear_gpu_memory()
-        shutil.rmtree(ckpt_dir)
-        # teacher_dataset.cleanup_cache_files()
         print('Teacher LoRA is done.', args.task, args.teacher_model_name)
 
     def run_student_lora(self):
@@ -355,22 +356,25 @@ class BertDistillPipeline:
         student_trainer, train_metrics = self.train_distill_lora(student_model, student_train_dataset,
                                                                  student_eval_dataset,
                                                                  teacher_soft_labels, ckpt_dir)
-        if hasattr(student_trainer, "accelerator"):
-            student_trainer.accelerator.wait_for_everyone()
+
+        student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
+        self.patch_results(student_lora_results, args, train_metrics, 'kd-lora')
+        print(f"student lora results: {student_lora_results}")
 
         if student_trainer.is_world_process_zero():
-            student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
-            self.patch_results(student_lora_results, args, train_metrics, 'kd-lora')
-            print(f"student lora results: {student_lora_results}")
             with open(metrics_file, 'w', encoding='utf-8') as f:
                 json.dump(student_lora_results, f, indent=4, ensure_ascii=False)
+            shutil.rmtree(ckpt_dir)
+            teacher_dataset.cleanup_cache_files()
+
+        if hasattr(student_trainer, "accelerator"):
+            student_trainer.accelerator.wait_for_everyone()
 
         student_model.to('cpu')
         del student_model
         clear_gpu_memory()
-        shutil.rmtree(ckpt_dir)
-        # teacher_dataset.cleanup_cache_files()
         print('Student LoRA is done.', args.task, args.student_model_name)
+
 
 def main_teacher_fft(args):
     for seed in [42, 123, 2024]:
