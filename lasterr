@@ -247,3 +247,69 @@ Traceback (most recent call last):
     raise ChildFailedError(
 torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
 ============================================================
+
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/data_loader.py", line 550, in __iter__
+[rank2]:     current_batch = next(dataloader_iter)
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+[rank2]:     data = self._next_data()
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 673, in _next_data
+[rank2]:     data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 55, in fetch
+[rank2]:     return self.collate_fn(data)
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 92, in default_data_collator
+[rank2]:     return torch_default_data_collator(features)
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 158, in torch_default_data_collator
+[rank2]:     batch[k] = torch.tensor([f[k] for f in features])
+[rank2]: ValueError: expected sequence of length 30 at dim 1 (got 25)
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 456, in <module>
+[rank1]:     main_lora(args_cmd, is_student=False)
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 413, in main_lora
+[rank1]:     raise e
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 410, in main_lora
+[rank1]:     pipe.run_teacher_lora()
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 310, in run_teacher_lora
+[rank1]:     teacher_lora_trainer, train_metrics = self.train_lora(teacher_lora_model, teacher_train_dataset,
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 140, in train_lora
+[rank1]:     train_output = trainer.train()
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank1]:     return inner_training_loop(
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2427, in _inner_training_loop
+[rank1]:     batch_samples, num_items_in_batch = self.get_batch_samples(epoch_iterator, num_batches)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 5045, in get_batch_samples
+[rank1]:     batch_samples += [next(epoch_iterator)]
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/data_loader.py", line 550, in __iter__
+[rank1]:     current_batch = next(dataloader_iter)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+[rank1]:     data = self._next_data()
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 673, in _next_data
+[rank1]:     data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 55, in fetch
+[rank1]:     return self.collate_fn(data)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 92, in default_data_collator
+[rank1]:     return torch_default_data_collator(features)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 158, in torch_default_data_collator
+[rank1]:     batch[k] = torch.tensor([f[k] for f in features])
+[rank1]: ValueError: expected sequence of length 19 at dim 1 (got 74)
+  0%|                                                                                                                                             | 0/15 [00:00<?, ?it/s]
+W0125 14:40:08.409942 139864843846848 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1654300 closing signal SIGTERM
+W0125 14:40:08.410661 139864843846848 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1654301 closing signal SIGTERM
+E0125 14:40:08.538784 139864843846848 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 2 (pid: 1654307) of binary: /home/user/anaconda3/envs/lora/bin/python
+Traceback (most recent call last):
+  File "/home/user/anaconda3/envs/lora/bin/accelerate", line 8, in <module>
+    sys.exit(main())
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/accelerate_cli.py", line 48, in main
+    args.func(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/launch.py", line 1159, in launch_command
+    multi_gpu_launcher(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/commands/launch.py", line 793, in multi_gpu_launcher
+    distrib_run.run(args)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/run.py", line 892, in run
+    elastic_launch(
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 133, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/distributed/launcher/api.py", line 264, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+src/BERT_Distill_LoRA.py FAILED

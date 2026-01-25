@@ -87,14 +87,14 @@ class BertDistillPipeline:
 
     def tokenize_teacher_dataset(self, teacher_dataset):
         args = self.args
-        teacher_tokenizer = AutoTokenizer.from_pretrained(args.teacher_model_name)
+        teacher_tokenizer = AutoTokenizer.from_pretrained(args.teacher_model_name, use_fast=False)
         tokenized_teacher_dataset = teacher_dataset.map(tokenize_function(args, teacher_tokenizer),
                                                         batched=True, keep_in_memory=True)
         return tokenized_teacher_dataset
 
     def tokenize_student_dataset(self, teacher_dataset):
         args = self.args
-        student_tokenizer = AutoTokenizer.from_pretrained(args.student_model_name)
+        student_tokenizer = AutoTokenizer.from_pretrained(args.student_model_name, use_fast=False)
         tokenized_student_dataset = teacher_dataset.map(tokenize_function(args, student_tokenizer, with_indices=True),
                                                         with_indices=True, batched=True, keep_in_memory=True)
         return tokenized_student_dataset
