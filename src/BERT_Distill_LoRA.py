@@ -417,6 +417,7 @@ if __name__ == "__main__":
     parser.add_argument("--rank", type=int, default=8, help="Rank of LoRA matrices")
     parser.add_argument("--lora_alpha", type=int, default=16, help="LoRA alpha scaling factor")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
+    parser.add_argument('--lora_ranks', type=int, default=(8, 4, 2, 1), nargs='+', help="MrLora ranks")
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
@@ -427,7 +428,6 @@ if __name__ == "__main__":
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
     parser.add_argument('--from_disk', type=int, default=1, help="If 1, use load_from_disk()")
-    parser.add_argument('--lora_ranks', type=int, default=(32, 16, 8, 4, 2), nargs='+', help="MrLora ranks")
 
     args_cmd = parser.parse_args()
     if args_cmd.type == 0:

@@ -1,5 +1,4 @@
 import argparse
-from datasets import load_dataset
 from peft import get_peft_model
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
 from mrlora import MrLoraConfig
@@ -56,6 +55,7 @@ def main(args):
     )
 
     trainer.train()
+    print(trainer.evaluate())
 
 
 if __name__ == "__main__":

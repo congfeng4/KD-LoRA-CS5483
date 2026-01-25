@@ -7,7 +7,6 @@ from transformers.trainer_pt_utils import get_model_param_count
 from transformers import Trainer, TrainerCallback
 import torch
 import torch.nn.functional as F
-import peft
 
 
 GLUE_TASKS = [
@@ -37,7 +36,7 @@ PEFT_FAMILY = [
     "dora",  # weight decomposed lora
     "adalora",  # Adaptive lora
     "rslora",  # Rank stablized lora
-    #"mrlora", # Multi-Rank lora
+    "mrlora", # Multi-Rank lora
 ]
 
 
