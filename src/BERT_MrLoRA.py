@@ -41,8 +41,8 @@ def main(args):
         learning_rate=5e-4,
         per_device_train_batch_size=32,
         num_train_epochs=args.num_train_epochs,
-        logging_strategy="steps",  # Changed from "no" to see progress
-        logging_steps=10,
+        logging_strategy="epoch",  # Changed from "no" to see progress
+        save_strategy="epoch",
         load_best_model_at_end=True,
     )
 
