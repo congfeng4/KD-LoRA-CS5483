@@ -11,7 +11,8 @@ def main(args):
     num_labels = get_num_labels(args)
 
     # Load dataset and tokenizer
-    dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
+    # dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
+    dataset = load_glue_dataset(args.dataset_path, args.task)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     tokenized_datasets = dataset.map(tokenize_function(args, tokenizer), batched=True)
     print(tokenized_datasets)
