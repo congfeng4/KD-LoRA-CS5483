@@ -88,14 +88,15 @@ class BertDistillPipeline:
     def tokenize_teacher_dataset(self, teacher_dataset):
         args = self.args
         teacher_tokenizer = AutoTokenizer.from_pretrained(args.teacher_model_name)
-        tokenized_teacher_dataset = teacher_dataset.map(tokenize_function(args, teacher_tokenizer), batched=True)
+        tokenized_teacher_dataset = teacher_dataset.map(tokenize_function(args, teacher_tokenizer),
+                                                        batched=True, keep_in_memory=True)
         return tokenized_teacher_dataset
 
     def tokenize_student_dataset(self, teacher_dataset):
         args = self.args
         student_tokenizer = AutoTokenizer.from_pretrained(args.student_model_name)
         tokenized_student_dataset = teacher_dataset.map(tokenize_function(args, student_tokenizer, with_indices=True),
-                                                        with_indices=True, batched=True)
+                                                        with_indices=True, batched=True, keep_in_memory=True)
         return tokenized_student_dataset
 
     def split_dataset(self, tokenized_datasets):
@@ -275,6 +276,7 @@ class BertDistillPipeline:
         del teacher_model
         clear_gpu_memory()
         shutil.rmtree(ckpt_dir)
+        teacher_dataset.cleanup_cache_files()
         print('Teacher FFT is done.', args.task, args.teacher_model_name)
 
     def run_teacher_lora(self):
@@ -311,6 +313,7 @@ class BertDistillPipeline:
         del teacher_lora_model
         clear_gpu_memory()
         shutil.rmtree(ckpt_dir)
+        teacher_dataset.cleanup_cache_files()
         print('Teacher LoRA is done.', args.task, args.teacher_model_name)
 
     def run_student_lora(self):
@@ -350,6 +353,7 @@ class BertDistillPipeline:
         del student_model
         clear_gpu_memory()
         shutil.rmtree(ckpt_dir)
+        teacher_dataset.cleanup_cache_files()
         print('Student LoRA is done.', args.task, args.student_model_name)
 
 def main_teacher_fft(args):
