@@ -392,6 +392,7 @@ def main_teacher_fft(args):
                 except Exception as e:
                     print(e)
                     raise e
+    print('All finish')
 
 
 def main_lora(args, is_student: bool):
@@ -417,6 +418,7 @@ def main_lora(args, is_student: bool):
                     except Exception as e:
                         print(e)
                         # raise e
+    print('All finish')
 
 
 def main_mrlora(args):
