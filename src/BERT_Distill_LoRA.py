@@ -126,7 +126,6 @@ class BertDistillPipeline:
             learning_rate=args.student_learning_rate,
             **self.training_params,
         )
-        print('training_args', training_args)
         if args.task == "mnli":
             eval_dataset = eval_dataset[0]
         callback = MemoryTrackingCallback()
