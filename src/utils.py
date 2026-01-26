@@ -10,8 +10,8 @@ import torch.nn.functional as F
 
 
 GLUE_TASKS = [
-    "wnli", "rte", "qnli",
-    "mrpc", "qqp", "stsb",
+   # "wnli", "rte", "qnli",
+   # "mrpc", "qqp", "stsb",
     "mnli", "cola", "sst2",
 ]
 
