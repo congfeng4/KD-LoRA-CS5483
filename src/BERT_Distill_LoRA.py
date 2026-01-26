@@ -427,6 +427,7 @@ def main_mrlora(args):
     add_model_name_to_config(model_family, config)
     pipe = BertDistillPipeline(**config)
     pipe.run_teacher_lora()
+    # pipe.run_student_lora()
 
 
 
