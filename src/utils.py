@@ -127,21 +127,28 @@ def get_peft_config(args, model_name, peft_method):
 
 
 def distillation_loss(student_logits, teacher_logits, labels, temperature=2.0, alpha=0.5):
-    # Compute the distillation loss with temperature scaling
-    # Ensure proper dtypes for mixed precision training
-    # Cast to float32 for stable loss computation (gradients will propagate correctly)
-    student_logits = student_logits.float()
-    teacher_logits = teacher_logits.float()
-    # Ensure labels are long integers for cross-entropy
-    labels = labels.long()
-    
-    soft_loss = F.kl_div(
-        F.log_softmax(student_logits / temperature, dim=-1),
-        F.softmax(teacher_logits / temperature, dim=-1),
-        reduction="batchmean"
-    ) * (temperature ** 2)
-    hard_loss = F.cross_entropy(student_logits, labels)
-    return alpha * soft_loss + (1 - alpha) * hard_loss
+    # Determine if this is a regression task (single output dimension)
+    if student_logits.size(-1) == 1:
+        # Regression task: use MSE loss
+        # Squeeze the last dimension
+        student_logits = student_logits.squeeze(-1)
+        teacher_logits = teacher_logits.squeeze(-1)
+        # Labels are already float, no conversion needed
+        soft_loss = F.mse_loss(student_logits, teacher_logits)
+        hard_loss = F.mse_loss(student_logits, labels)
+        return alpha * soft_loss + (1 - alpha) * hard_loss
+    else:
+        # Classification task
+        # Ensure labels are long integers for cross-entropy
+        labels = labels.long()
+        
+        soft_loss = F.kl_div(
+            F.log_softmax(student_logits / temperature, dim=-1),
+            F.softmax(teacher_logits / temperature, dim=-1),
+            reduction="batchmean"
+        ) * (temperature ** 2)
+        hard_loss = F.cross_entropy(student_logits, labels)
+        return alpha * soft_loss + (1 - alpha) * hard_loss
 
 
 # Define a custom training loop for distillation
@@ -154,10 +161,10 @@ class DistillationTrainer(Trainer):
         outputs = model(**inputs)
         student_logits = outputs.logits
         teacher_logits = self.teacher_soft_labels[idx]  # Align teacher logits with batch size
-        # teacher_logits = teacher_soft_labels[inputs["input_ids"].shape[0]]  # Align teacher logits with batch size
-        teacher_logits = teacher_logits.to(student_logits.device)
         # Ensure teacher_logits match student_logits dtype for mixed precision compatibility
         teacher_logits = teacher_logits.to(student_logits.dtype)
+        teacher_logits = teacher_logits.to(student_logits.device)
+
         loss = distillation_loss(student_logits, teacher_logits, labels)
         return (loss, outputs) if return_outputs else loss
 
