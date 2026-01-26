@@ -1,10 +1,13 @@
 import argparse
+import logging
 import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, TrainerCallback
 from peft import LoraConfig, get_peft_model, TaskType
-
 from utils import *
+
+# Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
+logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
 
 def main(args):

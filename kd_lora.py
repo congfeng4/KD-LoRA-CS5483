@@ -72,7 +72,7 @@ teacher_dataset
 # %%
 # teacher_dataset = load_from_disk(args.dataset_path)
 tokenized_teacher_dataset = teacher_dataset.map(
-    lambda x: teacher_tokenizer(x["sentence1"], x["sentence2"], padding="max_length", truncation=True),
+    lambda x: teacher_tokenizer(x["sentence1"], x["sentence2"], padding="max_length", truncation='longest_first', return_overflowing_tokens=False),
     batched=True
 )
 
@@ -176,7 +176,7 @@ class DistillationTrainer(Trainer):
 # %%
 # Tokenize student dataset
 tokenized_student_dataset = teacher_dataset.map(
-    lambda x, idx: {**student_tokenizer(x["sentence1"], x["sentence2"], padding="max_length", truncation=True),
+    lambda x, idx: {**student_tokenizer(x["sentence1"], x["sentence2"], padding="max_length", truncation='longest_first', return_overflowing_tokens=False),
                     'idx': idx},
     batched=True, with_indices=True
 )
@@ -223,7 +223,7 @@ model = student_model
 # 4. 预处理函数
 def preprocess_function(examples):
     return student_tokenizer(examples["sentence1"], examples["sentence2"],
-                             truncation=True, padding="max_length", max_length=128)
+                             truncation='longest_first', padding="max_length", max_length=128, return_overflowing_tokens=False)
 
 
 tokenized_test = test_data.map(preprocess_function, batched=True)

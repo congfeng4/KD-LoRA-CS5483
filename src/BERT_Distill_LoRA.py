@@ -1,6 +1,7 @@
 import argparse
 import json
 import shutil
+import logging
 
 from addict import Addict
 from copy import deepcopy
@@ -9,6 +10,9 @@ from pathlib import Path
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments
 from peft import get_peft_model
 from utils import *
+
+# Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
+logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
 
 class BertDistillPipeline:
