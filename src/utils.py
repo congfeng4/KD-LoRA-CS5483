@@ -36,7 +36,7 @@ PEFT_FAMILY = [
     "dora",  # weight decomposed lora
     "adalora",  # Adaptive lora
     "rslora",  # Rank stablized lora
-    # "mrlora", # Multi-Rank lora
+    "mrlora", # Multi-Rank lora
 ]
 
 
@@ -118,6 +118,7 @@ def get_peft_config(args, model_name, peft_method):
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
             target_modules=target_modules,
+            task_type="SEQ_CLS",
         )
         return mrlora_config
 

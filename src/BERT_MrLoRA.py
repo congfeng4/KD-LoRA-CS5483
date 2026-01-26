@@ -30,7 +30,6 @@ def main(args):
 
     # 2. Apply Mr. LoRA
     # Using the custom tuner:
-    # model_lora = MrLoraModel(model, mr_lora_config, "default")
     model_lora = get_peft_model(model, mr_lora_config)
 
     # Define training arguments
@@ -44,6 +43,7 @@ def main(args):
         save_strategy="epoch",
         load_best_model_at_end=True,
     )
+    print('training_args', training_args)
 
     # Initialize Trainer
     trainer = Trainer(
@@ -53,11 +53,9 @@ def main(args):
         eval_dataset=tokenized_datasets["validation"],
         compute_metrics=compute_metrics(args),
     )
+
     trainer.train()
-    if hasattr(trainer, 'accelerator'):
-        trainer.accelerator.wait_for_everyone()
-    if trainer.is_world_process_zero():
-        print(trainer.evaluate())
+    print(trainer.evaluate())
 
 
 if __name__ == "__main__":
