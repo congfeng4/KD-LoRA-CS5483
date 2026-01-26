@@ -38,7 +38,7 @@ class BertDistillPipeline:
         self.results = self.args.copy()
         self.training_params = dict(
             eval_strategy="epoch",  # Enable evaluation every epoch
-            logging_strategy="no",  # Enable logging
+            logging_strategy="epoch",  # Enable logging
             save_strategy="epoch",
             per_device_train_batch_size=args.train_batch_size,
             per_device_eval_batch_size=args.eval_batch_size,
@@ -126,6 +126,7 @@ class BertDistillPipeline:
             learning_rate=args.student_learning_rate,
             **self.training_params,
         )
+        print('training_args', training_args)
         if args.task == "mnli":
             eval_dataset = eval_dataset[0]
         callback = MemoryTrackingCallback()
@@ -419,6 +420,16 @@ def main_lora(args, is_student: bool):
                         # raise e
 
 
+def main_mrlora(args):
+    config = args.__dict__.copy()
+    config['peft'] = 'mrlora'
+    model_family = 'bert'
+    add_model_name_to_config(model_family, config)
+    pipe = BertDistillPipeline(**config)
+    pipe.run_teacher_lora()
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
@@ -449,7 +460,7 @@ if __name__ == "__main__":
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
     parser.add_argument('--seed', type=int, default=42, help="Random seed")
-    parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
+    parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2, 3),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
     parser.add_argument('--from_disk', type=int, default=1, help="If 1, use load_from_disk()")
 
@@ -460,5 +471,7 @@ if __name__ == "__main__":
         main_lora(args_cmd, is_student=True)
     elif args_cmd.type == 2:
         main_lora(args_cmd, is_student=False)
+    elif args_cmd.type == 3:
+        main_mrlora(args_cmd)
     else:
         raise ValueError(f"Unknown command {args_cmd.type}")
