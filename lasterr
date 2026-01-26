@@ -1,255 +1,73 @@
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: qnli
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/roberta-base
-Model name: ./models/distilroberta-base
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: qnli
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/deberta-v3-base
-Model name: ./models/deberta-v3-small
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: qnli
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/bert-base-uncased
-Model name: ./models/distilbert-base-uncased
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: mrpc
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/roberta-base
-Model name: ./models/distilroberta-base
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: mrpc
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/deberta-v3-base
-Model name: ./models/deberta-v3-small
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: mrpc
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/bert-base-uncased
-Model name: ./models/distilbert-base-uncased
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: qqp
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/roberta-base
-Model name: ./models/distilroberta-base
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: qqp
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/deberta-v3-base
-Model name: ./models/deberta-v3-small
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: qqp
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/bert-base-uncased
-Model name: ./models/distilbert-base-uncased
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: stsb
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/roberta-base
-Model name: ./models/distilroberta-base
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: stsb
-Begin Teacher FFT...
-Dataset path: ./dataset
-Dir Name: ./results
-Model name: ./models/deberta-v3-base
-Model name: ./models/deberta-v3-small
-Teacher learning rate: 5e-05
-Student learning rate: 0.0005
-Number of training epochs: 3
-Rank: 8
-LoRA Alpha: 16
-LoRA Dropout: 0.05
-PEFT method: lora
-Task: stsb
-Begin Teacher FFT...
-Preparing teacher FFT...
-Loaded dataset DatasetDict({
-    train: Dataset({
-        features: ['sentence1', 'sentence2', 'label', 'idx'],
-        num_rows: 5749
-    })
-    validation: Dataset({
-        features: ['sentence1', 'sentence2', 'label', 'idx'],
-        num_rows: 1500
-    })
-    test: Dataset({
-        features: ['sentence1', 'sentence2', 'label', 'idx'],
-        num_rows: 1379
-    })
-})
-Some weights of DebertaV2ForSequenceClassification were not initialized from the model checkpoint at ./models/deberta-v3-base and are newly initialized: ['classifier.bias', 'classifier.weight', 'pooler.dense.bias', 'pooler.dense.weight']
+Map: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5749/5749 [00:02<00:00, 2337.24 examples/s]
+Map: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1500/1500 [00:00<00:00, 2145.40 examples/s]
+Map: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1500/1500 [00:00<00:00, 2162.21 examples/s]
+Map: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1379/1379 [00:00<00:00, 2431.23 examples/s]
+Map: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1379/1379 [00:00<00:00, 2498.37 examples/s]
+Some weights of DistilBertForSequenceClassification were not initialized from the model checkpoint at ./models/distilbert-base-uncased and are newly initialized: ['classifier.bias', 'classifier.weight', 'pre_classifier.bias', 'pre_classifier.weight']
 You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
-Loaded pretrained model ./models/deberta-v3-base
-Some weights of DebertaV2ForSequenceClassification were not initialized from the model checkpoint at ./models/deberta-v3-base and are newly initialized: ['classifier.bias', 'classifier.weight', 'pooler.dense.bias', 'pooler.dense.weight']
+Loaded pretrained model ./models/distilbert-base-uncased
+Loaded pretrained model with LoRA ./models/distilbert-base-uncased
+Some weights of DistilBertForSequenceClassification were not initialized from the model checkpoint at ./models/distilbert-base-uncased and are newly initialized: ['classifier.bias', 'classifier.weight', 'pre_classifier.bias', 'pre_classifier.weight']
 You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
-Loaded pretrained model ./models/deberta-v3-base
-Map:  52%|████████████████████████████████████████████████████████▎                                                   | 3000/5749 [00:00<00:00, 6780.66 examples/s]Be aware, overflowing tokens are not returned for the setting you have chosen, i.e. sequence pairs with the 'longest_first' truncation strategy. So the returned list will always be empty even if some tokens have been removed.
-Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5749/5749 [00:00<00:00, 6195.40 examples/s]
-Map:  52%|████████████████████████████████████████████████████████▎                                                   | 3000/5749 [00:00<00:00, 6509.73 examples/s]Be aware, overflowing tokens are not returned for the setting you have chosen, i.e. sequence pairs with the 'longest_first' truncation strategy. So the returned list will always be empty even if some tokens have been removed.
-Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5749/5749 [00:00<00:00, 5947.04 examples/s]
-Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1500/1500 [00:00<00:00, 6493.38 examples/s]
-Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1500/1500 [00:00<00:00, 6206.04 examples/s]
-Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1379/1379 [00:00<00:00, 6971.46 examples/s]
-Loaded dataset & model #train 5749 #eval 1500 #param 184.422913
-Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1379/1379 [00:00<00:00, 6914.05 examples/s]
-Loaded dataset & model #train 5749 #eval 1500 #param 184.422913
-  0%|                                                                                                                                      | 0/270 [00:00<?, ?it/s][rank1]:[W126 16:22:27.472994495 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
-[rank0]:[W126 16:22:31.963088829 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
- 33%|█████████████████████████████████████████▏                                                                                   | 89/270 [00:40<00:57,  3.17it/s]Epoch 1.0: Allocated Memory: 3023.33 MB, Reserved Memory: 7736.39 MB
- 33%|█████████████████████████████████████████▋                                                                                   | 90/270 [00:40<00:56,  3.21it/s]Epoch 1.0: Allocated Memory: 3023.33 MB, Reserved Memory: 7736.39 MB
-{'loss': 1.7059, 'grad_norm': 12.239869117736816, 'learning_rate': 3.4074074074074077e-05, 'epoch': 1.0}                                                           
- 33%|█████████████████████████████████████████▋                                                                                   | 90/270 [00:40<00:56,  3.21it/saxis 1 is out of bounds for array of dimension 1█████████████████████████████████████████████████████████████████████████▌          | 22/24 [00:01<00:00, 20.48it/s]
-axis 1 is out of bounds for array of dimension 1
+Loaded dataset & model #train 5749 #eval 1500 #param 0.738817
+Loaded pretrained model ./models/distilbert-base-uncased
+Loaded pretrained model with LoRA ./models/distilbert-base-uncased
+Loaded dataset & model #train 5749 #eval 1500 #param 0.738817
+  0%|                                                                                                                                                   | 0/270 [00:00<?, ?it/s][rank0]:[W126 17:25:36.884727555 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank1]:[W126 17:25:36.892209149 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+"nll_loss_forward_reduce_cuda_kernel_2d_index" not implemented for 'Float'
 [rank0]: Traceback (most recent call last):
-[rank0]:   File "src/BERT_Distill_LoRA.py", line 469, in <module>
-[rank0]:     main_teacher_fft(args_cmd)
-[rank0]:   File "src/BERT_Distill_LoRA.py", line 394, in main_teacher_fft
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 471, in <module>
+[rank0]:     main_lora(args_cmd, is_student=True)
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 418, in main_lora
 [rank0]:     raise e
-[rank0]:   File "src/BERT_Distill_LoRA.py", line 391, in main_teacher_fft
-[rank0]:     pipe.run_teacher_fft()
-[rank0]:   File "src/BERT_Distill_LoRA.py", line 264, in run_teacher_fft
-[rank0]:     teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
-[rank0]:   File "src/BERT_Distill_LoRA.py", line 187, in train_fft
-[rank0]:     train_output = trainer.train()
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 413, in main_lora
+[rank0]:     pipe.run_student_lora()
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 356, in run_student_lora
+[rank0]:     student_trainer, train_metrics = self.train_distill_lora(student_model, student_train_dataset,
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 164, in train_distill_lora
+[rank0]:     train_output = student_trainer.train()
 [rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
 [rank0]:     return inner_training_loop(
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
-[rank0]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3004, in _maybe_log_save_evaluate
-[rank0]:     metrics = self._evaluate(trial, ignore_keys_for_eval)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2958, in _evaluate
-[rank0]:     metrics = self.evaluate(ignore_keys=ignore_keys_for_eval)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3975, in evaluate
-[rank0]:     output = eval_loop(
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 4264, in evaluation_loop
-[rank0]:     metrics = self.compute_metrics(
-[rank0]:   File "/mnt/data2/congfeng/kd-lora/src/utils.py", line 212, in func
-[rank0]:     predictions = np.argmax(predictionss, axis=1)
-[rank0]:   File "<__array_function__ internals>", line 200, in argmax
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/numpy/core/fromnumeric.py", line 1242, in argmax
-[rank0]:     return _wrapfunc(a, 'argmax', axis=axis, out=out, **kwds)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/numpy/core/fromnumeric.py", line 57, in _wrapfunc
-[rank0]:     return bound(*args, **kwds)
-[rank0]: numpy.AxisError: axis 1 is out of bounds for array of dimension 1
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2481, in _inner_training_loop
+[rank0]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3579, in training_step
+[rank0]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+[rank0]:   File "/mnt/data2/congfeng/kd-lora/src/utils.py", line 152, in compute_loss
+[rank0]:     loss = distillation_loss(student_logits, teacher_logits, labels)
+[rank0]:   File "/mnt/data2/congfeng/kd-lora/src/utils.py", line 136, in distillation_loss
+[rank0]:     hard_loss = F.cross_entropy(student_logits, labels)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/functional.py", line 3104, in cross_entropy
+[rank0]:     return torch._C._nn.cross_entropy_loss(input, target, weight, _Reduction.get_enum(reduction), ignore_index, label_smoothing)
+[rank0]: RuntimeError: "nll_loss_forward_reduce_cuda_kernel_2d_index" not implemented for 'Float'
+"nll_loss_forward_reduce_cuda_kernel_2d_index" not implemented for 'Float'
 [rank1]: Traceback (most recent call last):
-[rank1]:   File "src/BERT_Distill_LoRA.py", line 469, in <module>
-[rank1]:     main_teacher_fft(args_cmd)
-[rank1]:   File "src/BERT_Distill_LoRA.py", line 394, in main_teacher_fft
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 471, in <module>
+[rank1]:     main_lora(args_cmd, is_student=True)
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 418, in main_lora
 [rank1]:     raise e
-[rank1]:   File "src/BERT_Distill_LoRA.py", line 391, in main_teacher_fft
-[rank1]:     pipe.run_teacher_fft()
-[rank1]:   File "src/BERT_Distill_LoRA.py", line 264, in run_teacher_fft
-[rank1]:     teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
-[rank1]:   File "src/BERT_Distill_LoRA.py", line 187, in train_fft
-[rank1]:     train_output = trainer.train()
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 413, in main_lora
+[rank1]:     pipe.run_student_lora()
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 356, in run_student_lora
+[rank1]:     student_trainer, train_metrics = self.train_distill_lora(student_model, student_train_dataset,
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 164, in train_distill_lora
+[rank1]:     train_output = student_trainer.train()
 [rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
 [rank1]:     return inner_training_loop(
-[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
-[rank1]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
-[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3004, in _maybe_log_save_evaluate
-[rank1]:     metrics = self._evaluate(trial, ignore_keys_for_eval)
-[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2958, in _evaluate
-[rank1]:     metrics = self.evaluate(ignore_keys=ignore_keys_for_eval)
-[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3975, in evaluate
-[rank1]:     output = eval_loop(
-[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 4264, in evaluation_loop
-[rank1]:     metrics = self.compute_metrics(
-[rank1]:   File "/mnt/data2/congfeng/kd-lora/src/utils.py", line 212, in func
-[rank1]:     predictions = np.argmax(predictionss, axis=1)
-[rank1]:   File "<__array_function__ internals>", line 200, in argmax
-[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/numpy/core/fromnumeric.py", line 1242, in argmax
-[rank1]:     return _wrapfunc(a, 'argmax', axis=axis, out=out, **kwds)
-[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/numpy/core/fromnumeric.py", line 57, in _wrapfunc
-[rank1]:     return bound(*args, **kwds)
-[rank1]: numpy.AxisError: axis 1 is out of bounds for array of dimension 1
- 33%|█████████████████████████████████████████▋                                                                                   | 90/270 [00:41<01:23,  2.14it/s]
-                                                                                                                                                                  W0126 16:23:11.879753 140589920999232 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 4078041 closing signal SIGTERM                          
-E0126 16:23:11.994587 140589920999232 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 1 (pid: 4078042) of binary: /mnt/data2/congfeng/miniconda3/envs/lora/bin/python
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2481, in _inner_training_loop
+[rank1]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3579, in training_step
+[rank1]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+[rank1]:   File "/mnt/data2/congfeng/kd-lora/src/utils.py", line 152, in compute_loss
+[rank1]:     loss = distillation_loss(student_logits, teacher_logits, labels)
+[rank1]:   File "/mnt/data2/congfeng/kd-lora/src/utils.py", line 136, in distillation_loss
+[rank1]:     hard_loss = F.cross_entropy(student_logits, labels)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/functional.py", line 3104, in cross_entropy
+[rank1]:     return torch._C._nn.cross_entropy_loss(input, target, weight, _Reduction.get_enum(reduction), ignore_index, label_smoothing)
+[rank1]: RuntimeError: "nll_loss_forward_reduce_cuda_kernel_2d_index" not implemented for 'Float'
+  0%|                                                                                                                                                   | 0/270 [00:00<?, ?it/s]
+W0126 17:25:37.145671 140091654588224 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 211307 closing signal SIGTERM
+E0126 17:25:40.164600 140091654588224 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 0 (pid: 211304) of binary: /mnt/data2/congfeng/miniconda3/envs/lora/bin/python
 Traceback (most recent call last):
   File "/mnt/data2/congfeng/miniconda3/envs/lora/bin/accelerate", line 8, in <module>
     sys.exit(main())
@@ -274,10 +92,10 @@ Failures:
 ------------------------------------------------------------
 Root Cause (first observed failure):
 [0]:
-  time      : 2026-01-26_16:23:11
+  time      : 2026-01-26_17:25:37
   host      : gpu25.buaanlsde.org
-  rank      : 1 (local_rank: 1)
-  exitcode  : 1 (pid: 4078042)
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 211304)
   error_file: <N/A>
   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
 ============================================================

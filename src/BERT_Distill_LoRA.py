@@ -413,11 +413,9 @@ def main_lora(args, is_student: bool):
                             pipe.run_student_lora()
                         else:
                             pipe.run_teacher_lora()
-                    except FileNotFoundError as e:
-                        print(e)
                     except Exception as e:
                         print(e)
-                        # raise e
+                        raise e
     print('All finish')
 
 
