@@ -209,7 +209,12 @@ def get_num_labels(args):
 def compute_metrics(args):
     def func(p):
         predictionss, labels = p
-        predictions = np.argmax(predictionss, axis=1)
+        # print('predictionss', predictionss, 'labels', labels)
+        if predictionss.shape == 2:
+            predictions = np.argmax(predictionss, axis=1)
+        else:
+            predictions = predictionss
+            
         if args.task == "mrpc":
             accuracy = accuracy_score(labels, predictions)
             f1 = f1_score(labels, predictions, average="binary")
