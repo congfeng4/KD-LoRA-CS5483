@@ -1,0 +1,22 @@
+\begin{table}
+\caption{Efficiency metrics across PEFT variants and strategies}
+\label{tab:efficiency_metrics}
+\begin{tabular}{llrrrrrrrrrrr}
+\toprule
+peft & strategy & metric_value_mean & metric_value_std & metric_value_count & train_time_mean & train_time_std & trainable_params_millions_mean & trainable_params_millions_std & avg_memory_allocated_mb_mean & avg_memory_allocated_mb_std & throughput_samples_per_sec_mean & throughput_samples_per_sec_std \\
+\midrule
+adalora & KD-LoRA & 0.6792 & 0.1712 & 20 & 210.6382 & 283.7164 & 0.6999 & 0.3055 & 408.0246 & 124.5433 & 1277.6022 & 569.0877 \\
+adalora & LoRA-only & 0.6361 & 0.2790 & 66 & 255.5012 & 371.8650 & 0.7052 & 0.3086 & 583.4515 & 127.7931 & 1050.7738 & 296.3622 \\
+dora & KD-LoRA & 0.7272 & 0.1488 & 20 & 280.2476 & 433.6331 & 0.6287 & 0.3055 & 407.0863 & 124.4690 & 1118.9352 & 586.9084 \\
+dora & LoRA-only & 0.7593 & 0.1569 & 66 & 277.6868 & 481.3340 & 0.5629 & 0.3086 & 581.3202 & 127.7740 & 1094.9582 & 381.4415 \\
+lora & KD-LoRA & 0.7362 & 0.1494 & 21 & 253.4300 & 352.1831 & 0.5970 & 0.3138 & 415.8991 & 127.3611 & 1282.1193 & 706.4246 \\
+lora & LoRA-only & 0.7586 & 0.1575 & 70 & 291.6144 & 462.5205 & 0.5303 & 0.3038 & 574.5133 & 127.1235 & 1081.6768 & 502.5818 \\
+mrlora & KD-LoRA & 0.7348 & 0.1680 & 20 & 243.8049 & 348.1138 & 0.7606 & 0.3055 & 409.1046 & 124.8882 & 1176.9692 & 380.8311 \\
+mrlora & LoRA-only & 0.7600 & 0.1563 & 39 & 318.9121 & 532.3884 & 0.8266 & 0.3103 & 589.2544 & 129.3386 & 742.3347 & 154.9130 \\
+olora & KD-LoRA & 0.7250 & 0.1459 & 20 & 234.6156 & 351.8482 & 0.6186 & 0.3055 & 406.7943 & 124.5738 & 1306.4270 & 635.9089 \\
+olora & LoRA-only & 0.7647 & 0.1578 & 66 & 210.4182 & 314.6230 & 0.5427 & 0.3086 & 581.8535 & 127.0719 & 1308.9572 & 520.6888 \\
+rslora & KD-LoRA & 0.7390 & 0.1379 & 20 & 185.4449 & 257.4468 & 0.6186 & 0.3055 & 407.3240 & 124.1296 & 1438.3031 & 648.3969 \\
+rslora & LoRA-only & 0.7643 & 0.1611 & 65 & 185.9168 & 277.0419 & 0.5460 & 0.3098 & 582.9733 & 127.8696 & 1410.9149 & 468.0474 \\
+\bottomrule
+\end{tabular}
+\end{table}

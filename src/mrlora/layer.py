@@ -17,6 +17,7 @@ class MrLoraLayer(nn.Module, LoraLayer):
         self.lora_B = nn.ModuleDict({str(r): nn.Linear(r, in_features, bias=False) for r in ranks})
         # Learnable coefficients alpha_i
         self.alphas = nn.Parameter(torch.randn(len(ranks)))
+        # TODO: Use rank-stabilized alphas (scaled by sqrt rank)
         self.ranks = list(map(str, ranks))
 
         self.lora_dropout = nn.Dropout(p=lora_dropout) if lora_dropout > 0 else nn.Identity()
