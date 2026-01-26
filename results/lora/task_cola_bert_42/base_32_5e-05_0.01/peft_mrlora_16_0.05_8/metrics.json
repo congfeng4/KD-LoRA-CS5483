@@ -1,0 +1,118 @@
+{
+    "eval_loss": 0.4817565381526947,
+    "eval_matthews_correlation": 0.48599506757965116,
+    "eval_runtime": 0.3907,
+    "eval_samples_per_second": 2669.397,
+    "eval_steps_per_second": 23.034,
+    "epoch": 3.0,
+    "log_history": [
+        {
+            "loss": 0.5321,
+            "grad_norm": 1.0713578462600708,
+            "learning_rate": 0.0003333333333333333,
+            "epoch": 1.0,
+            "step": 67
+        },
+        {
+            "eval_loss": 0.5184339284896851,
+            "eval_matthews_correlation": 0.4035662082408423,
+            "eval_runtime": 0.4574,
+            "eval_samples_per_second": 2280.339,
+            "eval_steps_per_second": 19.677,
+            "epoch": 1.0,
+            "step": 67
+        },
+        {
+            "loss": 0.4495,
+            "grad_norm": 1.2214410305023193,
+            "learning_rate": 0.00016666666666666666,
+            "epoch": 2.0,
+            "step": 134
+        },
+        {
+            "eval_loss": 0.4631558358669281,
+            "eval_matthews_correlation": 0.49381712022518326,
+            "eval_runtime": 0.4694,
+            "eval_samples_per_second": 2222.084,
+            "eval_steps_per_second": 19.174,
+            "epoch": 2.0,
+            "step": 134
+        },
+        {
+            "loss": 0.4157,
+            "grad_norm": 0.6764974594116211,
+            "learning_rate": 0.0,
+            "epoch": 3.0,
+            "step": 201
+        },
+        {
+            "eval_loss": 0.4642934799194336,
+            "eval_matthews_correlation": 0.4992878421902516,
+            "eval_runtime": 0.3804,
+            "eval_samples_per_second": 2741.939,
+            "eval_steps_per_second": 23.66,
+            "epoch": 3.0,
+            "step": 201
+        },
+        {
+            "train_runtime": 31.1229,
+            "train_samples_per_second": 824.249,
+            "train_steps_per_second": 6.458,
+            "total_flos": 1703288600788992.0,
+            "train_loss": 0.46575612689725204,
+            "epoch": 3.0,
+            "step": 201
+        },
+        {
+            "eval_loss": 0.4817565381526947,
+            "eval_matthews_correlation": 0.48599506757965116,
+            "eval_runtime": 0.3907,
+            "eval_samples_per_second": 2669.397,
+            "eval_steps_per_second": 23.034,
+            "epoch": 3.0,
+            "step": 201
+        }
+    ],
+    "args": {
+        "teacher_model_name": "./models/bert-base-uncased",
+        "student_model_name": "./models/distilbert-base-uncased",
+        "dataset_path": "./dataset",
+        "train_batch_size": 32,
+        "eval_batch_size": 32,
+        "num_train_epochs": 3,
+        "weight_decay": 0.01,
+        "dir_name": "./results",
+        "rank": 8,
+        "lora_alpha": 16,
+        "lora_dropout": 0.05,
+        "lora_ranks": [
+            8,
+            4,
+            2,
+            1
+        ],
+        "teacher_learning_rate": 5e-05,
+        "student_learning_rate": 0.0005,
+        "task": "cola",
+        "peft": "mrlora",
+        "seed": 42,
+        "type": 2,
+        "from_disk": 1,
+        "model_family": "bert"
+    },
+    "train": {
+        "train_time": 31.1229,
+        "trainable_params_count": 0.554594,
+        "memory_allocated": [
+            466.364416,
+            466.364416,
+            466.364416
+        ],
+        "memory_reserved": [
+            3357.540352,
+            3357.540352,
+            3357.540352
+        ]
+    },
+    "variant": "lora"
+}
