@@ -14,8 +14,8 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 
 
 GLUE_TASKS = [
-    "wnli", "rte", "qnli",
-    "mrpc", "qqp", "stsb",
+   # "wnli", "rte", "qnli",
+   # "mrpc", "qqp", "stsb",
     "mnli", "cola", "sst2",
 ]
 
