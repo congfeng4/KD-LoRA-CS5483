@@ -1,0 +1,156 @@
+KD-LoRA Experimental Results Analysis Report
+============================================================
+Generated: 2026-01-27 09:51:43
+Total experiments analyzed: 742
+Total expected experiments: 1053
+Completion rate: 70.47%
+Missing experiments: 311
+
+DATA AVAILABILITY:
+- FFT experiments: 81/81 (100.0%)
+- Teacher LoRA experiments: 391/486 (80.45%)
+- Student KD-LoRA experiments: 270/486 (55.56%)
+- Total experiments completed: 742
+
+PERFORMANCE SUMMARY (Average across all tasks):
+------------------------------------------------
+BERT Model Family:
+  FFT Baseline: 0.7811
+  LoRA-only (MrLoRA): 0.7689 (-1.56% vs FFT)
+  KD-LoRA (MrLoRA): 0.7366 (-5.69% vs FFT)
+
+RoBERTa Model Family:
+  FFT Baseline: 0.8079
+  LoRA-only (MrLoRA): 0.7907 (-2.14% vs FFT)
+  KD-LoRA (MrLoRA): 0.7220 (-10.63% vs FFT)
+
+DeBERTa-v3 Model Family:
+  FFT Baseline: 0.8411
+  LoRA-only (MrLoRA): 0.8033 (-4.49% vs FFT)
+  KD-LoRA (MrLoRA): 0.7676 (-8.73% vs FFT)
+
+OVERALL AVERAGE (All model families):
+  FFT Baseline: 0.8100
+  LoRA-only (MrLoRA): 0.7876 (-2.77% vs FFT)
+  KD-LoRA (MrLoRA): 0.7421 (-8.43% vs FFT)
+
+EFFICIENCY METRICS (PEFT vs FFT):
+---------------------------------
+Parameter Reduction: 224.6× fewer parameters with PEFT
+Memory Reduction: 4.5× less memory with PEFT
+Training Speedup: 5.1× faster with PEFT
+Average trainable parameters (PEFT): 0.62M vs FFT: 139.52M
+
+STATISTICAL SIGNIFICANCE TESTS:
+-------------------------------
+1. LoRA-only vs KD-LoRA (within each PEFT variant):
+   - No significant differences found (p > 0.05 for all variants)
+   - Average performance difference: LoRA-only 0.7430 vs KD-LoRA 0.7061 (+0.0369)
+
+2. PEFT variants vs FFT baseline:
+   - All PEFT variants show statistically significant performance drop vs FFT (p < 0.05)
+   - MrLoRA performance drop vs FFT: -0.0511 (p = 0.0392, significant)
+   - Ranking of performance drops (smallest to largest):
+      1. MrLoRA: -0.0511 (p=0.0392)
+      2. rslora: -0.0516 (p=0.0279)
+      3. olora: -0.0571 (p=0.0160)
+      4. lora: -0.0601 (p=0.0110)
+      5. dora: -0.0602 (p=0.0113)
+      6. adalora: -0.1701 (p=0.0000)
+
+3. Model family comparisons:
+   - No significant differences between model families (p > 0.05)
+   - DeBERTa shows highest average performance (0.7538)
+   - RoBERTa shows middle average performance (0.7273)
+   - BERT shows similar average performance (0.7285)
+
+PEFT VARIANT RANKINGS:
+----------------------
+LoRA-only Strategy (6 variants):
+  1. MrLoRA: 0.7670 (Rank 1/6)
+  2. olora: 0.7669 (Rank 2/6)
+  3. rslora: 0.7667 (Rank 3/6)
+  4. dora: 0.7618 (Rank 4/6)
+  5. lora: 0.7601 (Rank 5/6)
+  6. adalora: 0.6418 (Rank 6/6)
+
+KD-LoRA Strategy (6 variants):
+  1. MrLoRA: 0.7368 (Rank 1/6)
+  2. rslora: 0.7302 (Rank 2/6)
+  3. lora: 0.7174 (Rank 3/6)
+  4. olora: 0.7159 (Rank 4/6)
+  5. dora: 0.7156 (Rank 5/6)
+  6. adalora: 0.6209 (Rank 6/6)
+
+PARAMETER EFFICIENCY (Performance per parameter):
+-------------------------------------------------
+Best parameter efficiency (KD-LoRA strategy):
+  1. lora: 1.2015 performance per million parameters
+  2. rslora: 1.2229
+  3. olora: 1.1990
+  4. dora: 1.1785
+  5. adalora: 0.9152
+  6. MrLoRA: 0.9969
+
+Best parameter efficiency (LoRA-only strategy):
+  1. lora: 1.4165 performance per million parameters
+  2. dora: 1.3457
+  3. rslora: 1.3963
+  4. olora: 1.4048
+  5. adalora: 0.9060
+  6. MrLoRA: 0.9328
+
+TASK-SPECIFIC PERFORMANCE PATTERNS:
+-----------------------------------
+Highest performing tasks (average across all variants):
+  1. SST-2: 0.9195
+  2. QQP: 0.8821
+  3. QNLI: 0.8697
+  4. MNLI (matched): 0.8053
+  5. MNLI (mismatched): 0.8065
+
+Lowest performing tasks:
+  1. WNLI: 0.5193
+  2. CoLA: 0.5135
+  3. RTE: 0.6008
+  4. MRPC: 0.7615
+
+RECOMMENDATIONS FOR PAPER:
+--------------------------
+1. MrLoRA ranks 1st in both LoRA-only and KD-LoRA strategy groups
+2. Performance drop vs FFT is statistically significant for MrLoRA (p=0.0392)
+3. Parameter reduction with PEFT is substantial (224.6×)
+4. Training speedup with PEFT is significant (5.1×)
+5. Memory reduction with PEFT is substantial (4.5×)
+6. No significant difference between LoRA-only and KD-LoRA for any variant
+7. Model families show no significant performance differences
+8. Consider highlighting MrLoRA's parameter-intensive nature vs competitive performance
+
+GENERATED FILES:
+----------------
+Key output files created:
+1. missing_experiments.csv - 311 missing experiment configurations
+2. efficiency_metrics_all.csv - Efficiency metrics for all experiments
+3. statistical_test_results.csv - Statistical test results
+4. table_i_results.csv - Table I (MrLoRA across model families)
+5. table_ii_bert/table_iia_results.csv - Table IIa for BERT
+6. table_ii_roberta/table_iia_results.csv - Table IIa for RoBERTa
+7. table_ii_deberta/table_iia_results.csv - Table IIa for DeBERTa
+8. efficiency_performance_scatter.png - Efficiency vs performance plots
+9. parameter_efficiency_analysis.png - Parameter efficiency plots
+10. model_family_comparison.png - Cross-model comparison
+
+MISSING EXPERIMENTS TO RUN:
+---------------------------
+Total missing: 311 experiments
+Breakdown by variant:
+- Teacher LoRA (type=2): 95 missing
+- Student KD-LoRA (type=1): 216 missing
+
+Server-balanced distribution for teacher LoRA experiments:
+- Server 1 (qnli, qqp, stsb, wnli): 48 missing experiments
+- Server 2 (cola, mnli, mrpc, rte, sst2): 47 missing experiments
+
+================================================================================
+ANALYSIS COMPLETE - All outputs updated to reflect latest data (742 experiments)
+================================================================================

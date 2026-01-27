@@ -14,9 +14,9 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 
 
 GLUE_TASKS = [
-   # "wnli", "rte", "qnli",
-   # "mrpc", "qqp", "stsb",
-    "mnli", "cola", "sst2",
+   "wnli", "rte", "qnli",
+   "mrpc", "qqp", "stsb",
+    # "mnli", "cola", "sst2",
 ]
 
 MODEL_FAMILY = {
@@ -41,7 +41,7 @@ PEFT_FAMILY = [
     "adalora",  # Adaptive lora
     "rslora",  # Rank stablized lora
     "mrlora", # Multi-Rank lora
-    "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
+ #   "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
 ]
 
 
@@ -120,16 +120,14 @@ def get_peft_config(args, model_name, peft_method):
         from mrlora import MrLoraConfig
         # For 'mrlora-rs' variant, force use_rslora=True
         if peft_method == 'mrlora-rs':
-            use_rslora = True
-        else:
-            use_rslora = getattr(args, 'use_rslora', False)
+            args.use_rslora = True
         mrlora_config = MrLoraConfig(
             ranks=args.lora_ranks,
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
             target_modules=target_modules,
             task_type="SEQ_CLS",
-            use_rslora=use_rslora,
+            use_rslora=args.use_rslora,
         )
         return mrlora_config
 
