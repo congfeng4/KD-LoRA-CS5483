@@ -1,27 +1,28 @@
 # Efficiency Analysis Report for KD-LoRA Paper
 
-**Date**: January 26, 2025  
-**Analysis Period**: All available experiments (574 total)  
-**Model Families**: BERT (200), RoBERTa (192), DeBERTa (182)  
+**Date**: January 27, 2026  
+**Analysis Period**: All available experiments (742 total)  
+**Model Families**: BERT (256), RoBERTa (248), DeBERTa (238)  
 **PEFT Variants**: adalora, dora, lora, mrlora, olora, rslora  
-**Strategies**: FFT (81), LoRA-only (372), KD-LoRA (121)
+**Strategies**: FFT (81), LoRA-only (391), KD-LoRA (270)  
+**Completion Rate**: 70.47% (742/1053 expected experiments)
 
 ## Executive Summary
 
-This analysis examines the efficiency trade-offs and statistical significance of performance differences in the KD-LoRA experiments. Key findings:
+This analysis examines the efficiency trade-offs and statistical significance of performance differences in the KD-LoRA experiments. Key findings from 742 experiments (70.47% completion rate):
 
-1. **Performance**: LoRA-only (0.7392) slightly outperforms KD-LoRA (0.7237) by 1.56 percentage points, but differences are not statistically significant for any individual PEFT variant.
+1. **Performance**: LoRA-only (0.7430) outperforms KD-LoRA (0.7061) by 3.69 percentage points, but differences are not statistically significant for any individual PEFT variant (p > 0.05 for all).
 
-2. **Efficiency Gains**: PEFT methods achieve **226.7× parameter reduction**, **4.2× memory reduction**, and **6.1× training speedup** compared to FFT.
+2. **Efficiency Gains**: PEFT methods achieve **224.6× parameter reduction**, **4.5× memory reduction**, and **5.1× training speedup** compared to FFT.
 
 3. **Statistical Significance**: 
-   - PEFT variants show **statistically significant performance drops** vs FFT for adalora, dora, lora, and olora (p < 0.05)
-   - No significant differences between LoRA-only and KD-LoRA strategies
-   - No significant differences between model families (BERT, RoBERTa, DeBERTa)
+   - **All PEFT variants** show statistically significant performance drops vs FFT (p < 0.05), including MrLoRA (p=0.0392)
+   - **No significant differences** between LoRA-only and KD-LoRA strategies for any variant
+   - **No significant differences** between model families (BERT, RoBERTa, DeBERTa)
 
 4. **Top Performers**: 
-   - **LoRA-only**: rslora (0.7643) and olora (0.7647) achieve highest performance
-   - **KD-LoRA**: rslora (0.7390) and lora (0.7362) perform best
+   - **LoRA-only**: MrLoRA (0.7670) ranks 1st among 6 variants, followed by olora (0.7669) and rslora (0.7667)
+   - **KD-LoRA**: MrLoRA (0.7368) ranks 1st among 6 variants, followed by rslora (0.7302) and lora (0.7174)
    - **Parameter Efficiency**: lora and rslora show best performance per parameter
 
 ## 1. Statistical Significance Analysis
@@ -30,14 +31,14 @@ This analysis examines the efficiency trade-offs and statistical significance of
 
 | PEFT Variant | LoRA-only Mean | KD-LoRA Mean | Difference | p-value | Significant? |
 |--------------|----------------|--------------|------------|---------|--------------|
-| adalora      | 0.6361         | 0.6792       | -0.0431    | 0.4061  | No           |
-| dora         | 0.7593         | 0.7272       | +0.0321    | 0.4094  | No           |
-| lora         | 0.7586         | 0.7362       | +0.0224    | 0.5560  | No           |
-| mrlora       | 0.7600         | 0.7348       | +0.0253    | 0.5791  | No           |
-| olora        | 0.7647         | 0.7250       | +0.0397    | 0.3038  | No           |
-| rslora       | 0.7643         | 0.7390       | +0.0253    | 0.4957  | No           |
+| adalora      | 0.6418         | 0.6209       | +0.0210    | 0.7154  | No           |
+| dora         | 0.7618         | 0.7156       | +0.0461    | 0.1858  | No           |
+| lora         | 0.7601         | 0.7174       | +0.0427    | 0.2198  | No           |
+| mrlora       | 0.7670         | 0.7368       | +0.0303    | 0.4007  | No           |
+| olora        | 0.7669         | 0.7159       | +0.0510    | 0.1387  | No           |
+| rslora       | 0.7667         | 0.7302       | +0.0365    | 0.2739  | No           |
 
-**Key Insight**: Despite average differences favoring LoRA-only, none reach statistical significance (p > 0.05 for all variants). This suggests KD-LoRA's performance degradation may not be systematic across variants.
+**Key Insight**: Despite average differences favoring LoRA-only (3.69 percentage points overall), none reach statistical significance (p > 0.05 for all variants). This suggests KD-LoRA's performance degradation may not be systematic across variants.
 
 ### 1.2 PEFT Variants vs FFT Baseline
 
