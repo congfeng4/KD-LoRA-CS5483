@@ -364,6 +364,14 @@ class BertDistillPipeline:
         clear_gpu_memory()
         print('Teacher LoRA is done.', args.task, args.teacher_model_name)
 
+    def load_teacher_labels(self):
+        # Teacher labels are not related to lora settings.
+        teacher_fft_dir = self.teacher_fft_dir.parent # last level is lora config
+        teacher_soft_labels_path = next(teacher_fft_dir.rglob('teacher_soft_labels.pth'))
+        teacher_soft_labels = torch.load(teacher_soft_labels_path, weights_only=False)
+        print('Loaded teacher soft-labels.', args.task, teacher_soft_labels_path, teacher_soft_labels.shape)
+        return teacher_soft_labels
+
     def run_student_lora(self):
         print("Begin Student Distill + LoRA...")
         student_lora_dir = self.student_lora_dir
@@ -378,8 +386,7 @@ class BertDistillPipeline:
         if metrics_file.exists():
             return
 
-        teacher_soft_labels = torch.load(str(teacher_fft_dir / 'teacher_soft_labels.pth'), weights_only=False)
-        print('Loaded teacher soft-labels.', args.taks, teacher_soft_labels.shape)
+        teacher_soft_labels = self.load_teacher_labels()
 
         teacher_dataset = self.load_dataset()
         peft_config = get_peft_config(args, args.student_model_name, args.peft)
