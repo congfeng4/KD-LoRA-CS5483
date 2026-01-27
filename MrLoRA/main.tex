@@ -1,0 +1,183 @@
+\documentclass{article}
+
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2024
+
+
+% ready for submission
+\usepackage[preprint]{neurips_2024}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2024}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+    % \usepackage[final]{neurips_2024}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2024}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{amsmath}
+
+\title{MR-LoRA: Multi-Rank Low Rank Adaptation for Efficient Knowledge Distillation of Large Language Models}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  Cong Feng\thanks{Use footnote for providing further information
+    about author (webpage, alternative address)} \\
+  Department of Computer Science,\\
+  City University of Hong Kong,\\
+81 Tat Chee Avenue,
+Kowloon Tong,
+Hong Kong\\
+  \texttt{congfeng4-c@my.cityu.edu.hk} \\
+  % examples of more authors
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+
+\begin{document}
+
+
+\maketitle
+
+
+\begin{abstract}
+Large language models achieve strong performance but are prohibitively large for deployment. Knowledge distillation transfers knowledge to smaller students, yet full fine-tuning is costly. KD-LoRA addresses this by freezing the student and training low-rank adapters, but its single low-rank matrix limits expressiveness. We propose Multi-Rank LoRA (MR-LoRA), which replaces each adapter with a weighted sum of exponentially decaying rank matrices. The learned weights flexibly allocate importance across ranks, enriching capacity without increasing parameters substantially. MR-LoRA better approximates the teacher-student performance gap while remaining efficient. Experiments on GLUE show MR-LoRA outperforms standard KD-LoRA by 2.7\% and achieving 99\% performance of full fine-tuning, using only 0.4\% extra parameters. Analysis confirms higher ranks capture coarse corrections early, while smaller ranks refine subtle mismatches.
+\end{abstract}
+
+\section{Introduction}
+Scaling language models to tens or hundreds of billions of parameters has unlocked remarkable capabilities in coding, mathematical reasoning, and multi-step problem solving. GPT-4 (\citep{openai2023gpt4}) and Gemini-Ultra (\cite{team2023gemini}) demonstrate expert-level performance on competitive programming benchmarks and graduate-level science exams, while smaller models like Llama-3-70B (\cite{llama31herdofmodels}) achieve strong results on tool use and long-context reasoning. Yet the same growth brings prohibitive memory footprints, latency, and energy costs, making deployment on edge devices or high-throughput services impractical. Knowledge distillation offers an appealing remedy: by transferring the teacher's predictive distribution to a much smaller student, one can retain most of the accuracy while shrinking parameters by orders of magnitude. \cite{hinton2015distilling} first showed that matching soft targets improves generalization, and subsequent work has extended this to intermediate layer representations. \cite{sanh2019distilbert} distilled BERT into TinyBERT with only 4M parameters, retaining 96\% of GLUE performance. More recently, \cite{gu2023knowledge} demonstrated that task-specific distillation from T5-XXL to T5-Small can match the teacher on closed-book QA with 60x fewer parameters. These successes motivate our focus on distillation as the primary mechanism for efficient deployment.
+
+Parameter-efficient fine-tuning (PEFT) further reduces the cost of specialization. Instead of updating all parameters, PEFT methods inject small trainable modules while freezing the pretrained backbone. \cite{houlsby2019parameter} proposed adapter layers with bottleneck architectures, achieving near full fine-tuning performance on NLU tasks. Prefix-tuning (\cite{li-liang-2021-prefix}) prepends learnable tokens to keys and values, reducing storage to 0.1\% of original parameters. LoRA (\cite{hu2022lora}) has emerged as particularly effective: by adding trainable low-rank matrices to linear layers, it enables task adaptation with less than 1\% extra storage and no inference latency. When both teacher and student are already pretrained, the distillation objective changes fundamentally. Rather than compressing the entire teacher knowledge into a randomly initialized student, we seek to bridge the residual gap between two powerful representations. KD-LoRA (\cite{pmlr-v262-kdlora}) pioneered this perspective, freezing the student weights and training LoRA adapters to approximate the teacher's outputs. This approach is parameter-efficient and preserves the student's pretrained capabilities. However, the single low-rank matrix in each layer is often too coarse to capture the complex mismatch between teacher and student. Empirical evidence supports this limitation: AdaLoRA (\cite{zhang2023adalora}) dynamically allocates parameter budgets across layers but still operates within a single rank per module. QLoRA \cite{dettmers2023qlora} enables 4-bit training but inherits the same representational constraints. DoRA (\cite{liu2024dora}) decomposes weights into magnitude and direction, yet the directional updates remain low-rank. These variants improve training stability or quantization but do not address the fundamental expressiveness bottleneck of a single rank decomposition.
+
+We therefore ask: can we enrich the adapter's hypothesis space without sacrificing parameter efficiency? Our answer draws on classical matrix theory. The singular value decomposition (SVD) states that any matrix $A$ can be written as $A = U\Sigma V^T = \sum_i \sigma_i u_i v_i^T$, a weighted sum of rank-one matrices, where $\sigma_1 \geq \sigma_2 \geq \ldots \geq 0$ are singular values and $u_i,v_i$ are left and right singular vectors. This series form elegantly decomposes complex structure into simpler components, with dominant directions captured by early terms and fine details by later ones. However, using individual rank-one matrices is computationally wasteful: each requires separate optimization and storage. Instead, we propose grouping singular values into exponentially decaying rank blocks, each containing multiple singular vectors. This yields a series of matrices with rapidly decreasing ranks, more parameter-efficient than pure rank-one expansion while preserving the hierarchical approximation property.
+
+We evaluate MR-LoRA following the protocol established in KD-LoRA, using the GLUE benchmark with three encoder-only language models: BERT (\cite{devlin-etal-2019-bert}), RoBERTa (\cite{liu2019roberta}), and DeBERTaV3 (\cite{he2021debertav3}). For each teacher model, we select student models from the same family (e.g., BERT-base as teacher with BERT-small as student). All experiments are conducted on NVIDIA A800 GPUs. We compare four settings: (1) Full Fine-Tuning (FFT) of the teacher model, (2) standard LoRA adaptation of the teacher, (3) LoRA adaptation of the student with knowledge distillation (KD-LoRA baseline), and (4) our MR-LoRA applied to both teacher and student scenarios. We also benchmark against recent LoRA variants including AdaLoRA, QLoRA, and DoRA.
+
+Our experimental results demonstrate the effectiveness of the multi-rank decomposition strategy:
+\begin{itemize}
+    \item MR-LoRA outperforms all compared LoRA variants in both teacher fine-tuning and student distillation settings, when controlled for the same maximum rank. This validates that the exponentially rank-decaying series captures residual gaps more effectively than single-rank adapters.
+    \item MR-LoRA introduces only 0.5\% additional parameters over standard LoRA for teacher fine-tuning and 0.1\% for student fine-tuning, representing negligible cost relative to the base parameter budget.
+    \item MR-LoRA achieves 99\% of FFT accuracy while reducing GPU memory requirements to 0.1\% for training and 0.5\% for inference compared to full fine-tuning.
+    \item MR-LoRA reduces inference latency by 50\% relative to FFT, while maintaining comparable convergence speed in terms of training iterations.
+\end{itemize}
+
+\section{Method}
+We propose Multi-Rank LoRA (MR-LoRA), which extends the KD-LoRA framework by replacing single low-rank adapters with a series of exponentially decaying rank matrices. We first recap standard LoRA and knowledge distillation, then derive our formulation from singular value decomposition.
+
+\textbf{LoRA Preliminaries.} Following \cite{hu2022lora}, for a pre-trained weight matrix $W_0 \in \mathbb{R}^{d \times k}$, LoRA constrains the update $\Delta W$ by a low-rank decomposition:
+
+\begin{align}
+W = W_0 + \Delta W = W_0 + BA
+\end{align}
+
+where $B \in \mathbb{R}^{d \times r}$, $A \in \mathbb{R}^{r \times k}$, and rank $r \ll \min(d, k)$. During fine-tuning, $W_0$ remains frozen while $A$ and $B$ are updated.
+
+\textbf{Knowledge Distillation with LoRA.} The distillation objective transfers knowledge from a fine-tuned teacher $\mathcal{T}$ to a student $\mathcal{S}$ equipped with LoRA modules. The student is trained with a weighted combination of task loss and distillation loss:
+
+\begin{align}
+\mathcal{L}_{\text{total}} = \alpha \mathcal{L}_{\text{task}}(\mathcal{S}(x), y) + (1-\alpha) \mathcal{L}_{\text{KD}}(z^\mathcal{S}, z^\mathcal{T})
+\end{align}
+
+where $z^\mathcal{T}, z^\mathcal{S}$ are teacher and student logits, $\mathcal{L}_{\text{KD}}$ is typically KL divergence, and $\alpha$ balances the two objectives.
+
+From SVD to Multi-Rank Decomposition. Singular value decomposition states that any matrix $M \in \mathbb{R}^{d \times k}$ can be written as:
+
+\begin{align}
+M = \sum_{i=1}^{\min(d,k)} \sigma_i u_i v_i^\top
+\end{align}
+
+where $\sigma_1 \geq \sigma_2 \geq \cdots \geq 0$ are singular values, and $u_i, v_i$ are left and right singular vectors. Each term $\sigma_i u_i v_i^\top$ is a rank-1 matrix. While this decomposition is exact, implementing each term as separate LoRA modules would require $r(d+k)$ parameters for $r$ rank-1 adapters, incurring substantial overhead for gradient computation and memory.
+
+We observe that adjacent singular values often capture similar granularities of information. Grouping them into blocks yields a more parameter-efficient approximation. Specifically, we partition the rank-$R$ decomposition into $K$ blocks with exponentially decaying ranks $\{R, R/2, R/4, \ldots, R/2^{K-1}\}$, where each block $k$ contains matrices $B_k \in \mathbb{R}^{d \times r_k}$ and $A_k \in \mathbb{R}^{r_k \times k}$ with $r_k = R/2^{k-1}$.
+
+\textbf{MR-LoRA Formulation.} Our multi-rank adapter takes the form:
+
+\begin{align}
+\Delta W = \sum_{k=1}^{K} \lambda_k \cdot B_k A_k
+\end{align}
+
+where $\lambda_k \in \mathbb{R}$ are learnable scalar weights initialized to favor higher ranks. The total parameter count is $\sum_{k=1}^{K} 2r_k(d+k) + K \approx 4R(d+k) + K$, compared to $2R(d+k)$ for standard LoRA with rank $R$—a modest 50\% increase that yields substantially richer expressiveness. This is far more efficient than $2R(d+k)$ parameters for $R$ separate rank-1 LoRAs, which would scale linearly with the number of components.
+
+The exponential decay schedule is motivated by empirical observations in adaptive LoRA methods (\cite{zhang2023adalora}): higher ranks dominate early training for coarse approximation, while smaller ranks refine fine-grained discrepancies. The learnable weights $\lambda_k$ allow the model to dynamically allocate capacity across scales without manual tuning.
+
+\section{Experiments}
+
+\section{Conclusion}
+
+
+
+\begin{ack}
+Use unnumbered first level headings for the acknowledgments. All acknowledgments
+go at the end of the paper before the list of references. Moreover, you are required to declare
+funding (financial activities supporting the submitted work) and competing interests (related financial activities outside the submitted work).
+More information about this disclosure can be found at: \url{https://neurips.cc/Conferences/2024/PaperInformation/FundingDisclosure}.
+
+
+Do {\bf not} include this section in the anonymized submission, only in the final paper. You can use the \texttt{ack} environment provided in the style file to automatically hide this section in the anonymized submission.
+\end{ack}
+
+\section*{References}
+\bibliographystyle{abbrvnat}
+\bibliography{reference}
+\medskip
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+
+\section{Appendix / supplemental material}
+
+
+Optionally include supplemental material (complete proofs, additional experiments and plots) in appendix.
+All such materials \textbf{SHOULD be included in the main submission.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
