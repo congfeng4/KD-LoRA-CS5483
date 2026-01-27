@@ -15,9 +15,9 @@ from utils import *
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
 # Hyperparameter search space (rank)
-# KD-LoRA paper uses rank 8,16,32,64 with alpha = rank
+# KD-LoRA paper uses rank 8,16,32,64 with alpha = rank, but we fix alpha = 16
 RANK_VALUES = [8, 16, 32, 64]
-# ALPHA_VALUES kept for reference (not used currently as alpha = rank)
+# ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024]
 
 
@@ -427,7 +427,7 @@ def main_lora(args, is_student: bool):
             for task in GLUE_TASKS:
                 for model_family in MODEL_FAMILY.keys():
                     for peft_method in PEFT_FAMILY:
-                        # Set alpha = rank as per KD-LoRA paper practice
+                        # Set alpha = 16 (fixed) as per our experimental setup
                         set_seed(seed)
                         config = args.__dict__.copy()
                         config['model_family'] = model_family
@@ -435,6 +435,7 @@ def main_lora(args, is_student: bool):
                         config['peft'] = peft_method
                         config['seed'] = seed
                         config['rank'] = rank
+                        config['lora_alpha'] = 16
                         
                         # For MrLoRA, generate ranks list from highest rank down to 1
                         # unless user provided custom lora_ranks (non-default)

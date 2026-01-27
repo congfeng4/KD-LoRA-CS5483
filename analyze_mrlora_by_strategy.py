@@ -56,12 +56,12 @@ def analyze_mrlora_by_strategy():
         lora_df_sorted = lora_df.sort_values('performance', ascending=False).reset_index(drop=True)
         print("\na) Performance Ranking (Higher is better):")
         for i, (_, row) in enumerate(lora_df_sorted.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['performance']:.4f} (std: {row['std']:.4f}, n={row['count']:.0f}){marker}")
         
         # Compare to best
         best = lora_df_sorted.iloc[0]
-        mrlora_row = lora_df_sorted[lora_df_sorted['peft'] == 'mrlora']
+        mrlora_row = lora_df_sorted[(lora_df_sorted['peft'] == 'mrlora') | (lora_df_sorted['peft'] == 'mrlora-rs')]
         if not mrlora_row.empty:
             mrlora = mrlora_row.iloc[0]
             diff = mrlora['performance'] - best['performance']
@@ -71,25 +71,25 @@ def analyze_mrlora_by_strategy():
         print("\nb) Training Time Ranking (Lower is better):")
         time_sorted = lora_df.sort_values('train_time').reset_index(drop=True)
         for i, (_, row) in enumerate(time_sorted.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['train_time']:.1f}s{marker}")
         
         print("\nc) Parameter Count Ranking (Lower is better):")
         param_sorted = lora_df.sort_values('parameters').reset_index(drop=True)
         for i, (_, row) in enumerate(param_sorted.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['parameters']:.3f}M{marker}")
         
         print("\nd) Memory Usage Ranking (Lower is better):")
         mem_sorted = lora_df.sort_values('memory').reset_index(drop=True)
         for i, (_, row) in enumerate(mem_sorted.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['memory']:.1f}MB{marker}")
         
         print("\ne) Throughput Ranking (Higher is better):")
         thr_sorted = lora_df.sort_values('throughput', ascending=False).reset_index(drop=True)
         for i, (_, row) in enumerate(thr_sorted.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['throughput']:.1f} samples/s{marker}")
     
     print("\n\n3. PERFORMANCE WITHIN KD-LORA GROUP (6 variants):")
@@ -120,12 +120,12 @@ def analyze_mrlora_by_strategy():
         kd_df_sorted = kd_df.sort_values('performance', ascending=False).reset_index(drop=True)
         print("\na) Performance Ranking (Higher is better):")
         for i, (_, row) in enumerate(kd_df_sorted.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['performance']:.4f} (std: {row['std']:.4f}, n={row['count']:.0f}){marker}")
         
         # Compare to best
         best_kd = kd_df_sorted.iloc[0]
-        mrlora_kd_row = kd_df_sorted[kd_df_sorted['peft'] == 'mrlora']
+        mrlora_kd_row = kd_df_sorted[(kd_df_sorted['peft'] == 'mrlora') | (kd_df_sorted['peft'] == 'mrlora-rs')]
         if not mrlora_kd_row.empty:
             mrlora_kd = mrlora_kd_row.iloc[0]
             diff_kd = mrlora_kd['performance'] - best_kd['performance']
@@ -135,25 +135,25 @@ def analyze_mrlora_by_strategy():
         print("\nb) Training Time Ranking (Lower is better):")
         time_sorted_kd = kd_df.sort_values('train_time').reset_index(drop=True)
         for i, (_, row) in enumerate(time_sorted_kd.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['train_time']:.1f}s{marker}")
         
         print("\nc) Parameter Count Ranking (Lower is better):")
         param_sorted_kd = kd_df.sort_values('parameters').reset_index(drop=True)
         for i, (_, row) in enumerate(param_sorted_kd.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['parameters']:.3f}M{marker}")
         
         print("\nd) Memory Usage Ranking (Lower is better):")
         mem_sorted_kd = kd_df.sort_values('memory').reset_index(drop=True)
         for i, (_, row) in enumerate(mem_sorted_kd.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['memory']:.1f}MB{marker}")
         
         print("\ne) Throughput Ranking (Higher is better):")
         thr_sorted_kd = kd_df.sort_values('throughput', ascending=False).reset_index(drop=True)
         for i, (_, row) in enumerate(thr_sorted_kd.iterrows(), 1):
-            marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+            marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
             print(f"   {i:2d}. {row['peft']:8s}: {row['throughput']:.1f} samples/s{marker}")
     
     print("\n\n4. PARAMETER EFFICIENCY ANALYSIS")
@@ -166,7 +166,7 @@ def analyze_mrlora_by_strategy():
     lora_param_sorted = lora_param.sort_values('perf_per_param', ascending=False).reset_index(drop=True)
     
     for i, (_, row) in enumerate(lora_param_sorted.iterrows(), 1):
-        marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+        marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
         print(f"   {i:2d}. {row['peft']:8s}: {row['perf_per_param']:.4f} (Perf: {row['metric_value']:.4f}, Params: {row['trainable_params_millions']:.3f}M){marker}")
     
     print("\nb) KD-LoRA Group - Performance per Parameter:")
@@ -175,7 +175,7 @@ def analyze_mrlora_by_strategy():
     kd_param_sorted = kd_param.sort_values('perf_per_param', ascending=False).reset_index(drop=True)
     
     for i, (_, row) in enumerate(kd_param_sorted.iterrows(), 1):
-        marker = " ← mrlora" if row['peft'] == 'mrlora' else ""
+        marker = " ← mrlora" if row['peft'] in ['mrlora', 'mrlora-rs'] else ""
         print(f"   {i:2d}. {row['peft']:8s}: {row['perf_per_param']:.4f} (Perf: {row['metric_value']:.4f}, Params: {row['trainable_params_millions']:.3f}M){marker}")
     
     print("\n\n5. STATISTICAL SIGNIFICANCE (vs FFT baseline)")
@@ -203,26 +203,26 @@ def analyze_mrlora_by_strategy():
     print("=" * 70)
     
     # Extract mrlora metrics
-    mrlora_lora = lora_df[lora_df['peft'] == 'mrlora'].iloc[0] if not lora_df[lora_df['peft'] == 'mrlora'].empty else None
-    mrlora_kd = kd_df[kd_df['peft'] == 'mrlora'].iloc[0] if not kd_df[kd_df['peft'] == 'mrlora'].empty else None
+    mrlora_lora = lora_df[lora_df['peft'].isin(['mrlora', 'mrlora-rs'])].iloc[0] if not lora_df[lora_df['peft'].isin(['mrlora', 'mrlora-rs'])].empty else None
+    mrlora_kd = kd_df[kd_df['peft'].isin(['mrlora', 'mrlora-rs'])].iloc[0] if not kd_df[kd_df['peft'].isin(['mrlora', 'mrlora-rs'])].empty else None
     
     if mrlora_lora is not None:
-        lora_rank = lora_df_sorted[lora_df_sorted['peft'] == 'mrlora'].index[0] + 1
+        lora_rank = lora_df_sorted[lora_df_sorted['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1
         print(f"\na) LoRA-only Strategy:")
         print(f"   • Performance: {mrlora_lora['performance']:.4f} (Rank {lora_rank}/6)")
-        print(f"   • Parameters: {mrlora_lora['parameters']:.3f}M (Rank: {param_sorted[param_sorted['peft'] == 'mrlora'].index[0] + 1}/6)")
-        print(f"   • Training Time: {mrlora_lora['train_time']:.1f}s (Rank: {time_sorted[time_sorted['peft'] == 'mrlora'].index[0] + 1}/6)")
-        print(f"   • Memory: {mrlora_lora['memory']:.1f}MB (Rank: {mem_sorted[mem_sorted['peft'] == 'mrlora'].index[0] + 1}/6)")
-        print(f"   • Parameter Efficiency: Rank {lora_param_sorted[lora_param_sorted['peft'] == 'mrlora'].index[0] + 1}/6")
+        print(f"   • Parameters: {mrlora_lora['parameters']:.3f}M (Rank: {param_sorted[param_sorted['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1}/6)")
+        print(f"   • Training Time: {mrlora_lora['train_time']:.1f}s (Rank: {time_sorted[time_sorted['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1}/6)")
+        print(f"   • Memory: {mrlora_lora['memory']:.1f}MB (Rank: {mem_sorted[mem_sorted['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1}/6)")
+        print(f"   • Parameter Efficiency: Rank {lora_param_sorted[lora_param_sorted['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1}/6")
     
     if mrlora_kd is not None:
-        kd_rank = kd_df_sorted[kd_df_sorted['peft'] == 'mrlora'].index[0] + 1
+        kd_rank = kd_df_sorted[kd_df_sorted['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1
         print(f"\nb) KD-LoRA Strategy:")
         print(f"   • Performance: {mrlora_kd['performance']:.4f} (Rank {kd_rank}/6)")
-        print(f"   • Parameters: {mrlora_kd['parameters']:.3f}M (Rank: {param_sorted_kd[param_sorted_kd['peft'] == 'mrlora'].index[0] + 1}/6)")
-        print(f"   • Training Time: {mrlora_kd['train_time']:.1f}s (Rank: {time_sorted_kd[time_sorted_kd['peft'] == 'mrlora'].index[0] + 1}/6)")
-        print(f"   • Memory: {mrlora_kd['memory']:.1f}MB (Rank: {mem_sorted_kd[mem_sorted_kd['peft'] == 'mrlora'].index[0] + 1}/6)")
-        print(f"   • Parameter Efficiency: Rank {kd_param_sorted[kd_param_sorted['peft'] == 'mrlora'].index[0] + 1}/6")
+        print(f"   • Parameters: {mrlora_kd['parameters']:.3f}M (Rank: {param_sorted_kd[param_sorted_kd['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1}/6)")
+        print(f"   • Training Time: {mrlora_kd['train_time']:.1f}s (Rank: {time_sorted_kd[time_sorted_kd['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1}/6)")
+        print(f"   • Memory: {mrlora_kd['memory']:.1f}MB (Rank: {mem_sorted_kd[mem_sorted_kd['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1}/6)")
+        print(f"   • Parameter Efficiency: Rank {kd_param_sorted[kd_param_sorted['peft'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1}/6")
     
     print(f"\nc) Overall Assessment:")
     print(f"   1. mrlora shows competitive performance in both strategy groups")

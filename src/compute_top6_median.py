@@ -179,6 +179,8 @@ def main():
         print("No results found.")
         return
     print(f"Collected {len(df)} hyperparameter configurations.")
+    print("PEFT method counts:")
+    print(df['peft'].value_counts())
     
     print("Computing median of top 6 configurations per group...")
     median_df = compute_median_top6(df)

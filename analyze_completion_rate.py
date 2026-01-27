@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 # Constants from utils.py and BERT_Distill_LoRA.py
 GLUE_TASKS = ["wnli", "rte", "qnli", "mrpc", "qqp", "stsb", "mnli", "cola", "sst2"]
 MODEL_FAMILIES = ["bert", "roberta", "deberta"]
-PEFT_VARIANTS = ["lora", "olora", "dora", "adalora", "rslora", "mrlora"]
+PEFT_VARIANTS = ["lora", "olora", "dora", "adalora", "rslora", "mrlora", "mrlora-rs"]
 SEEDS = [42, 123, 2024]
 
 # Mapping from directory name to training variant (type)

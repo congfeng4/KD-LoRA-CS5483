@@ -70,7 +70,7 @@ def analyze_mrlora():
     print("\n4. PARAMETER EFFICIENCY\n")
     print("=" * 80)
     
-    mrlora_param = param_df[param_df['peft'] == 'mrlora']
+    mrlora_param = param_df[(param_df['peft'] == 'mrlora') | (param_df['peft'] == 'mrlora-rs')]
     for _, row in mrlora_param.iterrows():
         print(f"\n{row['strategy']}:")
         print(f"  Parameters: {row['trainable_params_millions']:.3f}M")
@@ -81,13 +81,13 @@ def analyze_mrlora():
         all_param = param_df.copy()
         all_param['perf_per_param'] = all_param['metric_value'] / all_param['trainable_params_millions']
         sorted_param = all_param.sort_values('perf_per_param', ascending=False).reset_index()
-        rank = sorted_param[sorted_param['peft'] == 'mrlora'][sorted_param['strategy'] == row['strategy']].index[0] + 1
+        rank = sorted_param[(sorted_param['peft'] == row['peft']) & (sorted_param['strategy'] == row['strategy'])].index[0] + 1
         print(f"{rank}/12")
     
     print("\n5. MODEL-SPECIFIC PERFORMANCE\n")
     print("=" * 80)
     
-    mrlora_multi = multi_df[multi_df['peft_variant'] == 'mrlora']
+    mrlora_multi = multi_df[(multi_df['peft_variant'] == 'mrlora') | (multi_df['peft_variant'] == 'mrlora-rs')]
     for _, row in mrlora_multi.iterrows():
         print(f"\n{row['model_family']} - {row['strategy']}:")
         print(f"  Average Score: {row['average_score']:.4f}")

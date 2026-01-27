@@ -15,7 +15,7 @@ MODEL_FAMILIES = ['bert', 'roberta', 'deberta']
 MODEL_DISPLAY_NAMES = {'bert': 'BERT', 'roberta': 'RoBERTa', 'deberta': 'DeBERTa-v3'}
 
 # PEFT variants
-PEFT_VARIANTS = ['adalora', 'dora', 'lora', 'mrlora', 'olora', 'rslora']
+PEFT_VARIANTS = ['adalora', 'dora', 'lora', 'mrlora', 'mrlora-rs', 'olora', 'rslora']
 
 def load_model_tables():
     """Load all Table II results for each model family."""

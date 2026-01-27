@@ -41,7 +41,7 @@ PEFT_FAMILY = [
     "adalora",  # Adaptive lora
     "rslora",  # Rank stablized lora
     "mrlora", # Multi-Rank lora
- #   "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
+    "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
 ]
 
 

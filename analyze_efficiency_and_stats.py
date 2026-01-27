@@ -69,7 +69,7 @@ def perform_statistical_tests(df):
     
     # 1. Compare LoRA-only vs KD-LoRA for each PEFT variant
     print("\n1. LoRA-only vs KD-LoRA comparison (within each PEFT variant):")
-    peft_variants = ['adalora', 'dora', 'lora', 'mrlora', 'olora', 'rslora']
+    peft_variants = ['adalora', 'dora', 'lora', 'mrlora', 'mrlora-rs', 'olora', 'rslora']
     
     for peft_var in peft_variants:
         lora_only = peft_df[(peft_df['peft'] == peft_var) & (peft_df['variant'] == 'lora')]['metric_value'].dropna()

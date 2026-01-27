@@ -3,8 +3,8 @@ import pandas as pd
 # Load efficiency metrics
 df = pd.read_csv('efficiency_metrics_all.csv')
 
-# Filter for mrlora
-mrlora_df = df[df['peft'] == 'mrlora'].copy()
+# Filter for mrlora (including mrlora-rs)
+mrlora_df = df[(df['peft'] == 'mrlora') | (df['peft'] == 'mrlora-rs')].copy()
 
 print("MRLORA EFFICIENCY METRICS BY MODEL FAMILY")
 print("=" * 60)
