@@ -9,6 +9,14 @@ from transformers import Trainer, TrainerCallback, AutoTokenizer
 import torch
 import torch.nn.functional as F
 
+
+GLUE_TASKS = [
+  "wnli", "rte", "qnli",
+    #  "mrpc", "qqp", "stsb",
+#    "mnli", "cola", "sst2",
+]
+
+
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
@@ -36,12 +44,6 @@ def get_tokenizer(model_name):
         print(f"[CACHE HIT] Using cached tokenizer: {model_name}")
     return _TOKENIZER_CACHE[model_name]
 
-
-GLUE_TASKS = [
-  # "wnli", "rte", "qnli",
-     "mrpc", "qqp", "stsb",
-   # "mnli", "cola", "sst2",
-]
 
 MODEL_FAMILY = {
     'bert': {
