@@ -14,6 +14,23 @@ from utils import *
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
+# Hyperparameter search space (rank)
+# KD-LoRA paper uses rank 8,16,32,64 with alpha = rank
+RANK_VALUES = [8, 16, 32, 64]
+# ALPHA_VALUES kept for reference (not used currently as alpha = rank)
+
+def generate_mrlora_ranks(highest_rank):
+    """Generate MrLoRA ranks list from highest_rank down to 1 by halving."""
+    ranks = []
+    r = highest_rank
+    while r >= 1:
+        ranks.append(r)
+        r = r // 2
+    # Ensure at least two ranks
+    if len(ranks) == 1:
+        ranks.append(ranks[0] // 2)
+    return ranks
+
 
 class BertDistillPipeline:
     """
@@ -276,8 +293,11 @@ class BertDistillPipeline:
         if teacher_trainer.is_world_process_zero():
             with open(metrics_file, 'w', encoding='utf-8') as f:
                 json.dump(teacher_fft_results, f, indent=4, ensure_ascii=False)
-            torch.save(teacher_soft_labels.cpu(), str(teacher_fft_dir / 'teacher_soft_labels.pth'))
+            soft_labels_path = teacher_fft_dir / 'teacher_soft_labels.pth'
+            print(f"Saving soft labels of shape {teacher_soft_labels.shape} to {soft_labels_path}")
+            torch.save(teacher_soft_labels.cpu(), str(soft_labels_path))
             print('Saved teacher soft-labels.', teacher_soft_labels.shape)
+            assert soft_labels_path.exists(), "Soft labels file not created!"
             shutil.rmtree(ckpt_dir)
             teacher_dataset.cleanup_cache_files()
 
@@ -381,8 +401,8 @@ class BertDistillPipeline:
 
 
 def main_teacher_fft(args):
-    for seed in [42, 123, 2024]:
-        for task in GLUE_TASKS:
+    for seed in seed_list:
+        for task in tasks:
             for model_family in MODEL_FAMILY.keys():
                 set_seed(seed)
                 config = args.__dict__.copy()
@@ -400,26 +420,36 @@ def main_teacher_fft(args):
 
 
 def main_lora(args, is_student: bool):
-    for seed in [42, 123, 2024]:
-        for task in GLUE_TASKS:
-            for model_family in MODEL_FAMILY.keys():
-                for peft_method in PEFT_FAMILY:
-                    set_seed(seed)
-                    config = args.__dict__.copy()
-                    config['model_family'] = model_family
-                    config['task'] = task
-                    config['peft'] = peft_method
-                    config['seed'] = seed
-                    add_model_name_to_config(model_family, config)
-                    pipe = BertDistillPipeline(**config)
-                    try:
-                        if is_student:
-                            pipe.run_student_lora()
-                        else:
-                            pipe.run_teacher_lora()
-                    except Exception as e:
-                        print(e)
-                        raise e
+    for rank in RANK_VALUES:
+        for seed in seed_list:
+            for task in tasks:
+                for model_family in MODEL_FAMILY.keys():
+                    for peft_method in peft_methods:
+                        # Set alpha = rank as per KD-LoRA paper practice
+                        set_seed(seed)
+                        config = args.__dict__.copy()
+                        config['model_family'] = model_family
+                        config['task'] = task
+                        config['peft'] = peft_method
+                        config['seed'] = seed
+                        config['rank'] = rank
+                        config['lora_alpha'] = alpha
+                        
+                        # For MrLoRA, generate ranks list from highest rank down to 1
+                        # unless user provided custom lora_ranks (non-default)
+                        if 'mrlora' in peft_method:
+                            config['lora_ranks'] = generate_mrlora_ranks(rank)
+                        
+                        add_model_name_to_config(model_family, config)
+                        pipe = BertDistillPipeline(**config)
+                        try:
+                            if is_student:
+                                pipe.run_student_lora()
+                            else:
+                                pipe.run_teacher_lora()
+                        except Exception as e:
+                            print(e)
+                            raise e
     print('All finish')
 
 
@@ -456,7 +486,6 @@ if __name__ == "__main__":
     parser.add_argument("--rank", type=int, default=8, help="Rank of LoRA matrices")
     parser.add_argument("--lora_alpha", type=int, default=16, help="LoRA alpha scaling factor")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
-    parser.add_argument('--lora_ranks', type=int, default=(8, 4, 2, 1), nargs='+', help="MrLora ranks")
     parser.add_argument('--use_rslora', action='store_true', help='Use rank-stabilized scaling for MrLoRA (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
 
     # Learning rates for teacher and student
