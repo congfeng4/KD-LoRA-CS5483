@@ -45,8 +45,8 @@ def extract_data_from_json(filepath: Path) -> Optional[Dict]:
     args = data.get('args', {})
     peft = args.get('peft', '')
     
-    # We only care about mrlora for this analysis
-    if peft != 'mrlora':
+    # We only care about mrlora for this analysis (including mrlora-rs)
+    if peft != 'mrlora' and peft != 'mrlora-rs':
         return None
     
     task = args.get('task', '')

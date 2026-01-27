@@ -12,7 +12,7 @@ def analyze_mrlora_across_models():
     multi_df = pd.read_csv('multi_model_analysis_results.csv')
     
     # Filter for mrlora
-    mrlora_multi = multi_df[multi_df['Variant'] == 'mrlora'].copy()
+    mrlora_multi = multi_df[(multi_df['Variant'] == 'mrlora') | (multi_df['Variant'] == 'mrlora-rs')].copy()
     
     print("1. PERFORMANCE BY MODEL FAMILY AND STRATEGY\n")
     print("=" * 80)
@@ -42,8 +42,8 @@ def analyze_mrlora_across_models():
             model_data_sorted = model_data.sort_values('Average Score', ascending=False).reset_index(drop=True)
             
             # Find mrlora rank
-            mrlora_rank = model_data_sorted[model_data_sorted['Variant'] == 'mrlora'].index[0] + 1
-            mrlora_score = model_data_sorted[model_data_sorted['Variant'] == 'mrlora']['Average Score'].values[0]
+            mrlora_rank = model_data_sorted[model_data_sorted['Variant'].isin(['mrlora', 'mrlora-rs'])].index[0] + 1
+            mrlora_score = model_data_sorted[model_data_sorted['Variant'].isin(['mrlora', 'mrlora-rs'])]['Average Score'].values[0]
             best_score = model_data_sorted.iloc[0]['Average Score']
             best_variant = model_data_sorted.iloc[0]['Variant']
             

@@ -35,7 +35,7 @@ TASK_METRIC_MAP = {
 MODEL_FAMILY = 'bert'
 
 # PEFT variants to include (excluding 'lora' which is used for FFT)
-PEFT_VARIANTS = ['adalora', 'dora', 'lora', 'mrlora', 'olora', 'rslora']
+PEFT_VARIANTS = ['adalora', 'dora', 'lora', 'mrlora', 'mrlora-rs', 'olora', 'rslora']
 
 # Finetuning strategies for Table II
 STRATEGIES = ['FFT', 'LoRA', 'KD-LoRA']

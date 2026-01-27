@@ -63,9 +63,9 @@ def extract_experiment_data(json_file: Path) -> List[Dict]:
     # Map to Table I strategies
     if variant == 'fft':
         strategy = 'FFT'
-    elif variant == 'lora' and peft_method == 'mrlora':
+    elif variant == 'lora' and (peft_method == 'mrlora' or peft_method == 'mrlora-rs'):
         strategy = 'LoRA'
-    elif variant == 'kd-lora' and peft_method == 'mrlora':
+    elif variant == 'kd-lora' and (peft_method == 'mrlora' or peft_method == 'mrlora-rs'):
         strategy = 'KD-LoRA'
     else:
         # Not part of Table I comparison

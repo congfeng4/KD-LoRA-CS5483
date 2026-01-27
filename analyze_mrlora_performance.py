@@ -63,7 +63,7 @@ def analyze_mrlora_performance():
     
     # 3. Load parameter efficiency
     param_df = pd.read_csv('parameter_efficiency_analysis.csv')
-    mrlora_param = param_df[param_df['peft'] == 'mrlora']
+    mrlora_param = param_df[(param_df['peft'] == 'mrlora') | (param_df['peft'] == 'mrlora-rs')]
     
     print("\n\n3. PARAMETER EFFICIENCY:")
     print("=" * 80)
@@ -78,7 +78,7 @@ def analyze_mrlora_performance():
     
     # 4. Load multi-model analysis
     multi_df = pd.read_csv('multi_model_analysis_results.csv')
-    mrlora_multi = multi_df[multi_df['peft_variant'] == 'mrlora']
+    mrlora_multi = multi_df[(multi_df['peft_variant'] == 'mrlora') | (multi_df['peft_variant'] == 'mrlora-rs')]
     
     print("\n\n4. MODEL-SPECIFIC PERFORMANCE:")
     print("=" * 80)
