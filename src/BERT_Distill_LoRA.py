@@ -457,6 +457,7 @@ if __name__ == "__main__":
     parser.add_argument("--lora_alpha", type=int, default=16, help="LoRA alpha scaling factor")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
     parser.add_argument('--lora_ranks', type=int, default=(8, 4, 2, 1), nargs='+', help="MrLora ranks")
+    parser.add_argument('--use_rslora', action='store_true', help='Use rank-stabilized scaling for MrLoRA (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")

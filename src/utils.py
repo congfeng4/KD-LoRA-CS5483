@@ -41,6 +41,7 @@ PEFT_FAMILY = [
     "adalora",  # Adaptive lora
     "rslora",  # Rank stablized lora
     "mrlora", # Multi-Rank lora
+    "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
 ]
 
 
@@ -115,14 +116,20 @@ def get_peft_config(args, model_name, peft_method):
         )
         return adalora_config
 
-    if peft_method == 'mrlora':
+    if peft_method in ['mrlora', 'mrlora-rs']:
         from mrlora import MrLoraConfig
+        # For 'mrlora-rs' variant, force use_rslora=True
+        if peft_method == 'mrlora-rs':
+            use_rslora = True
+        else:
+            use_rslora = getattr(args, 'use_rslora', False)
         mrlora_config = MrLoraConfig(
             ranks=args.lora_ranks,
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
             target_modules=target_modules,
             task_type="SEQ_CLS",
+            use_rslora=use_rslora,
         )
         return mrlora_config
 

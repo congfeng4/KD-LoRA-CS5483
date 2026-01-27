@@ -37,7 +37,8 @@ class MrLoraModel(BaseTuner):
                 target,
                 ranks=peft_config.ranks,
                 lora_alpha=peft_config.lora_alpha,
-                lora_dropout=peft_config.lora_dropout
+                lora_dropout=peft_config.lora_dropout,
+                use_rslora=peft_config.use_rslora
             )
             self._replace_module(parent, target_name, new_module, target)
 

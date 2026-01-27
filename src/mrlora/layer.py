@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,19 +6,20 @@ from peft.tuners.lora import LoraLayer
 
 
 class MrLoraLayer(nn.Module, LoraLayer):
-    def __init__(self, in_features, out_features, ranks, lora_alpha, lora_dropout, **kwargs):
+    def __init__(self, in_features, out_features, ranks, lora_alpha, lora_dropout, use_rslora=False, **kwargs):
         nn.Module.__init__(self)
         LoraLayer.__init__(self, base_layer=kwargs.get("base_layer"))
 
         self.lora_alpha = lora_alpha
-        self.scaling = lora_alpha / max(ranks)  # Scaling relative to max rank
+        self.scaling = lora_alpha / max(ranks)  # Scaling relative to max rank (used when use_rslora=False)
+        self.use_rslora = use_rslora
+        self.ranks_int = ranks  # Store integer ranks for sqrt calculation
 
         # Multi-rank components
         self.lora_A = nn.ModuleDict({str(r): nn.Linear(in_features, r, bias=False) for r in ranks})
         self.lora_B = nn.ModuleDict({str(r): nn.Linear(r, in_features, bias=False) for r in ranks})
         # Learnable coefficients alpha_i
         self.alphas = nn.Parameter(torch.randn(len(ranks)))
-        # TODO: Use rank-stabilized alphas (scaled by sqrt rank)
         self.ranks = list(map(str, ranks))
 
         self.lora_dropout = nn.Dropout(p=lora_dropout) if lora_dropout > 0 else nn.Identity()
@@ -40,12 +42,21 @@ class MrLoraLayer(nn.Module, LoraLayer):
         mr_adapter = 0
         for i, r in enumerate(self.ranks):
             out = self.lora_B[r](self.lora_A[r](self.lora_dropout(x)))
-            mr_adapter += self.alphas[i] * out
+            if self.use_rslora:
+                # Rank-stabilized scaling: lora_alpha / sqrt(r)
+                scaling = self.lora_alpha / math.sqrt(self.ranks_int[i])
+                mr_adapter += self.alphas[i] * out * scaling
+            else:
+                mr_adapter += self.alphas[i] * out
 
-        return result + mr_adapter * self.scaling
+        if not self.use_rslora:
+            # Original scaling: lora_alpha / max(ranks)
+            mr_adapter = mr_adapter * self.scaling
+        
+        return result + mr_adapter
 
 
 class MrLoraLinear(MrLoraLayer):
-    def __init__(self, base_layer, ranks, lora_alpha, lora_dropout, **kwargs):
+    def __init__(self, base_layer, ranks, lora_alpha, lora_dropout, use_rslora=False, **kwargs):
         super().__init__(base_layer.in_features, base_layer.out_features, ranks, lora_alpha, lora_dropout,
-                         base_layer=base_layer)
+                         use_rslora=use_rslora, base_layer=base_layer)

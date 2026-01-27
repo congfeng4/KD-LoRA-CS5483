@@ -29,7 +29,8 @@ def main(args):
         lora_alpha=args.lora_alpha,
         target_modules=["query", "value"],
         lora_dropout=args.lora_dropout,
-        task_type="SEQ_CLS"
+        task_type="SEQ_CLS",
+        use_rslora=args.use_rslora
     )
 
     # 2. Apply Mr. LoRA
@@ -71,5 +72,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_train_epochs", type=int, default=3)
     parser.add_argument('--task', type=str, default="wnli")
     parser.add_argument('--ranks', type=int, nargs='+', default=[32, 16, 8, 4, 2])
+    parser.add_argument('--use_rslora', action='store_true', help='Use rank-stabilized scaling (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
 
     main(parser.parse_args())
