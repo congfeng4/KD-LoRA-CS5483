@@ -378,7 +378,7 @@ class BertDistillPipeline:
         if metrics_file.exists():
             return
 
-        teacher_soft_labels = torch.load(str(teacher_fft_dir / 'teacher_soft_labels.pth'))
+        teacher_soft_labels = torch.load(str(teacher_fft_dir / 'teacher_soft_labels.pth'), weights_only=False)
         print('Loaded teacher soft-labels.', args.taks, teacher_soft_labels.shape)
 
         teacher_dataset = self.load_dataset()
