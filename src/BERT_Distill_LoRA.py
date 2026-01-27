@@ -365,6 +365,7 @@ class BertDistillPipeline:
         print('Teacher LoRA is done.', args.task, args.teacher_model_name)
 
     def load_teacher_labels(self):
+        args = self.args
         # Teacher labels are not related to lora settings.
         teacher_fft_dir = self.teacher_fft_dir.parent # last level is lora config
         teacher_soft_labels_path = next(teacher_fft_dir.rglob('teacher_soft_labels.pth'))
