@@ -14,9 +14,9 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 
 
 GLUE_TASKS = [
-   # "wnli", "rte", "qnli",
-   # "mrpc", "qqp", "stsb",
-    "mnli", "cola", "sst2",
+   "wnli", "rte", "qnli",
+   "mrpc", "qqp", "stsb",
+    # "mnli", "cola", "sst2",
 ]
 
 MODEL_FAMILY = {
@@ -41,7 +41,7 @@ PEFT_FAMILY = [
     "adalora",  # Adaptive lora
     "rslora",  # Rank stablized lora
     "mrlora", # Multi-Rank lora
-    "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
+ #   "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
 ]
 
 
