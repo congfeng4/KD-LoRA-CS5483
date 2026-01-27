@@ -3,47 +3,47 @@ SUMMARY REPORT: KEY FINDINGS
 ================================================================================
 
 1. OVERALL TRENDS:
-  • LoRA-only average drop vs FFT: 6.52%
-  • KD-LoRA average drop vs FFT: 10.77%
-  • KD-LoRA underperforms LoRA-only by 4.24 percentage points
+  • LoRA-only average drop vs FFT: 6.37%
+  • KD-LoRA average drop vs FFT: 10.98%
+  • KD-LoRA underperforms LoRA-only by 4.60 percentage points
 
 2. BEST PERFORMING VARIANTS OVERALL:
-  • LoRA-only: mrlora (avg: 0.7865)
-  • KD-LoRA: lora (avg: 0.7462)
+  • LoRA-only: mrlora (avg: 0.7876)
+  • KD-LoRA: mrlora (avg: 0.7421)
 
 3. MODEL-SPECIFIC INSIGHTS:
   • BERT - LoRA-only:
-    - Best: rslora (0.7769, Drop: 0.54%)
-    - Worst: adalora (0.6520, Drop: 16.52%)
+    - Best: rslora (0.7766, Drop: 0.57%)
+    - Worst: adalora (0.6528, Drop: 16.43%)
   • BERT - KD-LoRA:
-    - Best: mrlora (0.7536, Drop: 4.75%)
-    - Worst: adalora (0.7004, Drop: 11.48%)
+    - Best: mrlora (0.7366, Drop: 5.69%)
+    - Worst: adalora (0.6612, Drop: 15.35%)
   • RoBERTa - LoRA-only:
-    - Best: mrlora (0.7894, Drop: 2.29%)
-    - Worst: adalora (0.6351, Drop: 21.39%)
+    - Best: mrlora (0.7907, Drop: 2.14%)
+    - Worst: adalora (0.6355, Drop: 21.35%)
   • RoBERTa - KD-LoRA:
-    - Best: rslora (0.7536, Drop: 8.00%)
-    - Worst: adalora (0.6484, Drop: 20.85%)
+    - Best: rslora (0.7366, Drop: 8.83%)
+    - Worst: adalora (0.6076, Drop: 24.80%)
   • DeBERTa-v3 - LoRA-only:
     - Best: rslora (0.8099, Drop: 3.70%)
     - Worst: adalora (0.6360, Drop: 24.39%)
   • DeBERTa-v3 - KD-LoRA:
-    - Best: lora (0.7651, Drop: 9.93%)
-    - Worst: dora (0.7236, Drop: 14.82%)
+    - Best: mrlora (0.7676, Drop: 8.73%)
+    - Worst: adalora (0.7061, Drop: 16.05%)
 
 4. CONSISTENCY ACROSS MODELS:
   • adalora - LoRA-only: Average rank 6.0 across models
-  • adalora - KD-LoRA: Average rank 5.7 across models
+  • adalora - KD-LoRA: Average rank 6.0 across models
   • dora - LoRA-only: Average rank 3.3 across models
-  • dora - KD-LoRA: Average rank 4.3 across models
+  • dora - KD-LoRA: Average rank 3.7 across models
   • lora - LoRA-only: Average rank 4.3 across models
-  • lora - KD-LoRA: Average rank 3.3 across models
+  • lora - KD-LoRA: Average rank 4.0 across models
   • mrlora - LoRA-only: Average rank 2.0 across models
-  • mrlora - KD-LoRA: Average rank 2.0 across models
+  • mrlora - KD-LoRA: Average rank 1.3 across models
   • olora - LoRA-only: Average rank 3.0 across models
-  • olora - KD-LoRA: Average rank 3.3 across models
+  • olora - KD-LoRA: Average rank 4.0 across models
   • rslora - LoRA-only: Average rank 2.3 across models
-  • rslora - KD-LoRA: Average rank 2.3 across models
+  • rslora - KD-LoRA: Average rank 2.0 across models
 
 5. RECOMMENDATIONS FOR PAPER:
   • Highlight best-performing variants: rslora (LoRA-only) and mrlora (KD-LoRA)
