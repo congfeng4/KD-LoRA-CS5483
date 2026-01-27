@@ -18,6 +18,8 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 # KD-LoRA paper uses rank 8,16,32,64 with alpha = rank
 RANK_VALUES = [8, 16, 32, 64]
 # ALPHA_VALUES kept for reference (not used currently as alpha = rank)
+seed_list = [42, 123, 2024]
+
 
 def generate_mrlora_ranks(highest_rank):
     """Generate MrLoRA ranks list from highest_rank down to 1 by halving."""
@@ -402,7 +404,7 @@ class BertDistillPipeline:
 
 def main_teacher_fft(args):
     for seed in seed_list:
-        for task in tasks:
+        for task in GLUE_TASKS:
             for model_family in MODEL_FAMILY.keys():
                 set_seed(seed)
                 config = args.__dict__.copy()
@@ -422,9 +424,9 @@ def main_teacher_fft(args):
 def main_lora(args, is_student: bool):
     for rank in RANK_VALUES:
         for seed in seed_list:
-            for task in tasks:
+            for task in GLUE_TASKS:
                 for model_family in MODEL_FAMILY.keys():
-                    for peft_method in peft_methods:
+                    for peft_method in PEFT_FAMILY:
                         # Set alpha = rank as per KD-LoRA paper practice
                         set_seed(seed)
                         config = args.__dict__.copy()
@@ -433,7 +435,6 @@ def main_lora(args, is_student: bool):
                         config['peft'] = peft_method
                         config['seed'] = seed
                         config['rank'] = rank
-                        config['lora_alpha'] = alpha
                         
                         # For MrLoRA, generate ranks list from highest rank down to 1
                         # unless user provided custom lora_ranks (non-default)
