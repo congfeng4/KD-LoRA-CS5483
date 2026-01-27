@@ -109,27 +109,17 @@ class BertDistillPipeline:
         return student_model
 
     def tokenize_teacher_dataset(self, teacher_dataset):
-        """Tokenize teacher dataset (teacher_dataset parameter ignored, cached dataset used)."""
         args = self.args
-        tokenized_teacher_dataset = get_tokenized_dataset(
-            task=args.task,
-            tokenizer_name=args.teacher_model_name,
-            with_indices=False,
-            dataset_path=args.dataset_path,
-            from_disk=bool(args.from_disk)
-        )
+        teacher_tokenizer = AutoTokenizer.from_pretrained(args.teacher_model_name, use_fast=False)
+        tokenized_teacher_dataset = teacher_dataset.map(tokenize_function(args, teacher_tokenizer),
+                                                        batched=True, keep_in_memory=True)
         return tokenized_teacher_dataset
 
     def tokenize_student_dataset(self, teacher_dataset):
-        """Tokenize student dataset (teacher_dataset parameter ignored, cached dataset used)."""
         args = self.args
-        tokenized_student_dataset = get_tokenized_dataset(
-            task=args.task,
-            tokenizer_name=args.student_model_name,
-            with_indices=True,
-            dataset_path=args.dataset_path,
-            from_disk=bool(args.from_disk)
-        )
+        student_tokenizer = AutoTokenizer.from_pretrained(args.student_model_name, use_fast=False)
+        tokenized_student_dataset = teacher_dataset.map(tokenize_function(args, student_tokenizer, with_indices=True),
+                                                        with_indices=True, batched=True, keep_in_memory=True)
         return tokenized_student_dataset
 
     def split_dataset(self, tokenized_datasets):
