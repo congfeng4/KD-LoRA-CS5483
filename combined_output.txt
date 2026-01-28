@@ -1,0 +1,30 @@
+Combined dataset:
+  Model Family Strategy  ...  Memory Usage Inference Time
+0         bert      FFT  ...        1332.0           6.10
+1         bert     LoRA  ...         463.5           6.22
+2         bert  KD-LoRA  ...         296.8           5.36
+3      roberta      FFT  ...        1515.9           7.21
+4      roberta     LoRA  ...         531.9           7.19
+5      roberta  KD-LoRA  ...         358.3           4.44
+6      deberta      FFT  ...        2234.5          14.37
+7      deberta     LoRA  ...         763.4          15.62
+8      deberta  KD-LoRA  ...         590.3          10.38
+
+[9 rows x 7 columns]
+
+Efficiency-Accuracy Metrics:
+                Model Strategy  ...  Parameters (M)  Score per Param (per M)
+0           BERT-base      FFT  ...           110.0                 0.007101
+1           BERT-base     LoRA  ...             2.9                 0.266279
+2     DistilBERT-base  KD-LoRA  ...             1.2                 0.614991
+3        RoBERTa-base      FFT  ...           125.0                 0.006463
+4        RoBERTa-base     LoRA  ...             2.9                 0.272633
+5  DistilRoBERTa-base  KD-LoRA  ...             1.5                 0.497032
+6     DeBERTa-v3-base      FFT  ...           183.0                 0.004596
+7     DeBERTa-v3-base     LoRA  ...             2.9                 0.279245
+8    DeBERTa-v3-small  KD-LoRA  ...             1.5                 0.513007
+
+[9 rows x 5 columns]
+
+Report saved to combined_analysis_report.md
+Plots saved to combined_plots/

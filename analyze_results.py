@@ -1,305 +1,258 @@
-#!/usr/bin/env python3
-"""
-Analyze experimental results for KD-LoRA paper Table I.
-Focus on mrlora variant across fft, lora, kd-lora strategies and bert, roberta, deberta-v3 models.
-"""
-
-import json
-from pathlib import Path
 import pandas as pd
 import numpy as np
-from typing import Dict, Tuple, Optional, List
-import warnings
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
 
-# Suppress warnings
-warnings.filterwarnings('ignore')
+# Set style for plots
+sns.set_style("whitegrid")
+plt.rcParams['figure.figsize'] = (12, 8)
 
-# Define GLUE task to metric mapping based on GLUE benchmark
-TASK_METRIC_MAP = {
-    'cola': 'eval_matthews_correlation',
-    'sst2': 'eval_accuracy',
-    'mrpc': 'eval_accuracy',  # Note: MRPC uses accuracy/F1, but JSON has accuracy
-    'qqp': 'eval_accuracy',   # QQP uses accuracy/F1
-    'stsb': 'eval_pearson',   # STS-B uses Pearson correlation (also has spearman)
-    'mnli': 'matched_accuracy',  # Will handle mismatched separately
-    'qnli': 'eval_accuracy',
-    'rte': 'eval_accuracy',
-    'wnli': 'eval_accuracy'
-}
+# 1. Load CSV (comma separator ',')
+df = pd.read_csv('kd-lora-table-ii.csv', sep=',')
+# Clean column names (strip spaces)
+df.columns = df.columns.str.strip()
+# Show the loaded data
+print("Loaded DataFrame shape:", df.shape)
+print("\nColumn names:", df.columns.tolist())
+print("\nFirst few rows:")
+print(df.head())
 
-# Model families we care about (based on paper)
-TARGET_MODEL_FAMILIES = ['bert', 'roberta', 'deberta']
+# 3. Compute summary statistics: average score per model family per strategy (excluding the "Score" row)
+# Separate tasks from score row
+task_df = df[df['Task'] != 'Score'].copy()
+score_row = df[df['Task'] == 'Score'].copy()
 
-# Finetuning strategies (variants)
-STRATEGIES = ['fft', 'lora', 'kd-lora']
+# Convert numeric columns to float (they may be strings)
+numeric_cols = df.columns[1:]  # all columns except 'Task'
+for col in numeric_cols:
+    task_df[col] = pd.to_numeric(task_df[col], errors='coerce')
+    score_row[col] = pd.to_numeric(score_row[col], errors='coerce')
 
-def extract_data_from_json(filepath: Path) -> Optional[Dict]:
-    """Extract relevant data from a metrics.json file."""
-    try:
-        with open(filepath, 'r') as f:
-            data = json.load(f)
-    except Exception as e:
-        print(f"Error reading {filepath}: {e}")
-        return None
-    
-    args = data.get('args', {})
-    peft = args.get('peft', '')
-    
-    # We only care about mrlora for this analysis (including mrlora-rs)
-    if peft != 'mrlora' and peft != 'mrlora-rs':
-        return None
-    
-    task = args.get('task', '')
-    model_family = args.get('model_family', '')
-    variant = data.get('variant', '')
-    seed = args.get('seed', 0)
-    
-    # Extract metric value based on task
-    metric_value = None
-    if task == 'mnli':
-        matched = data.get('matched_accuracy')
-        mismatched = data.get('mismatched_accuracy')
-        metric_value = (matched, mismatched)
-    else:
-        metric_name = TASK_METRIC_MAP.get(task)
-        if metric_name and metric_name in data:
-            metric_value = data.get(metric_name)
-        else:
-            # Fallback: search for any known metric key
-            for key in ['eval_accuracy', 'eval_matthews_correlation', 'eval_pearson', 'eval_spearman']:
-                if key in data:
-                    metric_value = data.get(key)
-                    break
-    
-    if metric_value is None:
-        print(f"Warning: No metric found for {task} in {filepath}")
-        return None
-    
-    return {
-        'task': task,
-        'model_family': model_family,
-        'variant': variant,
-        'seed': seed,
-        'metric_value': metric_value,
-        'filepath': str(filepath)
-    }
+# Compute average per model family per strategy across tasks
+# We'll group by model family and strategy
+# First, melt the dataframe to long format
+long_df = task_df.melt(id_vars=['Task'], var_name='Model_Strategy', value_name='Score')
 
-def collect_all_mrlora_data(results_dir: str = 'results') -> List[Dict]:
-    """Collect all mrlora data from results directory."""
-    all_data = []
-    mrlora_files = []
-    
-    # Find all JSON files that might contain mrlora data
-    # More efficient: check directory names first
-    for variant_dir in Path(results_dir).iterdir():
-        if not variant_dir.is_dir():
-            continue
-        
-        variant_name = variant_dir.name
-        if variant_name not in STRATEGIES:
-            continue
-        
-        # Search for mrlora in subdirectories
-        for json_file in variant_dir.rglob('*.json'):
-            if 'mrlora' in str(json_file).lower():
-                mrlora_files.append(json_file)
-    
-    print(f"Found {len(mrlora_files)} potential mrlora files")
-    
-    # Process each file
-    for filepath in mrlora_files:
-        data = extract_data_from_json(filepath)
-        if data:
-            all_data.append(data)
-    
-    return all_data
+# Extract model family and strategy from column name
+# Pattern: 'BERT-b/DBERT-b FFT' -> model_family='BERT-b/DBERT-b', strategy='FFT'
+def split_model_strategy(col):
+    # Find last space
+    last_space = col.rfind(' ')
+    model = col[:last_space]
+    strategy = col[last_space+1:]
+    return model, strategy
 
-def create_table_i_dataframe(all_data: List[Dict]) -> pd.DataFrame:
-    """Create Table I DataFrame with multi-index columns."""
-    # Initialize dictionary to store results
-    # Structure: task -> model_family -> strategy -> list of (seed, value) tuples
-    results = {}
-    
-    for entry in all_data:
-        task = entry['task']
-        model_family = entry['model_family']
-        variant = entry['variant']
-        seed = entry['seed']
-        metric_value = entry['metric_value']
-        
-        if model_family not in TARGET_MODEL_FAMILIES:
-            continue
-        
-        if variant not in STRATEGIES:
-            continue
-        
-        # Initialize nested dicts
-        if task not in results:
-            results[task] = {}
-        if model_family not in results[task]:
-            results[task][model_family] = {}
-        if variant not in results[task][model_family]:
-            results[task][model_family][variant] = []
-        
-        results[task][model_family][variant].append((seed, metric_value))
-    
-    # For MNLI, we need to handle matched and mismatched separately
-    # Let's restructure: create separate rows for mnli_m and mnli_mm
-    processed_results = {}
-    
-    for task, model_dict in results.items():
-        if task == 'mnli':
-            # Create entries for matched and mismatched
-            for model_family, variant_dict in model_dict.items():
-                for variant, seed_values in variant_dict.items():
-                    # Calculate average across seeds
-                    matched_values = []
-                    mismatched_values = []
-                    
-                    for seed, (matched, mismatched) in seed_values:
-                        if matched is not None:
-                            matched_values.append(matched)
-                        if mismatched is not None:
-                            mismatched_values.append(mismatched)
-                    
-                    # Store averages
-                    if matched_values:
-                        if 'mnli_m' not in processed_results:
-                            processed_results['mnli_m'] = {}
-                        if model_family not in processed_results['mnli_m']:
-                            processed_results['mnli_m'][model_family] = {}
-                        processed_results['mnli_m'][model_family][variant] = np.mean(matched_values)
-                    
-                    if mismatched_values:
-                        if 'mnli_mm' not in processed_results:
-                            processed_results['mnli_mm'] = {}
-                        if model_family not in processed_results['mnli_mm']:
-                            processed_results['mnli_mm'][model_family] = {}
-                        processed_results['mnli_mm'][model_family][variant] = np.mean(mismatched_values)
-        else:
-            # For other tasks, average across seeds
-            for model_family, variant_dict in model_dict.items():
-                for variant, seed_values in variant_dict.items():
-                    values = [v for _, v in seed_values if v is not None]
-                    if values:
-                        if task not in processed_results:
-                            processed_results[task] = {}
-                        if model_family not in processed_results[task]:
-                            processed_results[task][model_family] = {}
-                        processed_results[task][model_family][variant] = np.mean(values)
-    
-    # Now create DataFrame with multi-index columns
-    # Rows: tasks (including mnli_m, mnli_mm)
-    # Columns: multi-index (model_family, strategy)
-    
-    # Get all tasks sorted
-    all_tasks = sorted(processed_results.keys())
-    
-    # Create multi-index columns
-    column_tuples = []
-    for model in TARGET_MODEL_FAMILIES:
-        for strategy in STRATEGIES:
-            column_tuples.append((model, strategy))
-    
-    columns = pd.MultiIndex.from_tuples(column_tuples, names=['Model Family', 'Strategy'])
-    
-    # Create DataFrame
-    df = pd.DataFrame(index=all_tasks, columns=columns, dtype=object)
-    
-    # Fill DataFrame
-    for task in all_tasks:
-        for model in TARGET_MODEL_FAMILIES:
-            for strategy in STRATEGIES:
-                value = processed_results.get(task, {}).get(model, {}).get(strategy, np.nan)
-                df.loc[task, (model, strategy)] = value
-    
-    # Add average row
-    avg_row = {}
-    for model in TARGET_MODEL_FAMILIES:
-        for strategy in STRATEGIES:
-            # Average across all tasks (excluding NaN)
-            values = []
-            for task in all_tasks:
-                val = df.loc[task, (model, strategy)]
-                if not pd.isna(val):
-                    values.append(val)
-            avg_row[(model, strategy)] = np.mean(values) if values else np.nan
-    
-    # Add average row to DataFrame
-    df.loc['Average'] = avg_row
-    
-    return df
+model_strategy = long_df['Model_Strategy'].apply(split_model_strategy)
+long_df['Model_Family'] = model_strategy.apply(lambda x: x[0])
+long_df['Strategy'] = model_strategy.apply(lambda x: x[1])
 
-def main():
-    print("Collecting mrlora data from results directory...")
-    all_data = collect_all_mrlora_data()
-    
-    if not all_data:
-        print("No mrlora data found!")
-        return
-    
-    print(f"Collected {len(all_data)} mrlora data entries")
-    
-    # Create Table I DataFrame
-    print("\nCreating Table I DataFrame...")
-    table_df = create_table_i_dataframe(all_data)
-    
-    # Display the table
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.width', None)
-    
-    print("\n" + "="*80)
-    print("TABLE I: Performance of MrLoRA across GLUE tasks")
-    print("Rows: GLUE tasks (including MNLI matched/mismatched)")
-    print("Columns: Multi-index (Model Family × Finetuning Strategy)")
-    print("Values: Metric scores (accuracy, correlation, etc.)")
-    print("="*80 + "\n")
-    
-    print(table_df.round(4))
-    
-    # Save to CSV
-    output_path = 'table_i_mrlora_results.csv'
-    table_df.to_csv(output_path)
-    print(f"\nTable saved to {output_path}")
-    
-    # Print summary of missing data
-    print("\n" + "="*80)
-    print("DATA AVAILABILITY SUMMARY")
-    print("="*80)
-    
-    missing_count = 0
-    total_cells = len(table_df.index) * len(table_df.columns)
-    
-    for task in table_df.index:
-        for col in table_df.columns:
-            if pd.isna(table_df.loc[task, col]):
-                missing_count += 1
-                if task != 'Average':  # Don't report missing averages
-                    print(f"Missing: {task} - {col}")
-    
-    print(f"\nTotal missing cells: {missing_count}/{total_cells} ({missing_count/total_cells*100:.1f}%)")
-    
-    # Generate a simple heatmap visualization
-    try:
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-        
-        # Create a numeric version for heatmap (replace NaN with -1 for visualization)
-        heatmap_data = table_df.copy()
-        for col in heatmap_data.columns:
-            heatmap_data[col] = pd.to_numeric(heatmap_data[col], errors='coerce')
-        
-        # Plot
-        plt.figure(figsize=(12, 8))
-        sns.heatmap(heatmap_data, annot=True, fmt='.3f', cmap='YlOrRd', 
-                   cbar_kws={'label': 'Metric Score'}, linewidths=0.5)
-        plt.title('Table I: MrLoRA Performance Heatmap', fontsize=16)
-        plt.tight_layout()
-        plt.savefig('table_i_heatmap.png', dpi=150)
-        print("\nHeatmap saved to table_i_heatmap.png")
-    except ImportError:
-        print("\nNote: matplotlib/seaborn not available for visualization")
+# Compute average per model family and strategy
+avg_scores = long_df.groupby(['Model_Family', 'Strategy'])['Score'].mean().reset_index()
+print("\nAverage scores per model family per strategy (excluding Score row):")
+print(avg_scores)
 
-if __name__ == '__main__':
-    main()
+# 4. Compute relative performance drop from FFT to LoRA, FFT to KD-LoRA, LoRA to KD-LoRA for each model family and task.
+# Create pivot table with tasks as rows, model_family+strategy as columns
+pivot = task_df.set_index('Task')
+# We'll compute differences for each model family separately
+model_families = ['BERT-b/DBERT-b', 'DeB-b/DeB-s', 'RoB-b/DRoB-b']
+strategies = ['FFT', 'LoRA', 'KD-LoRA']
+
+# Create a dictionary to store differences
+diffs = {}
+for model in model_families:
+    fft_col = f"{model} FFT"
+    lora_col = f"{model} LoRA"
+    kd_lora_col = f"{model} KD-LoRA"
+    
+    # Ensure columns exist
+    if fft_col in pivot.columns and lora_col in pivot.columns:
+        diffs[f'{model}_FFT_to_LoRA'] = pivot[fft_col] - pivot[lora_col]
+    if fft_col in pivot.columns and kd_lora_col in pivot.columns:
+        diffs[f'{model}_FFT_to_KD_LoRA'] = pivot[fft_col] - pivot[kd_lora_col]
+    if lora_col in pivot.columns and kd_lora_col in pivot.columns:
+        diffs[f'{model}_LoRA_to_KD_LoRA'] = pivot[lora_col] - pivot[kd_lora_col]
+
+diff_df = pd.DataFrame(diffs)
+print("\nRelative performance drops (positive means first better than second):")
+print(diff_df)
+
+# 5. Identify tasks where KD-LoRA performs better than LoRA or even FFT.
+# KD-LoRA > LoRA: negative drop in LoRA_to_KD_LoRA (since LoRA - KD-LoRA)
+# KD-LoRA > FFT: negative drop in FFT_to_KD_LoRA
+kd_lora_better_lora = {}
+kd_lora_better_fft = {}
+for model in model_families:
+    col = f'{model}_LoRA_to_KD_LoRA'
+    if col in diff_df.columns:
+        better_tasks = diff_df.index[diff_df[col] < 0].tolist()
+        kd_lora_better_lora[model] = better_tasks
+    col2 = f'{model}_FFT_to_KD_LoRA'
+    if col2 in diff_df.columns:
+        better_tasks = diff_df.index[diff_df[col2] < 0].tolist()
+        kd_lora_better_fft[model] = better_tasks
+
+print("\nTasks where KD-LoRA performs better than LoRA:")
+for model, tasks in kd_lora_better_lora.items():
+    print(f"{model}: {tasks}")
+
+print("\nTasks where KD-LoRA performs better than FFT:")
+for model, tasks in kd_lora_better_fft.items():
+    print(f"{model}: {tasks}")
+
+# 6. Identify tasks where LoRA underperforms significantly.
+# Define significant as drop > 2% from FFT? Let's compute average drop and identify outliers.
+significant_threshold = 2.0  # percentage points
+lora_underperform = {}
+for model in model_families:
+    col = f'{model}_FFT_to_LoRA'
+    if col in diff_df.columns:
+        underperform_tasks = diff_df.index[diff_df[col] > significant_threshold].tolist()
+        lora_underperform[model] = underperform_tasks
+
+print(f"\nTasks where LoRA underperforms FFT by >{significant_threshold}%:")
+for model, tasks in lora_underperform.items():
+    print(f"{model}: {tasks}")
+
+# 7. Compute overall average scores across all tasks for each model and strategy (the "Score" row is already provided, but compute to verify)
+computed_avg = task_df[numeric_cols].mean()
+print("\nComputed average scores across tasks (verification):")
+print(computed_avg)
+print("\nProvided Score row:")
+print(score_row[numeric_cols].iloc[0])
+
+# 8. Create visualizations
+# Ensure output directory
+output_dir = 'analysis_plots'
+os.makedirs(output_dir, exist_ok=True)
+
+# Bar chart comparing average scores per model family per strategy.
+plt.figure()
+bar_data = avg_scores.pivot(index='Model_Family', columns='Strategy', values='Score')
+bar_data.plot(kind='bar', rot=0)
+plt.title('Average GLUE Score per Model Family and Strategy')
+plt.ylabel('Average Accuracy (%)')
+plt.xlabel('Model Family')
+plt.legend(title='Strategy')
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'bar_avg_scores.png'), dpi=300)
+plt.close()
+
+# Heatmap of performance across tasks and strategies for each model family.
+for model in model_families:
+    # Filter columns for this model
+    model_cols = [col for col in pivot.columns if model in col]
+    model_data = pivot[model_cols].copy()
+    # Sort strategies: FFT, LoRA, KD-LoRA
+    strategy_order = ['FFT', 'LoRA', 'KD-LoRA']
+    # Reorder columns
+    ordered_cols = []
+    for s in strategy_order:
+        for col in model_cols:
+            if s in col:
+                ordered_cols.append(col)
+    model_data = model_data[ordered_cols]
+    
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(model_data, annot=True, fmt='.1f', cmap='YlOrRd', cbar_kws={'label': 'Accuracy (%)'})
+    plt.title(f'Performance Heatmap for {model}')
+    plt.xlabel('Strategy')
+    plt.ylabel('Task')
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f'heatmap_{model.replace("/", "_")}.png'), dpi=300)
+    plt.close()
+
+# Line plot showing performance trends across tasks (x-axis tasks, y-axis score, colored by strategy).
+# We'll create separate plot for each model family
+for model in model_families:
+    plt.figure()
+    tasks = task_df['Task'].tolist()
+    for strategy in strategies:
+        col = f"{model} {strategy}"
+        if col in task_df.columns:
+            scores = task_df[col].values
+            plt.plot(tasks, scores, marker='o', label=strategy)
+    plt.title(f'GLUE Performance across Tasks for {model}')
+    plt.xlabel('Task')
+    plt.ylabel('Accuracy (%)')
+    plt.legend(title='Strategy')
+    plt.xticks(rotation=45)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f'line_trends_{model.replace("/", "_")}.png'), dpi=300)
+    plt.close()
+
+print(f"\nPlots saved to '{output_dir}' directory.")
+
+# 9. Generate concise textual summary
+print("\n" + "="*60)
+print("ANALYSIS SUMMARY")
+print("="*60)
+
+# Which model family performs best overall?
+# Use the provided Score row for overall average
+overall_scores = score_row[numeric_cols].iloc[0]
+# Group by model family (average across strategies)
+model_family_scores = {}
+for model in model_families:
+    model_cols = [col for col in overall_scores.index if model in col]
+    model_family_scores[model] = overall_scores[model_cols].mean()
+
+best_model = max(model_family_scores, key=model_family_scores.get)
+print(f"Best performing model family: {best_model} (average across strategies: {model_family_scores[best_model]:.1f}%)")
+
+# Which strategy performs best overall?
+strategy_scores = {}
+for strategy in strategies:
+    strategy_cols = [col for col in overall_scores.index if strategy in col]
+    strategy_scores[strategy] = overall_scores[strategy_cols].mean()
+
+best_strategy = max(strategy_scores, key=strategy_scores.get)
+print(f"Best performing strategy: {best_strategy} (average across models: {strategy_scores[best_strategy]:.1f}%)")
+
+# How much performance drop occurs with KD-LoRA compared to FFT (average across tasks and models)?
+# Compute average drop across all model families and tasks
+fft_kd_drops = []
+for model in model_families:
+    col = f'{model}_FFT_to_KD_LoRA'
+    if col in diff_df.columns:
+        fft_kd_drops.extend(diff_df[col].values)
+avg_drop = np.mean(fft_kd_drops)
+print(f"Average performance drop from FFT to KD-LoRA: {avg_drop:.2f} percentage points")
+
+# Which tasks are most robust to distillation? Which are most sensitive?
+# Robust: smallest drop from FFT to KD-LoRA across models
+# Compute average drop per task across models
+task_drops = {}
+for task in task_df['Task']:
+    drops = []
+    for model in model_families:
+        col = f'{model}_FFT_to_KD_LoRA'
+        if col in diff_df.columns:
+            drops.append(diff_df.loc[task, col])
+    task_drops[task] = np.mean(drops)
+
+# Sort by drop magnitude (absolute)
+robust_tasks = sorted(task_drops.items(), key=lambda x: abs(x[1]))[:3]
+sensitive_tasks = sorted(task_drops.items(), key=lambda x: abs(x[1]), reverse=True)[:3]
+print("\nMost robust tasks to distillation (smallest drop from FFT to KD-LoRA):")
+for task, drop in robust_tasks:
+    print(f"  {task}: {drop:.2f}% drop")
+print("\nMost sensitive tasks to distillation (largest drop from FFT to KD-LoRA):")
+for task, drop in sensitive_tasks:
+    print(f"  {task}: {drop:.2f}% drop")
+
+# Any surprising results (e.g., KD-LoRA outperforming LoRA).
+print("\nSurprising results (KD-LoRA outperforming LoRA):")
+for model, tasks in kd_lora_better_lora.items():
+    if tasks:
+        print(f"  {model}: {tasks}")
+print("\nSurprising results (KD-LoRA outperforming FFT):")
+for model, tasks in kd_lora_better_fft.items():
+    if tasks:
+        print(f"  {model}: {tasks}")
+
+print("\n" + "="*60)
+print("Analysis complete.")
+print("="*60)
