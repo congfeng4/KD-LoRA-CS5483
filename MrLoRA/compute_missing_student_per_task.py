@@ -164,14 +164,24 @@ def load_fft_baseline():
         "roberta": "RoB‑b/DRoB‑b FFT",
         "deberta": "DeB‑b/DeB‑s FFT"
     }
+    # Map CSV task names to metrics.json task names
+    task_map = {
+        "cola": "cola",
+        "sst‑2": "sst2",
+        "mrpc": "mrpc",
+        "qqp": "qqp",
+        "sts‑b": "stsb",
+        "qnli": "qnli",
+        "rte": "rte",
+        "wnli": "wnli"
+    }
     for fam, col in family_cols.items():
         fft[fam] = {}
         for _, row in df.iterrows():
-            task = row["Task"]
-            # Map task names to lowercase
-            task_lower = task.lower()
-            if task_lower in TASK_METRIC:
-                fft[fam][task_lower] = float(row[col])
+            task = row["Task"].lower()
+            if task in task_map:
+                task_key = task_map[task]
+                fft[fam][task_key] = float(row[col])
     return fft
 
 def main():
