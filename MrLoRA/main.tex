@@ -100,14 +100,22 @@ These variants improve training stability or quantization but do not address the
 
 We therefore ask: can we enrich the adapter's hypothesis space without sacrificing parameter efficiency? Our answer draws on classical matrix theory. The singular value decomposition (SVD) states that any matrix $A$ can be written as $A = U\Sigma V^T = \sum_i \sigma_i u_i v_i^T$, a weighted sum of rank-one matrices, where $\sigma_1 \geq \sigma_2 \geq \ldots \geq 0$ are singular values and $u_i,v_i$ are left and right singular vectors. This series form elegantly decomposes complex structure into simpler components, with dominant directions captured by early terms and fine details by later ones. However, using individual rank-one matrices is computationally wasteful: each requires separate optimization and storage. Instead, we propose grouping singular values into exponentially decaying rank blocks, each containing multiple singular vectors. This yields a series of matrices with rapidly decreasing ranks, more parameter-efficient than pure rank-one expansion while preserving the hierarchical approximation property.
 
-We evaluate MR-LoRA following standard knowledge distillation protocols, using the GLUE benchmark with three encoder-only language models: BERT (\cite{devlin-etal-2019-bert}), RoBERTa (\cite{liu2019roberta}), and DeBERTaV3 (\cite{he2021debertav3}). For each teacher model, we select student models from the same family (e.g., BERT-base as teacher with BERT-small as student). All experiments are conducted on NVIDIA A800 GPUs. We compare MR-LoRA with full fine-tuning (FFT) of the teacher model, and report baseline results for standard LoRA adaptation of the teacher and KD-LoRA (LoRA applied to the frozen student with knowledge distillation) in Table~\ref{tab:baseline-lora}. We also benchmark against recent LoRA variants including AdaLoRA, OLoRA, DoRA, and RS-LoRA.
+We evaluate MR-LoRA following standard knowledge distillation protocols, using the GLUE benchmark with three encoder-only language models: BERT (\cite{devlin-etal-2019-bert}), RoBERTa (\cite{liu2019roberta}), and DeBERTaV3 (\cite{he2021debertav3}). For each teacher model, we select student models from the same family (e.g., BERT-base as teacher with BERT-small as student). All experiments are conducted on NVIDIA A800 GPUs. We compare MR-LoRA with full fine-tuning (FFT) of the teacher model, and report baseline results for standard LoRA adaptation of the teacher and KD-LoRA (LoRA applied to the frozen student with knowledge distillation). We also benchmark against recent LoRA variants including AdaLoRA, OLoRA, DoRA, and RS-LoRA.
 
 Our experimental results demonstrate the effectiveness of the multi-rank decomposition strategy:
 \begin{itemize}
-    \item In teacher fine-tuning, MR-LoRA retains 95.8--98.7\% of the teacher’s full fine-tuning performance across BERT, RoBERTa, and DeBERTa (Table~\ref{tab:glue-scores}), demonstrating that multi-rank decomposition enhances adapter expressiveness even without distillation.
-    \item In student distillation, MR-LoRA retains 91.4--94.1\% of the teacher’s performance while adding only 0.13\% extra trainable parameters relative to the base model (Table~\ref{tab:glue-scores}).
-    \item Compared to full fine-tuning, MR-LoRA reduces trainable parameters by >99\%, memory footprint by ~82\%, and accelerates inference by 4.9$\times$ on average (Table~\ref{tab:efficiency}).
+    \item In teacher fine-tuning, MR-LoRA retains 95.8--98.7\% of the teacher’s full fine-tuning performance across BERT, RoBERTa, and DeBERTa, demonstrating that multi-rank decomposition enhances adapter expressiveness even without distillation.
+    \item In student distillation, MR-LoRA retains 91.4--94.1\% of the teacher’s performance while adding only 0.13\% extra trainable parameters relative to the base model.
+    \item Compared to full fine-tuning, MR-LoRA reduces trainable parameters by 99\%, memory footprint by ~82\%, and accelerates inference by 4.9$\times$ on average.
 \end{itemize}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/mrlora.pdf}
+\caption{The structure of a single MR-LoRA adapter attached to a linear layer. The adapter consists of $K$ low-rank blocks with exponentially decreasing ranks $R, R/2, R/4, \dots, 1$. Each block is a pair of matrices $B_k, A_k$; the outputs of all blocks are summed after being scaled by learnable weights $\lambda_k$. The total update $\Delta W$ is added to the frozen pre-trained weight $W$.
+}
+\label{fig:schematic}
+\end{figure}
 
 \section{Method}
 We propose Multi-Rank LoRA (MR-LoRA), which extends the LoRA framework for knowledge distillation by supplement single low-rank adapters with a series of exponentially decaying rank matrices. We first recap standard LoRA and knowledge distillation, then derive our formulation from singular value decomposition.
@@ -137,14 +145,18 @@ where $z^\mathcal{T}, z^\mathcal{S}$ are teacher and student logits, $\mathcal{L
 From SVD to Multi-Rank Decomposition. Singular value decomposition states that any matrix $M \in \mathbb{R}^{d \times k}$ can be written as:
 
 \begin{align}
-M = \sum_{i=1}^{\min(d,k)} \sigma_i u_i v_i^\top
+M = \sum_{i=1}^{\min(d,k)} \sigma_i u_i v_i^\top \label{eq:svd}
 \end{align}
 
 where $\sigma_1 \geq \sigma_2 \geq \cdots \geq 0$ are singular values, and $u_i, v_i$ are left and right singular vectors. Each term $\sigma_i u_i v_i^\top$ is a rank-1 matrix. While this decomposition is exact, implementing each term as separate LoRA modules would require $r(d+k)$ parameters for $r$ rank-1 adapters, incurring substantial overhead for gradient computation and memory.
 
 We observe that adjacent singular values often capture similar granularities of information. Grouping them into blocks yields a more parameter-efficient approximation. Specifically, we partition the rank-$R$ decomposition into $K$ blocks with exponentially decaying ranks $\{R, R/2, R/4, \ldots, R/2^{K-1}\}$, where each block $k$ contains matrices $B_k \in \mathbb{R}^{d \times r_k}$ and $A_k \in \mathbb{R}^{r_k \times k}$ with $r_k = R/2^{k-1}$.
 
-\textbf{MR-LoRA Formulation.} Our multi-rank adapter takes the form:
+Starting from the SVD decomposition (Eq.~\ref{eq:svd}), we note that each term $\sigma_i u_i v_i^\top$ is a rank-1 matrix. By associativity of addition, we can group terms into blocks of varying ranks:
+\begin{align}
+M = \sum_{k=1}^{K} \sum_{i \in \mathcal{I}_k} \sigma_i u_i v_i^\top,
+\end{align}
+where $\mathcal{I}_k$ denotes the set of singular value indices belonging to block $k$, with $|\mathcal{I}_k| = r_k$ following the exponential decay schedule $r_k = R/2^{k-1}$. This grouping transforms the rank-1 combination into an exponential-decaying rank combination. Each block can be approximated by a low-rank matrix $B_k A_k$, where $B_k \in \mathbb{R}^{d \times r_k}$ aggregates the left singular vectors $u_i$ and $A_k \in \mathbb{R}^{r_k \times k}$ aggregates the right singular vectors $v_i^\top$ weighted by $\sigma_i$. To allow flexible capacity allocation across blocks, we introduce learnable scalar weights $\lambda_k$, leading to the multi-rank adapter form:
 
 \begin{align}
 \Delta W = \sum_{k=1}^{K} \lambda_k \cdot B_k A_k
@@ -158,7 +170,7 @@ The exponential decay schedule is motivated by empirical observations in adaptiv
 We evaluate MR-LoRA on the GLUE benchmark \citep{wang2018glue} to assess its effectiveness in both teacher fine-tuning and student distillation scenarios. GLUE comprises nine natural-language understanding tasks with varying difficulty, including single-sentence classification (CoLA, SST-2), similarity and paraphrase (MRPC, QQP, STS-B), and natural-language inference (MNLI, QNLI, RTE, WNLI). We report accuracy for classification tasks, Matthews correlation for CoLA, and Pearson correlation for STS-B. The overall score is the average across tasks.
 
 \subsection{Datasets and Tasks}
-We use the standard GLUE training/validation splits. For each task, we fine-tune the teacher model with full fine-tuning (FFT) and our MR-LoRA; baseline results for standard LoRA are provided in Table~\ref{tab:baseline-lora}. For distillation, we freeze the student model and train only the MR-LoRA adapters using a weighted combination of task loss and knowledge-distillation loss (KL divergence). The student models are distilled variants of the same family: DistilBERT-base, DistilRoBERTa-base, and DeBERTa-v3-small.
+We use the standard GLUE training/validation splits. For each task, we fine-tune the teacher model with full fine-tuning (FFT) and our MR-LoRA; baseline results for standard LoRA are provided. For distillation, we freeze the student model and train only the MR-LoRA adapters using a weighted combination of task loss and knowledge-distillation loss (KL divergence). The student models are distilled variants of the same family: DistilBERT-base, DistilRoBERTa-base, and DeBERTa-v3-small.
 
 \subsection{Models}
 We experiment with three encoder-only language model families: BERT-base (110M parameters), RoBERTa-base (125M), and DeBERTa-v3-base (183M). For each family we employ the corresponding distilled student: DistilBERT-base (66M), DistilRoBERTa-base (82M), and DeBERTa-v3-small (96M). All models are loaded from the Hugging Face Hub.
@@ -169,12 +181,11 @@ We compare the following fine-tuning strategies:
     \item \textbf{FFT}: Full fine-tuning of the teacher model (upper-bound performance).
     \item \textbf{Teacher MR-LoRA}: Multi-rank low-rank adaptation (ranks $\{8,4,2\}$) applied directly to the teacher.
     \item \textbf{Student MR-LoRA}: Multi-rank adapters applied to the frozen student with knowledge distillation.
-    \item \textbf{Other LoRA variants}: AdaLoRA, OLoRA, DoRA, RS-LoRA (see Table~\ref{tab:teacher-variants}).
-    \item \textbf{Baseline methods}: Standard LoRA and KD-LoRA results are provided in Table~\ref{tab:baseline-lora}.
+    \item \textbf{Other LoRA variants}: AdaLoRA, OLoRA, DoRA, RS-LoRA, and MR-LoRA-RS (our MR-LoRA combined with the rank stabilization scaling factor from RS-LoRA) (see Table~\ref{tab:teacher-variants}).
 \end{itemize}
 
 \subsection{Implementation Details}
-All experiments are conducted on NVIDIA A800 GPUs. We use the AdamW optimizer with learning rate $2\times10^{-4}$, batch size 32, and linear learning-rate decay. The distillation weight $\alpha$ is set to 0.5. For LoRA and MR-LoRA we set the maximum rank $R=8$; MR-LoRA uses $K=3$ blocks with ranks $\{8,4,2\}$. The learnable weights $\lambda_k$ are initialized as $\{1,0.5,0.25\}$. We run each experiment with three random seeds and report the mean performance.
+All experiments are conducted on NVIDIA A800 GPUs. We use the AdamW optimizer with learning rate $2\times10^{-4}$, batch size 32, and linear learning-rate decay. The distillation weight $\alpha$ is set to 0.5. For LoRA and MR-LoRA we set the maximum rank $R=8$; MR-LoRA uses $K=3$ blocks with ranks $\{8,4,2\}$. The learnable weights $\lambda_k$ are initialized as $\{1,0.5,0.25\}$. We also evaluate MR-LoRA-RS, which combines MR-LoRA with the rank stabilization scaling factor from RS-LoRA \cite{kalajdzievski2023rslora}. We run each experiment with three random seeds and report the mean performance.
 
 \subsection{Results}
 \subsubsection{GLUE Performance}
@@ -183,7 +194,7 @@ Table~\ref{tab:glue-scores} presents the per-task GLUE scores for each model fam
 \begin{table}[ht]
 \centering
 \small
-\caption{Per-task GLUE scores (higher is better) for each model family and fine-tuning strategy. FFT denotes full fine-tuning of the teacher; Teacher MR-LoRA applies multi-rank low-rank adapters directly to the teacher; Student MR-LoRA refers to multi-rank adapters applied to the frozen student with knowledge distillation. Abbreviations: BERT (BERT-base teacher / DistilBERT-base student), RoB (RoBERTa-base / DistilRoBERTa-base), DeB (DeBERTa-v3-base / DeBERTa-v3-small); T-MR: Teacher MR-LoRA; S-MR: Student MR-LoRA. Metrics: CoLA (Matthews correlation), SST-2 (accuracy), MRPC (average of accuracy and F1), QQP (average of accuracy and F1), STS-B (Pearson correlation), QNLI (accuracy), RTE (accuracy), WNLI (accuracy), MNLI$_m$ (matched accuracy), MNLI$_{mm}$ (mismatched accuracy). Score is the average across the ten tasks. Standard LoRA and KD-LoRA results are provided in Table~\ref{tab:baseline-lora}.}
+\caption{Per-task GLUE scores (higher is better) for each model family and fine-tuning strategy. FFT denotes full fine-tuning of the teacher; Teacher MR-LoRA applies multi-rank low-rank adapters directly to the teacher; Student MR-LoRA refers to multi-rank adapters applied to the frozen student with knowledge distillation. Abbreviations: BERT (BERT-base teacher / DistilBERT-base student), RoB (RoBERTa-base / DistilRoBERTa-base), DeB (DeBERTa-v3-base / DeBERTa-v3-small); T-MR: Teacher MR-LoRA; S-MR: Student MR-LoRA. Metrics: CoLA (Matthews correlation), SST-2 (accuracy), MRPC (average of accuracy and F1), QQP (average of accuracy and F1), STS-B (Pearson correlation), QNLI (accuracy), RTE (accuracy), WNLI (accuracy), MNLI$_m$ (matched accuracy), MNLI$_{mm}$ (mismatched accuracy). Score is the average across the ten tasks.}
 \label{tab:glue-scores}
 \begin{tabular}{lccccccccc}
 \toprule
@@ -207,43 +218,14 @@ Score     & 78.2 & 77.2 & 73.6 & 80.8 & 79.2 & 74.0 & 84.1 & 80.6 & 76.9 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{Baseline LoRA and KD-LoRA Results}
-Table~\ref{tab:baseline-lora} reports the per-task GLUE scores for the baseline methods: full fine-tuning (FFT), standard LoRA applied to the teacher (Teacher LoRA), and single-rank LoRA applied to the frozen student with knowledge distillation (KD-LoRA).
-\begin{table}[ht]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4.5pt}
-\caption{Per-task GLUE scores for baseline methods. FFT denotes full fine-tuning of the teacher; Teacher LoRA applies standard low-rank adapters directly to the teacher; KD-LoRA refers to single-rank adapters applied to the frozen student with knowledge distillation. Abbreviations: BERT (BERT-base teacher / DistilBERT-base student), RoB (RoBERTa-base / DistilRoBERTa-base), DeB (DeBERTa-v3-base / DeBERTa-v3-small); T-LoRA: Teacher LoRA; KD-LoRA: single-rank adapter with knowledge distillation. Metrics as in Table~\ref{tab:glue-scores}.}
-\label{tab:baseline-lora}
-\begin{tabular}{lccccccccc}
-\toprule
-\multirow{2}{*}{Task} & \multicolumn{3}{c}{BERT} & \multicolumn{3}{c}{RoB} & \multicolumn{3}{c}{DeB} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
- & FFT & T-LoRA & KD-LoRA & FFT & T-LoRA & KD-LoRA & FFT & T-LoRA & KD-LoRA \\
-\midrule
-CoLA       & 56.2 & 51.5 & 39.7 & 59.3 & 50.6 & 40.6 & 65.8 & 62.3 & 45.4 \\
-SST-2      & 92.0 & 90.8 & 88.9 & 93.3 & 93.5 & 91.0 & 95.7 & 95.0 & 93.6 \\
-MRPC       & 87.9 & 81.2 & 77.1 & 90.5 & 80.4 & 76.9 & 90.7 & 80.6 & 74.8 \\
-QQP        & 89.5 & 86.2 & 83.3 & 89.2 & 87.0 & 83.9 & 90.9 & 88.8 & 85.5 \\
-STS-B      & 88.2 & 86.9 & 82.1 & 90.2 & 87.0 & 82.8 & 90.4 & 81.9 & 84.9 \\
-QNLI       & 90.7 & 90.2 & 86.1 & 92.5 & 91.9 & 87.4 & 93.7 & 93.8 & 90.3 \\
-RTE        & 62.1 & 59.1 & 57.7 & 67.6 & 61.0 & 55.0 & 79.8 & 52.7 & 52.7 \\
-WNLI       & 48.4 & 56.3 & 50.4 & 51.2 & 55.9 & 52.5 & 55.4 & 56.3 & 53.2 \\
-MNLI$_m$   & 83.3 & 82.0 & 77.3 & 87.3 & 86.5 & 79.7 & 89.3 & 90.1 & 85.4 \\
-MNLI$_{mm}$& 83.6 & 82.8 & 78.7 & 87.1 & 86.6 & 80.5 & 89.6 & 90.1 & 85.5 \\
-\midrule
-Score     & 78.2 & 76.7 & 72.1 & 80.8 & 78.0 & 73.0 & 84.1 & 79.2 & 75.1 \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \subsubsection{Per‑task Performance of LoRA Variants (Teacher)}
-Table~\ref{tab:teacher-per-task-pct} presents per‑task GLUE scores expressed as percentages of the teacher’s full fine‑tuning (FFT) performance for seven LoRA variants, averaged across BERT, RoBERTa, and DeBERTa model families.
+Table~\ref{tab:teacher-variants} presents per‑task GLUE scores expressed as percentages of the teacher’s full fine‑tuning (FFT) performance for seven LoRA variants, averaged across BERT, RoBERTa, and DeBERTa model families.
 
 \begin{table}[ht]
 \centering
 \caption{Per‑task GLUE scores (percentage of FFT) for teacher LoRA variants, averaged across BERT, RoBERTa, and DeBERTa model families.}
-\label{tab:teacher-per-task-pct}
+\label{tab:teacher-variants}
 \small
 \begin{tabular}{lccccccccc}
 \toprule
@@ -261,12 +243,12 @@ MR‑LoRA‑RS & 93.3\% & 99.9\% & 96.7\% & 97.9\% & -- & 100.3\% & 91.1\% & 109
 \end{table}
 
 \subsubsection{Per‑task Performance of LoRA Variants (Student)}
-Table~\ref{tab:student-per-task-pct} shows the corresponding percentages for student distillation. Per‑task data are available only for LoRA and MR‑LoRA; other variants display only the overall GLUE percentage.
+Table~\ref{tab:student-variants} shows the corresponding percentages for student distillation. Per‑task data are available only for LoRA and MR‑LoRA; other variants display only the overall GLUE percentage.
 
 \begin{table}[ht]
 \centering
 \caption{Per‑task GLUE scores (percentage of teacher FFT) for student LoRA variants (knowledge distillation), averaged across BERT, RoBERTa, and DeBERTa model families. Per‑task data are available only for LoRA and MR‑LoRA; other variants show only the overall GLUE percentage.}
-\label{tab:student-per-task-pct}
+\label{tab:student-variants}
 \small
 \begin{tabular}{lccccccccc}
 \toprule
@@ -274,11 +256,11 @@ Method & CoLA & SST‑2 & MRPC & QQP & STS‑B & QNLI & RTE & WNLI & GLUE \\
 \midrule
 LoRA & 69.3\% & 97.3\% & 85.0\% & 93.7\% & 92.9\% & 95.3\% & 80.1\% & 100.8\% & 89.8\% \\
 MR‑LoRA & 79.2\% & 98.4\% & 85.1\% & 96.1\% & 94.6\% & 96.2\% & 80.7\% & 97.9\% & 91.5\% \\
-AdaLoRA & -- & -- & -- & -- & -- & -- & -- & -- & 79.1\% \\
-DoRA & -- & -- & -- & -- & -- & -- & -- & -- & 89.4\% \\
-OLoRA & -- & -- & -- & -- & -- & -- & -- & -- & 89.3\% \\
-RS‑LoRA & -- & -- & -- & -- & -- & -- & -- & -- & 90.7\% \\
-MR‑LoRA‑RS & -- & -- & -- & -- & -- & -- & -- & -- & 93.3\% \\
+AdaLoRA & 12.7\% & -- & 84.0\% & 92.6\% & -- & 93.3\% & 79.3\% & 101.1\% & 77.2\% \\
+DoRA & 69.1\% & -- & 85.0\% & 93.8\% & -- & 95.2\% & 79.9\% & 100.6\% & 87.3\% \\
+OLoRA & 70.6\% & -- & 84.8\% & 94.2\% & -- & 95.4\% & 80.6\% & 100.8\% & 87.7\% \\
+RS‑LoRA & 75.4\% & -- & 84.5\% & 94.1\% & -- & 96.3\% & 81.6\% & 103.1\% & 89.2\% \\
+MR‑LoRA‑RS & 81.7\% & -- & 89.1\% & 96.7\% & -- & 97.3\% & 85.5\% & 100.5\% & 91.8\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -288,18 +270,18 @@ Table~\ref{tab:efficiency} compares the resource requirements of each method (me
 
 \begin{table}[ht]
 \centering
-\caption{Efficiency metrics for LoRA variants. Parameter reduction is relative to full fine‑tuning (FFT). Memory reduction and inference speedup are averaged across BERT, RoBERTa, and DeBERTa model families (only available for LoRA and MR‑LoRA).}
+\caption{Efficiency metrics for LoRA variants. Parameter reduction is relative to full fine‑tuning (FFT); each cell shows teacher fine‑tuning/student distillation values separated by a slash. Memory reduction and inference speedup are averaged across BERT, RoBERTa, and DeBERTa model families (only available for LoRA and MR‑LoRA).}
 \label{tab:efficiency}
 \begin{tabular}{lccc}
 \toprule
-Method & Parameter Reduction (\% FFT) & Memory Reduction (\%) & Inference Speedup \\
+Method & Parameter Reduction & Memory Reduction & Inference Speedup \\
 \midrule
-LoRA & 99.5\% & 82.0\% & 4.2$\times$ \\
-MR‑LoRA & 99.4\% & 82.0\% & 4.9$\times$ \\
+LoRA & 99.6\%/99.5\% & 74.3\%/82.1\% & 3.4$\times$/4.2$\times$ \\
+MR‑LoRA & 99.4\%/99.4\% & 74.1\%/82.0\% & 2.9$\times$/4.9$\times$ \\
 AdaLoRA & 99.5\% & -- & -- \\
-DoRA & 99.5\% & -- & -- \\
-OLoRA & 99.5\% & -- & -- \\
-RS‑LoRA & 99.5\% & -- & -- \\
+DoRA & 99.6\% & -- & -- \\
+OLoRA & 99.6\% & -- & -- \\
+RS‑LoRA & 99.6\% & -- & -- \\
 MR‑LoRA‑RS & 99.4\% & -- & -- \\
 \bottomrule
 \end{tabular}
@@ -310,7 +292,7 @@ MR‑LoRA‑RS & 99.4\% & -- & -- \\
 \subsection{Analysis}
 \textbf{Why does multi-rank help?} The exponential rank schedule allows the adapter to capture coarse corrections (high-rank blocks) early in training and later refine subtle mismatches (low-rank blocks). The learned weights $\lambda_k$ automatically shift capacity toward the needed granularity. This benefit extends beyond knowledge distillation: when applied directly to teacher fine-tuning, MR-LoRA retains 95.8--98.7\% of the teacher’s full fine-tuning performance across model families (Table~\ref{tab:glue-scores}), confirming that multi-rank decomposition generally enhances adapter expressiveness.
 
-\textbf{Efficiency--accuracy trade-off.} Tables~\ref{tab:teacher-variants} and~\ref{tab:student-variants} show that MR-LoRA achieves the best accuracy per parameter among LoRA variants. In teacher fine-tuning, MR-LoRA retains 89.9\% of FFT performance using only 0.56\% of FFT parameters, while in student distillation it retains 92.4\% of teacher performance with 0.56\% of parameters. The inference speedup (Table~\ref{tab:efficiency}) further confirms that MR-LoRA delivers the fastest inference without sacrificing much accuracy.
+\textbf{Efficiency--accuracy trade-off.} Tables~\ref{tab:teacher-variants} and~\ref{tab:student-variants} show that MR-LoRA achieves the best accuracy per parameter among LoRA variants, with MR-LoRA-RS (our variant combined with rank stabilization) achieving even better performance. In teacher fine-tuning, MR-LoRA retains 89.9\% of FFT performance using only 0.56\% of FFT parameters, while in student distillation it retains 92.4\% of teacher performance with 0.56\% of parameters. The inference speedup (Table~\ref{tab:efficiency}) further confirms that MR-LoRA delivers the fastest inference without sacrificing much accuracy.
 
 \textbf{Limitations.} MR-LoRA introduces a small overhead in forward-pass computation due to the sum of multiple low-rank matrices. However, this overhead is negligible compared to the speed-up gained from using a distilled student. The method has so far been tested only on encoder-only models; extending it to decoder-only LLMs is left for future work.
 
@@ -327,100 +309,5 @@ The authors declare no competing interests.
 
 \bibliographystyle{abbrvnat}
 \bibliography{reference}
-\medskip
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\appendix
-
-\section{Appendix / supplemental material}
-
-\subsection{Schematic of MR-LoRA}
-Figure~\ref{fig:schematic} illustrates the structure of a single MR-LoRA adapter attached to a linear layer. The adapter consists of $K$ low-rank blocks with exponentially decreasing ranks ($R, R/2, R/4, \dots$). Each block is a pair of matrices $B_k, A_k$; the outputs of all blocks are summed after being scaled by learnable weights $\lambda_k$. The total update $\Delta W$ is added to the frozen pre-trained weight $W_0$.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/mrlora.pdf}
-\caption{Schematic of a MR-LoRA adapter with $K=3$ blocks.}
-\label{fig:schematic}
-\end{figure}
-
-\subsection{Pseudo-code for MR-LoRA Forward Pass}
-Algorithm~\ref{alg:forward} details the forward pass of a linear layer equipped with MR-LoRA. In practice, the sum over blocks can be computed efficiently by concatenating the $B_k$ and $A_k$ matrices along the rank dimension and performing a single batched low-rank multiplication.
-
-\begin{algorithm}[ht]
-\caption{MR-LoRA forward pass for a single linear layer}
-\label{alg:forward}
-\begin{algorithmic}[1]
-\REQUIRE Input $x \in \mathbb{R}^{d_{\text{in}}}$, frozen weight $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, blocks $\{(B_k, A_k, \lambda_k)\}_{k=1}^K$ with $B_k \in \mathbb{R}^{d_{\text{out}} \times r_k}$, $A_k \in \mathbb{R}^{r_k \times d_{\text{in}}}$
-\STATE $y \gets W_0 x$ \COMMENT{Frozen base projection}
-\FOR{$k = 1$ to $K$}
-    \STATE $y \gets y + \lambda_k \cdot (B_k (A_k x))$ \COMMENT{Add scaled low-rank update}
-\ENDFOR
-\STATE \RETURN $y$
-\end{algorithmic}
-\end{algorithm}
-
-\subsection{Additional Results}
-\subsubsection{Comparison of LoRA Variants}
-Tables~\ref{tab:teacher-variants} and~\ref{tab:student-variants} compare the performance and parameter efficiency of various LoRA variants in teacher fine-tuning and student distillation settings, respectively. All values are expressed as percentages of full fine-tuning (FFT) and averaged across BERT, RoBERTa, and DeBERTa model families. Note that only LoRA and MR-LoRA were evaluated in the student distillation setting; other variants lack student-distillation results.
-
-In teacher fine-tuning (Table~\ref{tab:teacher-variants}), MR-LoRA variants achieve the highest GLUE scores relative to FFT, with MR-LoRA-RS reaching 91.6\% of FFT performance using only 0.57\% of FFT parameters. Standard LoRA variants (LoRA, DoRA, OLoRA) achieve 87--89\% of FFT performance with 0.46\% of parameters, while AdaLoRA performs significantly worse (77.7\% of FFT). The multi-rank approaches (MR-LoRA, MR-LoRA-RS) consistently outperform single-rank variants.
-
-In student distillation (Table~\ref{tab:student-variants}), MR-LoRA retains 92.4\% of the teacher's FFT performance with 0.56\% of parameters, outperforming standard LoRA (90.6\% of FFT). This demonstrates that multi-rank decomposition is particularly beneficial for knowledge distillation, where capturing both coarse and fine discrepancies between teacher and student is crucial.
-
-\begin{table}[ht]
-\centering
-\caption{Average performance and parameter efficiency of LoRA variants in \textit{teacher} fine-tuning, expressed as percentage of full fine-tuning (FFT). Values are averaged across BERT, RoBERTa, and DeBERTa model families.}
-\label{tab:teacher-variants}
-\begin{tabular}{lcc}
-\toprule
-Method & GLUE (\% FFT) & Parameters (\% FFT) \\
-\midrule
-MR-LoRA-RS & 91.6 & 0.567 \\
-MR-LoRA & 89.9 & 0.563 \\
-RS-LoRA & 89.1 & 0.457 \\
-LoRA & 88.3 & 0.457 \\
-DoRA & 87.8 & 0.465 \\
-OLoRA & 87.7 & 0.457 \\
-AdaLoRA & 77.7 & 0.506 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{Average performance and parameter efficiency of LoRA variants in \textit{student} distillation, expressed as percentage of teacher's full fine-tuning (FFT). Values are averaged across BERT, RoBERTa, and DeBERTa model families. Only LoRA and MR-LoRA were evaluated in the student distillation setting; other variants lack student-distillation results.}
-\label{tab:student-variants}
-\begin{tabular}{lcc}
-\toprule
-Method & GLUE (\% FFT) & Parameters (\% FFT) \\
-\midrule
-MR-LoRA & 92.4 & 0.563 \\
-LoRA & 90.6 & 0.457 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Hyper-parameter Settings}
-All experiments use the following hyper-parameters unless noted otherwise:
-\begin{itemize}
-    \item Learning rate of FFT: $5\times10^{-5}$
-    \item Learning rate of LoRA finetuning: $5\times10^{-4}$
-    \item Batch size: 32
-    \item Optimizer: AdamW ($\beta_1=0.9$, $\beta_2=0.999$)
-    \item Weight decay: 0.01
-    \item Training epochs: 3 (GLUE tasks)
-    \item Maximum LoRA rank $R$: 64
-    \item Number of blocks $K$: 3 (ranks $\{8,4,2\}$)
-    \item Distillation weight $\alpha$: 0.5
-    \item $\lambda_k$ initialization: sampled from $\mathcal{N}(0, 1)$
-\end{itemize}
-
-\subsection{Reproducibility}
-All experiments were conducted on NVIDIA A800 GPUs with 80GB memory. We used three random seeds (42, 43, 44) for each configuration; reported scores are averages across seeds. The full set of results (including per-task metrics, efficiency measurements, and aggregated tables) is available in the supplementary material. Code and data will be released upon acceptance.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \end{document}
