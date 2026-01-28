@@ -34,7 +34,7 @@ def generate_sensitivity():
     
     fig, ax = plt.subplots()
     bars1 = ax.bar(x - width/2, drops_lora, width, label='LoRA', color='#1f77b4')
-    bars2 = ax.bar(x + width/2, drops_mrlora, width, label='MR‑LoRA', color='#ff7f0e')
+    bars2 = ax.bar(x + width/2, drops_mrlora, width, label='MR-LoRA', color='#ff7f0e')
     
     ax.set_xlabel('GLUE Task')
     ax.set_ylabel('Performance Drop (FFT → Student)')
