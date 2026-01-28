@@ -131,7 +131,7 @@ def get_peft_config(args, model_name, peft_method):
         adalora_config = AdaLoraConfig(
             peft_type="ADALORA",
             task_type="SEQ_CLS",
-            r=8,  # 初始 Rank
+            r=args.rank,  # 初始 Rank
             target_r=4,  # 最终平均 Rank 目标
             tinit=200,  # 初始逐步剪枝前的步数
             tfinal=1000,  # 停止剪枝前的步数
