@@ -1,0 +1,75 @@
+{
+    "eval_loss": 1.6844109296798706,
+    "eval_accuracy": 0.43661971830985913,
+    "eval_runtime": 0.8929,
+    "eval_samples_per_second": 79.516,
+    "eval_steps_per_second": 3.36,
+    "epoch": 1.0,
+    "log_history": [
+        {
+            "loss": 1.7821435928344727,
+            "grad_norm": 2.2462892532348633,
+            "learning_rate": 2.5e-05,
+            "epoch": 1.0,
+            "step": 20
+        },
+        {
+            "eval_loss": 1.6844109296798706,
+            "eval_accuracy": 0.43661971830985913,
+            "eval_runtime": 1.2074,
+            "eval_samples_per_second": 58.806,
+            "eval_steps_per_second": 2.485,
+            "epoch": 1.0,
+            "step": 20
+        },
+        {
+            "train_runtime": 23.8444,
+            "train_samples_per_second": 26.631,
+            "train_steps_per_second": 0.839,
+            "total_flos": 41985516272640.0,
+            "train_loss": 1.7821435928344727,
+            "epoch": 1.0,
+            "step": 20
+        },
+        {
+            "eval_loss": 1.6844109296798706,
+            "eval_accuracy": 0.43661971830985913,
+            "eval_runtime": 0.8929,
+            "eval_samples_per_second": 79.516,
+            "eval_steps_per_second": 3.36,
+            "epoch": 1.0,
+            "step": 20
+        }
+    ],
+    "args": {
+        "teacher_model_name": "./models/bert-base-uncased",
+        "student_model_name": "./models/distilbert-base-uncased",
+        "dataset_path": "./dataset",
+        "train_batch_size": 32,
+        "eval_batch_size": 32,
+        "num_train_epochs": 1,
+        "weight_decay": 0.01,
+        "dir_name": "./results/test_adalora",
+        "rank": 8,
+        "lora_alpha": 16,
+        "lora_dropout": 0.05,
+        "teacher_learning_rate": 5e-05,
+        "student_learning_rate": 0.0005,
+        "task": "wnli",
+        "seed": 42,
+        "from_disk": 0,
+        "peft": "adalora",
+        "model_family": "bert"
+    },
+    "train": {
+        "train_time": 23.8444,
+        "trainable_params_count": 0.444194,
+        "memory_allocated": [
+            0.0
+        ],
+        "memory_reserved": [
+            0.0
+        ]
+    },
+    "variant": "lora"
+}
