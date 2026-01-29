@@ -129,16 +129,18 @@ def get_peft_config(args, model_name, peft_method):
     if peft_method == 'adalora':
         from peft import AdaLoraConfig
         adalora_config = AdaLoraConfig(
-            peft_type="ADALORA",
-            task_type="SEQ_CLS",
-            r=args.rank,  # 初始 Rank
-            target_r=4,  # 最终平均 Rank 目标
-            tinit=200,  # 初始逐步剪枝前的步数
-            tfinal=1000,  # 停止剪枝前的步数
-            deltaT=10,  # 每隔多少步计算一次重要性并剪枝
+            init_r=12,               # Start higher
+            target_r=8,              # Final average rank
+            beta1=0.85,              # Smoothing for importance score
+            beta2=0.85,              # Uncertainty for importance score
+            tinit=200,               # Steps before pruning starts
+            tfinal=1000,             # Steps when pruning ends
+            deltaT=10,               # Interval between pruning steps
+            orth_reg_weight=0.5,     # Orthogonal regularization coefficient
             lora_alpha=args.lora_alpha,
             target_modules=target_modules,
             lora_dropout=args.lora_dropout,
+            task_type="SEQ_CLS",
         )
         return adalora_config
 

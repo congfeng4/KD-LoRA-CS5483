@@ -335,6 +335,28 @@ class BertDistillPipeline:
         teacher_train_dataset, teacher_eval_dataset = self.split_dataset(tokenized_teacher_dataset)
 
         peft_config = get_peft_config(args, args.teacher_model_name, args.peft)
+        # Set total training steps for AdaLoRA
+        if args.peft == 'adalora':
+            steps_per_epoch = (len(teacher_train_dataset) + args.train_batch_size - 1) // args.train_batch_size
+            total_step = steps_per_epoch * args.num_train_epochs
+            peft_config.total_step = total_step
+            # Adjust tinit, tfinal, deltaT to be within total_step bounds
+            if total_step < peft_config.tinit + peft_config.tfinal:
+                # Scale proportionally
+                scale = total_step / (peft_config.tinit + peft_config.tfinal)
+                peft_config.tinit = max(1, int(peft_config.tinit * scale))
+                peft_config.tfinal = max(1, int(peft_config.tfinal * scale))
+                peft_config.deltaT = max(1, int(peft_config.deltaT * scale))
+                print(f"Scaled AdaLoRA pruning parameters: tinit={peft_config.tinit}, tfinal={peft_config.tfinal}, deltaT={peft_config.deltaT}")
+            # Ensure tinit < total_step - tfinal (pruning interval positive)
+            if peft_config.tinit >= total_step - peft_config.tfinal:
+                # Reduce tfinal so that there is at least one step for pruning
+                peft_config.tfinal = total_step - peft_config.tinit - 1
+                if peft_config.tfinal < 1:
+                    peft_config.tfinal = 1
+                    peft_config.tinit = total_step - 2
+                print(f"Adjusted tfinal={peft_config.tfinal}, tinit={peft_config.tinit}")
+            print(f"AdaLoRA total_step set to {total_step} (steps per epoch: {steps_per_epoch})")
         print('target_modules', peft_config.target_modules)
         print('teacher', args.teacher_model_name)
         print('student', args.student_model_name)
@@ -391,6 +413,29 @@ class BertDistillPipeline:
 
         teacher_dataset = self.load_dataset()
         peft_config = get_peft_config(args, args.student_model_name, args.peft)
+        # Set total training steps for AdaLoRA
+        if args.peft == 'adalora':
+            train_size = len(teacher_dataset['train'])
+            steps_per_epoch = (train_size + args.train_batch_size - 1) // args.train_batch_size
+            total_step = steps_per_epoch * args.num_train_epochs
+            peft_config.total_step = total_step
+            # Adjust tinit, tfinal, deltaT to be within total_step bounds
+            if total_step < peft_config.tinit + peft_config.tfinal:
+                # Scale proportionally
+                scale = total_step / (peft_config.tinit + peft_config.tfinal)
+                peft_config.tinit = max(1, int(peft_config.tinit * scale))
+                peft_config.tfinal = max(1, int(peft_config.tfinal * scale))
+                peft_config.deltaT = max(1, int(peft_config.deltaT * scale))
+                print(f"Scaled AdaLoRA pruning parameters: tinit={peft_config.tinit}, tfinal={peft_config.tfinal}, deltaT={peft_config.deltaT}")
+            # Ensure tinit < total_step - tfinal (pruning interval positive)
+            if peft_config.tinit >= total_step - peft_config.tfinal:
+                # Reduce tfinal so that there is at least one step for pruning
+                peft_config.tfinal = total_step - peft_config.tinit - 1
+                if peft_config.tfinal < 1:
+                    peft_config.tfinal = 1
+                    peft_config.tinit = total_step - 2
+                print(f"Adjusted tfinal={peft_config.tfinal}, tinit={peft_config.tinit}")
+            print(f"AdaLoRA total_step set to {total_step} (steps per epoch: {steps_per_epoch}, train size: {train_size})")
         tokenized_student_dataset = self.tokenize_student_dataset(teacher_dataset)
         student_model = self.load_pretrained_model_lora(args.student_model_name, lora_config=peft_config)
         student_train_dataset, student_eval_dataset = self.split_dataset(tokenized_student_dataset)
