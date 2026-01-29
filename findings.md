@@ -1,52 +1,76 @@
 # Findings
 
-## Data Sources
+## Previous Task: Fill missing cells in MrLoRA/main.tex
+(See above for detailed findings from that task.)
 
-1. **CSV files in MrLoRA/**:
-   - `teacher_per_task.csv`: raw per‑task scores for teacher variants (LoRA, MR‑LoRA, AdaLoRA, DoRA, OLoRA, RS‑LoRA, MR‑LoRA‑RS) across BERT, RoBERTa, DeBERTa.
-   - `student_per_task.csv`: raw per‑task scores only for `lora_student` and `mrlora_student`.
-   - `glue_averages.csv`: GLUE averages for all variants (including student distillation) – used for overall GLUE percentages.
-   - `table_i_detailed.csv`: FFT, LoRA, KD‑LoRA per‑task scores (FFT baseline).
-   - `table_i_mrlora.csv`: FFT, Teacher MR‑LoRA, Student MR‑LoRA per‑task scores.
+---
 
-2. **Generated percentage tables**:
-   - `teacher_per_task_pct.tex`: already contains the same percentages as Table 2 in main.tex (except STS‑B for MR‑LoRA‑RS is '--').
-   - `student_per_task_pct.tex`: matches Table 3 exactly.
+## New Task: Redesign experimental presentation scheme
 
-3. **Results directory structure**:
-   - `results/lora/task_{task}_{model}_{seed}/base_.../peft_{method}_.../metrics.json`
-   - Each JSON contains evaluation metrics (`eval_matthews_correlation`, `eval_accuracy`, etc.) and configuration (`type`, `teacher_model_name`, `student_model_name`).
-   - The `type` field distinguishes teacher fine‑tuning (type=2) from student distillation (type=1). Confirmed via inspection.
+### Current State (as of 2026‑01‑29)
+**Data dimensions present in experiments:**
+1. **Benchmarks**: GLUE (8 tasks: CoLA, MRPC, QQP, QNLI, RTE, WNLI, SST‑2, STS‑B)
+2. **Model families**: BERT, RoBERTa, DeBERTa‑v3
+3. **Training variants**:
+   - Teacher fine‑tuning (`type=2`): FFT (full fine‑tuning), LoRA (standard LoRA), MR‑LoRA, AdaLoRA, DoRA, OLoRA, RS‑LoRA, MR‑LoRA‑RS
+   - Student distillation (`type=1`): same set of LoRA variants applied to a smaller student model
+4. **Metrics recorded**:
+   - Task‑specific: accuracy (for QQP, QNLI, RTE, WNLI, SST‑2), Matthews correlation (CoLA), F1 (MRPC), Spearman correlation (STS‑B)
+   - Aggregated: GLUE average (arithmetic mean of per‑task scores normalized to 0‑100 scale)
+   - Efficiency: parameter count, memory reduction, inference speedup (only available for LoRA and MR‑LoRA)
 
-## Missing Cells Analysis
+**Current presentation (MrLoRA/main.tex):**
+- Table 2: Teacher variants – per‑task scores as percentages of teacher FFT baseline, averaged across model families
+- Table 3: Student variants – same layout as Table 2
+- Table 4: Efficiency – memory reduction and inference speedup for LoRA and MR‑LoRA only
+- Table 1 (?) – not yet examined
 
-### Table 2 (teacher variants)
-- STS‑B column for MR‑LoRA‑RS is '--'.
-- Raw data missing: `teacher_per_task.csv` shows empty STS‑B for bert & roberta MR‑LoRA‑RS, and empty QQP & STS‑B for deberta MR‑LoRA‑RS.
-- Therefore '--' is correct; cannot fill.
+**Observations:**
+- Per‑task scores are shown as percentages relative to teacher FFT baseline (averaged across BERT/RoBERTa/DeBERTa).
+- The tables separate teacher and student variants, respecting the architectural difference.
+- Missing efficiency data for most LoRA variants.
+- SQuAD benchmark not yet run (no data).
 
-### Table 3 (student variants)
-- Per‑task columns for AdaLoRA, DoRA, OLoRA, RS‑LoRA, MR‑LoRA‑RS are '--', only GLUE percentage is given.
-- `student_per_task.csv` contains no rows for those methods, but metrics.json files in `results/kd‑lora/` contain the missing per‑task scores.
+**Key design challenge:** Need to present multi‑dimensional results in a digestible tabular form that highlights:
+1. MR‑LoRA’s parameter efficiency compared to enlarging a singular LoRA matrix
+2. Performance retention relative to FFT baseline
+3. Comparison across model families (generality)
+4. Trade‑offs between teacher and student distillation
 
-### Table 4 (efficiency)
-- Memory reduction and inference speedup columns are '--' for all variants except LoRA and MR‑LoRA.
-- Likely those measurements were only taken for LoRA and MR‑LoRA.
+### Design Principles (preliminary)
+1. **Separate tables for teacher and student variants** – architectures differ, cannot average together.
+2. **Show per‑task scores alongside averages** – readers need both detail and summary.
+3. **Include parameter counts** – essential for parameter‑efficiency argument.
+4. **Highlight MR‑LoRA vs. other LoRA variants** – make comparison easy.
+5. **Aggregate across model families** – show generality while optionally providing per‑family breakdown in appendix.
+6. **Plan for SQuAD inclusion** – table structure should accommodate another benchmark.
 
-## Extracted Per‑Task Percentages (Student Distillation)
-- Script `compute_student_missing.py` extracted scores from `results/kd‑lora/` and computed percentages relative to teacher FFT baseline.
-- Results (averaged across BERT, RoBERTa, DeBERTa):
-  - **AdaLoRA**: CoLA 12.7%, MRPC 84.0%, QQP 92.6%, QNLI 93.3%, RTE 79.3%, WNLI 101.1%
-  - **DoRA**: CoLA 69.1%, MRPC 85.0%, QQP 93.8%, QNLI 95.2%, RTE 79.9%, WNLI 100.6%
-  - **OLoRA**: CoLA 70.6%, MRPC 84.8%, QQP 94.2%, QNLI 95.4%, RTE 80.6%, WNLI 100.8%
-  - **RS‑LoRA**: CoLA 75.4%, MRPC 84.5%, QQP 94.1%, QNLI 96.3%, RTE 81.6%, WNLI 103.1%
-  - **MR‑LoRA‑RS**: CoLA 81.7%, MRPC 89.1%, QQP 96.7%, QNLI 97.3%, RTE 85.5%, WNLI 100.5%
-- SST‑2 and STS‑B data missing for these variants; left as '--'.
+### Potential Table Structures
+**Option A: Two‑tier presentation**
+- **Top‑level table:** GLUE average (%) for all LoRA variants (teacher and student separate), plus parameter counts, memory, speedup.
+- **Appendix tables:** Full per‑task breakdown for each variant.
 
-## Actions Taken
-- Updated `main.tex` Table 3 with the above percentages, preserving '--' for SST‑2 and STS‑B.
-- Teacher variant STS‑B (MR‑LoRA‑RS) remains '--'.
-- Efficiency table unchanged.
+**Option B: Integrated per‑task table**
+- One large table per benchmark (GLUE, SQuAD) with rows = (variant × model family), columns = tasks + average + efficiency metrics.
+- Could be overwhelming but comprehensive.
 
-## Conclusion
-The '--' cells that could be filled with real data have been filled. Remaining '--' cells correspond to missing measurements (SST‑2, STS‑B for student variants; STS‑B for teacher MR‑LoRA‑RS; efficiency metrics). The LaTeX tables now reflect the available experimental results.
+**Option C: Focused comparison tables**
+- Table 1: Teacher variants – GLUE average vs. parameter count (scatter plot data)
+- Table 2: Student variants – same
+- Table 3: Per‑task performance of MR‑LoRA vs. best competing variant
+- Table 4: Efficiency metrics for all variants where available.
+
+**Option D: Hierarchical tables**
+- Table 1: Teacher GLUE results (per‑task scores as percentages, averaged across families)
+- Table 2: Student GLUE results (same)
+- Table 3: Teacher SQuAD results (future)
+- Table 4: Student SQuAD results (future)
+- Table 5: Efficiency (parameter counts, memory, speedup) for all variants.
+
+**Need to examine typical NLP paper conventions** – look at existing LoRA papers for inspiration.
+
+### Next Steps
+- Examine MrLoRA/main.tex to see exact current table layouts.
+- Search for similar papers in the directory (maybe `paper/`).
+- Inventory which efficiency metrics are actually available.
+- Draft concrete table schemas.
