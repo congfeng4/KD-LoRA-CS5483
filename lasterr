@@ -1,104 +1,34 @@
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 776, in convert_to_tensors
-[rank3]:     tensor = as_tensor(value)
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 738, in as_tensor
-[rank3]:     return torch.tensor(value)
-[rank3]: RuntimeError: Could not infer dtype of NoneType
-
-[rank3]: The above exception was the direct cause of the following exception:
-
-[rank3]: Traceback (most recent call last):
-[rank3]:   File "src/BERT_QA.py", line 473, in <module>
-[rank3]:     main_lora(args_cmd, is_student=False)
-[rank3]:   File "src/BERT_QA.py", line 433, in main_lora
-[rank3]:     raise e
-[rank3]:   File "src/BERT_QA.py", line 430, in main_lora
-[rank3]:     pipe.run_teacher_lora()
-[rank3]:   File "src/BERT_QA.py", line 364, in run_teacher_lora
-[rank3]:     trainer_output=trainer.train()
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
-[rank3]:     return inner_training_loop(
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
-[rank3]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3004, in _maybe_log_save_evaluate
-[rank3]:     metrics = self._evaluate(trial, ignore_keys_for_eval)
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2958, in _evaluate
-[rank3]:     metrics = self.evaluate(ignore_keys=ignore_keys_for_eval)
-[rank3]:   File "/home/user/fc/kd-lora/src/trainer_qa.py", line 46, in evaluate
-[rank3]:     output = self.evaluation_loop(
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 4159, in evaluation_loop
-[rank3]:     for step, inputs in enumerate(dataloader):
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/data_loader.py", line 550, in __iter__
-[rank3]:     current_batch = next(dataloader_iter)
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
-[rank3]:     data = self._next_data()
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 673, in _next_data
-[rank3]:     data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 55, in fetch
-[rank3]:     return self.collate_fn(data)
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 271, in __call__
-[rank3]:     batch = pad_without_fast_tokenizer_warning(
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 66, in pad_without_fast_tokenizer_warning
-[rank3]:     padded = tokenizer.pad(*pad_args, **pad_kwargs)
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 3541, in pad
-[rank3]:     return BatchEncoding(batch_outputs, tensor_type=return_tensors)
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 240, in __init__
-[rank3]:     self.convert_to_tensors(tensor_type=tensor_type, prepend_batch_axis=prepend_batch_axis)
-[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 792, in convert_to_tensors
-[rank3]:     raise ValueError(
-[rank3]: ValueError: Unable to create tensor, you should probably activate truncation and/or padding with 'padding=True' 'truncation=True' to have batched tensors with the same length. Perhaps your features (`offset_mapping` in this case) have excessive nesting (inputs type `list` where type `int` is expected).
-[rank1]: Traceback (most recent call last):
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 776, in convert_to_tensors
-[rank1]:     tensor = as_tensor(value)
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 738, in as_tensor
-[rank1]:     return torch.tensor(value)
-[rank1]: RuntimeError: Could not infer dtype of NoneType
-
-[rank1]: The above exception was the direct cause of the following exception:
-
-[rank1]: Traceback (most recent call last):
-[rank1]:   File "src/BERT_QA.py", line 473, in <module>
-[rank1]:     main_lora(args_cmd, is_student=False)
-[rank1]:   File "src/BERT_QA.py", line 433, in main_lora
-[rank1]:     raise e
-[rank1]:   File "src/BERT_QA.py", line 430, in main_lora
-[rank1]:     pipe.run_teacher_lora()
-[rank1]:   File "src/BERT_QA.py", line 364, in run_teacher_lora
-[rank1]:     trainer_output=trainer.train()
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
-[rank1]:     return inner_training_loop(
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
-[rank1]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3004, in _maybe_log_save_evaluate
-[rank1]:     metrics = self._evaluate(trial, ignore_keys_for_eval)
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2958, in _evaluate
-[rank1]:     metrics = self.evaluate(ignore_keys=ignore_keys_for_eval)
-[rank1]:   File "/home/user/fc/kd-lora/src/trainer_qa.py", line 46, in evaluate
-[rank1]:     output = self.evaluation_loop(
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 4159, in evaluation_loop
-[rank1]:     for step, inputs in enumerate(dataloader):
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/data_loader.py", line 550, in __iter__
-[rank1]:     current_batch = next(dataloader_iter)
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
-[rank1]:     data = self._next_data()
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 673, in _next_data
-[rank1]:     data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 55, in fetch
-[rank1]:     return self.collate_fn(data)
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 271, in __call__
-[rank1]:     batch = pad_without_fast_tokenizer_warning(
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 66, in pad_without_fast_tokenizer_warning
-[rank1]:     padded = tokenizer.pad(*pad_args, **pad_kwargs)
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 3541, in pad
-[rank1]:     return BatchEncoding(batch_outputs, tensor_type=return_tensors)
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 240, in __init__
-[rank1]:     self.convert_to_tensors(tensor_type=tensor_type, prepend_batch_axis=prepend_batch_axis)
-[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 792, in convert_to_tensors
-[rank1]:     raise ValueError(
-[rank1]: ValueError: Unable to create tensor, you should probably activate truncation and/or padding with 'padding=True' 'truncation=True' to have batched tensors with the same length. Perhaps your features (`offset_mapping` in this case) have excessive nesting (inputs type `list` where type `int` is expected).
-[rank2]: Traceback (most recent call last):
-[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 776, in convert_to_tensors
-[rank2]:     tensor = as_tensor(value)
-[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 738, in as_tensor
-[rank2]:     return torch.tensor(value)
-[rank2]: RuntimeError: Could not infer dtype of NoneType
+ersion 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+'Dict' object is not callable
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "src/BERT_QA.py", line 571, in <module>
+[rank0]:     main_lora(args_cmd, is_student=False)
+[rank0]:   File "src/BERT_QA.py", line 528, in main_lora
+[rank0]:     raise e
+[rank0]:   File "src/BERT_QA.py", line 525, in main_lora
+[rank0]:     pipe.run_teacher_lora()
+[rank0]:   File "src/BERT_QA.py", line 459, in run_teacher_lora
+[rank0]:     results, trainer = train_question_answering(self.args, raw_datasets, model, tokenizer, training_args,
+[rank0]:   File "src/BERT_QA.py", line 176, in train_question_answering
+[rank0]:     with args.main_process_first(desc="train dataset map pre-processing"):
+[rank0]: TypeError: 'Dict' object is not callable
+Begin Teacher LoRA...
+[rank0]:[W130 21:13:40.244415581 ProcessGroupNCCL.cpp:1168] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+Some weights of DistilBertForQuestionAnswering were not initialized from the model checkpoint at ./models/distilbert-base-uncased and are newly initialized: ['qa_outputs.bias', 'qa_outputs.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+get_target_moduele model_name_lower ./models/distilbert-base-uncased target_modules ['q_lin', 'v_lin']
+peft_config LoraConfig(peft_type=<PeftType.LORA: 'LORA'>, auto_mapping=None, base_model_name_or_path=None, revision=None, task_type='QUESTION_ANS', inference_mode=False, r=8, target_modules={'q_lin', 'v_lin'}, lora_alpha=16, lora_dropout=0.05, fan_in_fan_out=False, bias='none', use_rslora=False, modules_to_save=None, init_lora_weights=True, layers_to_transform=None, layers_pattern=None, rank_pattern={}, alpha_pattern={}, megatron_config=None, megatron_core='megatron.core', loftq_config={}, use_dora=False, layer_replication=None, runtime_config=LoraRuntimeConfig(ephemeral_gpu_offload=False))
+Begin Teacher LoRA...
+/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/training_args.py:1568: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+Some weights of DistilBertForQuestionAnswering were not initialized from the model checkpoint at ./models/distilbert-base-uncased and are newly initialized: ['qa_outputs.bias', 'qa_outputs.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+get_target_moduele model_name_lower ./models/distilbert-base-uncased target_modules ['q_lin', 'v_lin']
+peft_config LoraConfig(peft_type=<PeftType.LORA: 'LORA'>, auto_mapping=None, base_model_name_or_path=None, revision=None, task_type='QUESTION_ANS', inference_mode=False, r=8, target_modules={'v_lin', 'q_lin'}, lora_alpha=16, lora_dropout=0.05, fan_in_fan_out=False, bias='none', use_rslora=False, modules_to_save=None, init_lora_weights=True, layers_to_transform=None, layers_pattern=None, rank_pattern={}, alpha_pattern={}, megatron_config=None, megatron_core='megatron.core', loftq_config={}, use_dora=False, layer_replication=None, runtime_config=LoraRuntimeConfig(ephemeral_gpu_offload=False))
+/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/training_args.py:1568: FutureWarning: `evaluation_strategy` is deprecated and will be removed in version 4.46 of 🤗 Transformers. Use `eval_strategy` instead
+  warnings.warn(
+W0130 21:13:40.911169 140337243358400 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1892647 closing signal SIGTERM
+W0130 21:13:40.912084 140337243358400 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1892648 closing signal SIGTERM
+W0130 21:13:40.912298 140337243358400 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1892649 closing signal SIGTERM
+E0130 21:13:41.026683 140337243358400 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 0 (pid: 1892646) of binary: /home/user/anaconda3/envs/lora/bin/python

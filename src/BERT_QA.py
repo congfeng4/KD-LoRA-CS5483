@@ -173,15 +173,14 @@ def train_question_answering(args, raw_datasets, model, tokenizer, training_args
     train_dataset = raw_datasets["train"]
 
     # Create train feature from dataset
-    with args.main_process_first(desc="train dataset map pre-processing"):
-        train_dataset = train_dataset.map(
-            prepare_train_features,
-            batched=True,
-            num_proc=args.preprocessing_num_workers,
-            remove_columns=column_names,
-            load_from_cache_file=not args.overwrite_cache,
-            desc="Running tokenizer on train dataset",
-        )
+    train_dataset = train_dataset.map(
+        prepare_train_features,
+        batched=True,
+        num_proc=args.preprocessing_num_workers,
+        remove_columns=column_names,
+        load_from_cache_file=not args.overwrite_cache,
+        desc="Running tokenizer on train dataset",
+    )
 
     # Validation preprocessing
     def prepare_validation_features(examples):
@@ -233,15 +232,14 @@ def train_question_answering(args, raw_datasets, model, tokenizer, training_args
     eval_examples = raw_datasets["validation"]
 
     # Validation Feature Creation
-    with args.main_process_first(desc="validation dataset map pre-processing"):
-        eval_dataset = eval_examples.map(
-            prepare_validation_features,
-            batched=True,
-            num_proc=args.preprocessing_num_workers,
-            remove_columns=column_names,
-            load_from_cache_file=not args.overwrite_cache,
-            desc="Running tokenizer on validation dataset",
-        )
+    eval_dataset = eval_examples.map(
+        prepare_validation_features,
+        batched=True,
+        num_proc=args.preprocessing_num_workers,
+        remove_columns=column_names,
+        load_from_cache_file=not args.overwrite_cache,
+        desc="Running tokenizer on validation dataset",
+    )
 
     # Data collator
     # We have already padded to max length if the corresponding flag is True, otherwise we need to pad in the data
@@ -277,7 +275,7 @@ def train_question_answering(args, raw_datasets, model, tokenizer, training_args
         references = [{"id": str(ex["id"]), "answers": ex[answer_column_name]} for ex in examples]
         return EvalPrediction(predictions=formatted_predictions, label_ids=references)
 
-    metric = evaluate.load(args.task, cache_dir=args.cache_dir)
+    metric = evaluate.load('squad_v2' if 'v2' in args.task else 'squad', cache_dir=args.cache_dir)
 
     def compute_metrics(p: EvalPrediction):
         return metric.compute(predictions=p.predictions, references=p.label_ids)
@@ -296,12 +294,24 @@ def train_question_answering(args, raw_datasets, model, tokenizer, training_args
         data_collator=data_collator,
         post_process_function=post_processing_function,
         compute_metrics=compute_metrics,
-        callback=[callback],
+        callbacks=[callback],
     )
     if teacher_soft_labels is not None:
         trainer.teacher_soft_labels = teacher_soft_labels
             
     train_result = trainer.train()
+    trainer = trainer_cls(
+        model=model,
+        args=training_args,
+        train_dataset=None,
+        eval_dataset=eval_dataset,
+        eval_examples=eval_examples,
+        processing_class=tokenizer,
+        data_collator=data_collator,
+        post_process_function=post_processing_function,
+        compute_metrics=compute_metrics,
+        callbacks=[callback],
+    )
     metrics = trainer.evaluate()
 
     # Evaluation
@@ -326,14 +336,14 @@ class QADistillPipeline:
         self.metric = evaluate.load("squad_v2" if self.args.task == "squad-v2" else "squad")
 
         self.training_params = dict(
-            evaluation_strategy="epoch",
+            # eval_strategy="epoch",
             logging_strategy="epoch",
             save_strategy="epoch",
             per_device_train_batch_size=self.args.train_batch_size,
             per_device_eval_batch_size=self.args.eval_batch_size,
             num_train_epochs=self.args.num_train_epochs,
             weight_decay=self.args.weight_decay,
-            load_best_model_at_end=True,
+            # load_best_model_at_end=True,
             remove_unused_columns=False  # Important for distillation 'idx'
         )
 
@@ -546,7 +556,7 @@ if __name__ == "__main__":
     parser.add_argument("--doc_stride", type=int, default=128)
     parser.add_argument("--weight_decay", type=float, default=0.01)
     parser.add_argument("--dir_name", type=str, default="./results_qa")
-    parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2, 3),
+    parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2, 3), default=0,
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
     parser.add_argument('--use_rslora', action='store_true',
@@ -560,6 +570,7 @@ if __name__ == "__main__":
     parser.add_argument('--cache_dir', type=str, default='.')
     parser.add_argument('--pad_to_max_length', type=int, default=1)
     parser.add_argument('--max_answer_length', type=int, default=30)
+    parser.add_argument('--preprocessing_num_workers', type=int, default=2)
 
     args_cmd = parser.parse_args()
 
