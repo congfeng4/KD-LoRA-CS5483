@@ -58,12 +58,12 @@ class QADistillTrainer(QuestionAnsweringTrainer):
         return (loss, outputs) if return_outputs else loss
 
 
-def train_question_answering(args, raw_datasets, model, tokenizer, training_args, *,
+def train_question_answering(args, raw_datasets, model, tokenizer, training_args, output_dir, *,
                              variant, teacher_soft_labels=None,
                              returns_predictions=False):
     # Set seed before initializing model.
     set_seed(args.seed)
-
+    args.version_2_with_negative = 'v2' in args.task
     # Tokenizer check: this script requires a fast tokenizer.
     if not isinstance(tokenizer, PreTrainedTokenizerFast):
         raise ValueError(
@@ -261,7 +261,7 @@ def train_question_answering(args, raw_datasets, model, tokenizer, training_args
             n_best_size=args.n_best_size,
             max_answer_length=args.max_answer_length,
             null_score_diff_threshold=args.null_score_diff_threshold,
-            output_dir=args.output_dir,
+            output_dir=output_dir,
             prefix=stage,
         )
         # Format the result to the format the metric expects.
@@ -385,7 +385,7 @@ class QADistillPipeline:
             **self.training_params,
         )
         results, trainer, predictions = train_question_answering(self.args, raw_datasets, model, tokenizer,
-                                                                 training_args,
+                                                                 training_args, ckpt_dir,
                                                                  variant='fft',
                                                                  returns_predictions=True)
 
@@ -428,7 +428,7 @@ class QADistillPipeline:
             learning_rate=args.student_learning_rate,
             **self.training_params,
         )
-        results, trainer = train_question_answering(self.args, raw_datasets, model, tokenizer, training_args,
+        results, trainer = train_question_answering(self.args, raw_datasets, model, tokenizer, training_args, ckpt_dir,
                                                     variant='kd-lora',
                                                     teacher_soft_labels=teacher_logits)
 
@@ -466,7 +466,7 @@ class QADistillPipeline:
             learning_rate=args.student_learning_rate,
             **self.training_params,
         )
-        results, trainer = train_question_answering(self.args, raw_datasets, model, tokenizer, training_args,
+        results, trainer = train_question_answering(self.args, raw_datasets, model, tokenizer, training_args, ckpt_dir,
                                                     variant='lora')
 
         if trainer.is_world_process_zero():
@@ -572,6 +572,7 @@ if __name__ == "__main__":
     parser.add_argument('--n_best_size', type=int, default=20)
     parser.add_argument('--max_answer_length', type=int, default=30)
     parser.add_argument('--preprocessing_num_workers', type=int, default=2)
+    parser.add_argument('--null_score_diff_threshold', type=float, default=0.0)
 
     args_cmd = parser.parse_args()
 
