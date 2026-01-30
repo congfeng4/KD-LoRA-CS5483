@@ -1,19 +1,104 @@
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
-[rank0]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3004, in _maybe_log_save_evaluate
-[rank0]:     metrics = self._evaluate(trial, ignore_keys_for_eval)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2958, in _evaluate
-[rank0]:     metrics = self.evaluate(ignore_keys=ignore_keys_for_eval)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3975, in evaluate
-[rank0]:     output = eval_loop( 
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 4264, in evaluation_loop
-[rank0]:     metrics = self.compute_metrics(
-[rank0]:   File "/mnt/data2/congfeng/kd-lora/src/utils.py", line 264, in func
-[rank0]:     accuracy = accuracy_score(labels, predictions)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/sklearn/utils/_param_validation.py", line 214, in wrapper
-[rank0]:     return func(*args, **kwargs)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/sklearn/metrics/_classification.py", line 220, in accuracy_score
-[rank0]:     y_type, y_true, y_pred = _check_targets(y_true, y_pred)
-[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/sklearn/metrics/_classification.py", line 93, in _check_targets
-[rank0]:     raise ValueError(
-[rank0]: ValueError: Classification metrics can't handle a mix of multiclass and continuous-multioutput targets
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 776, in convert_to_tensors
+[rank3]:     tensor = as_tensor(value)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 738, in as_tensor
+[rank3]:     return torch.tensor(value)
+[rank3]: RuntimeError: Could not infer dtype of NoneType
+
+[rank3]: The above exception was the direct cause of the following exception:
+
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "src/BERT_QA.py", line 473, in <module>
+[rank3]:     main_lora(args_cmd, is_student=False)
+[rank3]:   File "src/BERT_QA.py", line 433, in main_lora
+[rank3]:     raise e
+[rank3]:   File "src/BERT_QA.py", line 430, in main_lora
+[rank3]:     pipe.run_teacher_lora()
+[rank3]:   File "src/BERT_QA.py", line 364, in run_teacher_lora
+[rank3]:     trainer_output=trainer.train()
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank3]:     return inner_training_loop(
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
+[rank3]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3004, in _maybe_log_save_evaluate
+[rank3]:     metrics = self._evaluate(trial, ignore_keys_for_eval)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2958, in _evaluate
+[rank3]:     metrics = self.evaluate(ignore_keys=ignore_keys_for_eval)
+[rank3]:   File "/home/user/fc/kd-lora/src/trainer_qa.py", line 46, in evaluate
+[rank3]:     output = self.evaluation_loop(
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 4159, in evaluation_loop
+[rank3]:     for step, inputs in enumerate(dataloader):
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/data_loader.py", line 550, in __iter__
+[rank3]:     current_batch = next(dataloader_iter)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+[rank3]:     data = self._next_data()
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 673, in _next_data
+[rank3]:     data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 55, in fetch
+[rank3]:     return self.collate_fn(data)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 271, in __call__
+[rank3]:     batch = pad_without_fast_tokenizer_warning(
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 66, in pad_without_fast_tokenizer_warning
+[rank3]:     padded = tokenizer.pad(*pad_args, **pad_kwargs)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 3541, in pad
+[rank3]:     return BatchEncoding(batch_outputs, tensor_type=return_tensors)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 240, in __init__
+[rank3]:     self.convert_to_tensors(tensor_type=tensor_type, prepend_batch_axis=prepend_batch_axis)
+[rank3]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 792, in convert_to_tensors
+[rank3]:     raise ValueError(
+[rank3]: ValueError: Unable to create tensor, you should probably activate truncation and/or padding with 'padding=True' 'truncation=True' to have batched tensors with the same length. Perhaps your features (`offset_mapping` in this case) have excessive nesting (inputs type `list` where type `int` is expected).
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 776, in convert_to_tensors
+[rank1]:     tensor = as_tensor(value)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 738, in as_tensor
+[rank1]:     return torch.tensor(value)
+[rank1]: RuntimeError: Could not infer dtype of NoneType
+
+[rank1]: The above exception was the direct cause of the following exception:
+
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "src/BERT_QA.py", line 473, in <module>
+[rank1]:     main_lora(args_cmd, is_student=False)
+[rank1]:   File "src/BERT_QA.py", line 433, in main_lora
+[rank1]:     raise e
+[rank1]:   File "src/BERT_QA.py", line 430, in main_lora
+[rank1]:     pipe.run_teacher_lora()
+[rank1]:   File "src/BERT_QA.py", line 364, in run_teacher_lora
+[rank1]:     trainer_output=trainer.train()
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank1]:     return inner_training_loop(
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2573, in _inner_training_loop
+[rank1]:     self._maybe_log_save_evaluate(tr_loss, grad_norm, model, trial, epoch, ignore_keys_for_eval)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3004, in _maybe_log_save_evaluate
+[rank1]:     metrics = self._evaluate(trial, ignore_keys_for_eval)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2958, in _evaluate
+[rank1]:     metrics = self.evaluate(ignore_keys=ignore_keys_for_eval)
+[rank1]:   File "/home/user/fc/kd-lora/src/trainer_qa.py", line 46, in evaluate
+[rank1]:     output = self.evaluation_loop(
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 4159, in evaluation_loop
+[rank1]:     for step, inputs in enumerate(dataloader):
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/accelerate/data_loader.py", line 550, in __iter__
+[rank1]:     current_batch = next(dataloader_iter)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+[rank1]:     data = self._next_data()
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 673, in _next_data
+[rank1]:     data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 55, in fetch
+[rank1]:     return self.collate_fn(data)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 271, in __call__
+[rank1]:     batch = pad_without_fast_tokenizer_warning(
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/data/data_collator.py", line 66, in pad_without_fast_tokenizer_warning
+[rank1]:     padded = tokenizer.pad(*pad_args, **pad_kwargs)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 3541, in pad
+[rank1]:     return BatchEncoding(batch_outputs, tensor_type=return_tensors)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 240, in __init__
+[rank1]:     self.convert_to_tensors(tensor_type=tensor_type, prepend_batch_axis=prepend_batch_axis)
+[rank1]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 792, in convert_to_tensors
+[rank1]:     raise ValueError(
+[rank1]: ValueError: Unable to create tensor, you should probably activate truncation and/or padding with 'padding=True' 'truncation=True' to have batched tensors with the same length. Perhaps your features (`offset_mapping` in this case) have excessive nesting (inputs type `list` where type `int` is expected).
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 776, in convert_to_tensors
+[rank2]:     tensor = as_tensor(value)
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/tokenization_utils_base.py", line 738, in as_tensor
+[rank2]:     return torch.tensor(value)
+[rank2]: RuntimeError: Could not infer dtype of NoneType
