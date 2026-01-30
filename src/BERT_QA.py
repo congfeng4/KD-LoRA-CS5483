@@ -26,7 +26,7 @@ RANK_VALUES = [8, 16, 32, 64]
 seed_list = [42, 123, 2024]
 
 # QA tasks
-QA_TASKS = ["squad", "squad_v2"]
+QA_TASKS = ["squad-v1.1", "squad-v2"]
 # Bench type hardcoded to QA
 BENCH = "QA"
 
@@ -48,7 +48,9 @@ def load_qa_dataset(dataset_path, task, from_disk=True):
     """Load SQuAD dataset from disk or Hugging Face Hub."""
     if from_disk:
         from datasets import load_from_disk
-        return load_from_disk(Path(dataset_path) / task)
+        print(dataset_path, task)
+
+        return load_from_disk(os.path.join(dataset_path, task))
     else:
         from datasets import load_dataset
         return load_dataset(task, cache_dir=dataset_path)
@@ -63,11 +65,11 @@ def get_raw_dataset(dataset_path, task, from_disk=True):
         print(f"[CACHE HIT] Using cached raw dataset: task={task}, from_disk={from_disk}")
     return _RAW_DATASET_CACHE[key]
 
-def get_tokenizer(model_name):
+def get_tokenizer(model_name, use_fast=False):
     """Get tokenizer with caching."""
     if model_name not in _TOKENIZER_CACHE:
         print(f"[CACHE MISS] Loading tokenizer: {model_name}")
-        _TOKENIZER_CACHE[model_name] = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+        _TOKENIZER_CACHE[model_name] = AutoTokenizer.from_pretrained(model_name, use_fast=True)
     else:
         print(f"[CACHE HIT] Using cached tokenizer: {model_name}")
     return _TOKENIZER_CACHE[model_name]
@@ -84,7 +86,7 @@ def get_tokenized_dataset_qa(task, tokenizer_name, with_indices=False, dataset_p
         if dataset_path is None:
             raise ValueError("dataset_path must be provided for first-time tokenization")
         raw_dataset = get_raw_dataset(dataset_path, task, from_disk)
-        tokenizer = get_tokenizer(tokenizer_name)
+        tokenizer = get_tokenizer(tokenizer_name, use_fast=True)
         
         # Tokenization function
         def tokenize_function(examples):

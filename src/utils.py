@@ -35,11 +35,11 @@ def get_raw_dataset(dataset_path, task, from_disk=True):
         print(f"[CACHE HIT] Using cached raw dataset: task={task}, from_disk={from_disk}")
     return _RAW_DATASET_CACHE[key]
 
-def get_tokenizer(model_name):
+def get_tokenizer(model_name, use_fast=False):
     """Get tokenizer with caching."""
-    if model_name not in _TOKENIZER_CACHE:
+    if model_name, use_fast not in _TOKENIZER_CACHE:
         print(f"[CACHE MISS] Loading tokenizer: {model_name}")
-        _TOKENIZER_CACHE[model_name] = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+        _TOKENIZER_CACHE[model_name, use_fast] = AutoTokenizer.from_pretrained(model_name, use_fast=use_fast)
     else:
         print(f"[CACHE HIT] Using cached tokenizer: {model_name}")
     return _TOKENIZER_CACHE[model_name]
