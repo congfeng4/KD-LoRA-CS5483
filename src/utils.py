@@ -1,3 +1,4 @@
+import functools
 import os
 import logging
 import numpy as np
@@ -33,29 +34,16 @@ def generate_mrlora_ranks(highest_rank):
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
-# Caches for sharing datasets and tokenizers across runs in the same process
-_RAW_DATASET_CACHE = {}
-_TOKENIZER_CACHE = {}
-_TOKENIZED_DATASET_CACHE = {}
 
+@functools.lru_cache(maxsize=None)
 def get_raw_dataset(dataset_path, task, from_disk=True):
     """Load raw GLUE dataset with caching."""
-    key = (dataset_path, task, from_disk)
-    if key not in _RAW_DATASET_CACHE:
-        print(f"[CACHE MISS] Loading raw dataset: task={task}, from_disk={from_disk}")
-        _RAW_DATASET_CACHE[key] = load_glue_dataset(dataset_path, task, from_disk)
-    else:
-        print(f"[CACHE HIT] Using cached raw dataset: task={task}, from_disk={from_disk}")
-    return _RAW_DATASET_CACHE[key]
+    return load_glue_dataset(dataset_path, task, from_disk)
 
+@functools.lru_cache(maxsize=None)
 def get_tokenizer(model_name, use_fast=False):
     """Get tokenizer with caching."""
-    if (model_name, use_fast) not in _TOKENIZER_CACHE:
-        print(f"[CACHE MISS] Loading tokenizer: {model_name}")
-        _TOKENIZER_CACHE[model_name, use_fast] = AutoTokenizer.from_pretrained(model_name, use_fast=use_fast)
-    else:
-        print(f"[CACHE HIT] Using cached tokenizer: {model_name}")
-    return _TOKENIZER_CACHE[model_name]
+    return AutoTokenizer.from_pretrained(model_name, use_fast=use_fast)
 
 
 MODEL_FAMILY = {

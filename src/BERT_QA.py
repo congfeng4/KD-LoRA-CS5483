@@ -15,6 +15,7 @@ from transformers import (
 )
 from peft import get_peft_model
 from utils import *
+from transformers import default_data_collator # Ensure this is imported
 
 # Import specialized components from official HF QA logic
 # Note: These usually reside in the same directory as run_qa.py
@@ -251,6 +252,7 @@ class QADistillPipeline:
             post_process_function=self.get_post_process_fn(eval_examples, tokenizer),
             compute_metrics=self.compute_metrics,
             callbacks=[callback],
+            data_collator=default_data_collator,
         )
 
         trainer_output = trainer.train()
@@ -360,6 +362,7 @@ class QADistillPipeline:
             post_process_function=self.get_post_process_fn(eval_examples, tokenizer),
             compute_metrics=self.compute_metrics,
             callbacks=[callback],
+            data_collator=default_data_collator,
         )
         trainer_output=trainer.train()
         results = trainer.evaluate()
