@@ -19,6 +19,11 @@ Constraints:
 
 ## Phases
 
+### Phase 0: Generate LaTeX table from existing results (immediate request)
+- Create LaTeX table with rows=methods, columns=tasks, cells=primary metric mean across seeds
+- Use all tasks and methods present in `results/lora/` directory
+- Deliver table.tex file for user review
+
 ### Phase 1: Understand current data and presentation
 - Inventory existing results (GLUE tasks, model families, LoRA variants, metrics)
 - Examine current LaTeX tables in MrLoRA/ to understand current presentation style
@@ -45,6 +50,10 @@ Constraints:
 - Write LaTeX code for the proposed table(s)
 - Provide instructions for filling with future SQuAD results
 - Update AGENTS.md with new presentation conventions
+
+## Progress Log
+- 2026-01-29: Phase 0 added for immediate LaTeX table generation
+- 2026-01-29: User requirements collected: rows=methods, columns=tasks, cells=primary metric mean across seeds
 
 ## Conclusion
 Deliver a complete presentation scheme that can be used for the paper and future experiments.

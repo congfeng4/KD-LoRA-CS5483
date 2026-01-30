@@ -1,0 +1,19 @@
+\begin{table}[ht]
+\centering
+\begin{tabular}{llcccccccccc}
+\toprule
+Method & \# Params & Mcc & m/mm & Acc/F1 & Acc & Acc/F1 & Acc & Acc & Pearson/Spearman & Acc & Avg. \\
+ & & COLA & MNLI & MRPC & QNLI & QQP & RTE & SST2 & STSB & WNLI & \\
+\midrule
+FFT & 109.484 & \textbf{56.19} & \textbf{83.28/83.60} & \textbf{85.70/90.08} & 90.67 & \textbf{91.00/88.07} & 62.09 & \textbf{91.97} & 88.21/87.78 & 48.36 & 77.61 \\
+LoRA & 0.370 & 50.88 & 82.11/82.84 & 77.82/85.25 & 90.06 & 88.33/84.35 & 58.75 & 91.03 & 87.05/86.78 & 56.34 & 76.17 \\
+DoRA & 0.389 & 49.78 & 82.33/82.93 & 78.68/85.82 & 90.0 & 88.38/84.38 & 59.21 & 91.28 & 87.27/87.02 & 56.34 & 76.24 \\
+MrLoRA & 0.702 & 50.04 & 82.83/83.25 & 79.96/86.62 & 90.26 & 88.74/84.85 & 59.48 & 91.57 & 87.52/87.29 & 56.69 & 76.62 \\
+MrLoRA-RS & 0.702 & 51.78 & 82.60/83.33 & 83.95/88.72 & \textbf{90.77} & 89.14/85.30 & \textbf{62.82} & 91.51 & \textbf{88.40/88.19} & 56.34 & 77.56 \\
+OLoRA & 0.370 & 48.46 & 82.19/82.72 & 78.74/85.69 & 90.26 & 88.39/84.35 & 57.76 & 91.08 & 87.28/87.04 & 56.34 & 75.91 \\
+RSLoRA & 0.370 & 52.08 & 82.52/83.17 & 82.84/88.24 & 90.54 & 88.87/84.93 & 60.38 & 91.57 & 87.93/87.56 & \textbf{57.04} & 77.21 \\
+\bottomrule
+\end{tabular}
+\caption{Performance of LoRA variants on GLUE tasks (bert family, lora training)}
+\label{tab:lora_bert_glue}
+\end{table}

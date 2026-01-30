@@ -21,19 +21,6 @@ RANK_VALUES = [8, 16, 32, 64]
 seed_list = [42, 123, 2024]
 
 
-def generate_mrlora_ranks(highest_rank):
-    """Generate MrLoRA ranks list from highest_rank down to 1 by halving."""
-    ranks = []
-    r = highest_rank
-    while r >= 1:
-        ranks.append(r)
-        r = r // 2
-    # Ensure at least two ranks
-    if len(ranks) == 1:
-        ranks.append(ranks[0] // 2)
-    return ranks
-
-
 class BertDistillPipeline:
     """
     BERT Distillation Pipeline.

@@ -17,6 +17,19 @@ GLUE_TASKS = [
 ]
 
 
+def generate_mrlora_ranks(highest_rank):
+    """Generate MrLoRA ranks list from highest_rank down to 1 by halving."""
+    ranks = []
+    r = highest_rank
+    while r >= 1:
+        ranks.append(r)
+        r = r // 2
+    # Ensure at least two ranks
+    if len(ranks) == 1:
+        ranks.append(ranks[0] // 2)
+    return ranks
+
+
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
@@ -37,7 +50,7 @@ def get_raw_dataset(dataset_path, task, from_disk=True):
 
 def get_tokenizer(model_name, use_fast=False):
     """Get tokenizer with caching."""
-    if model_name, use_fast not in _TOKENIZER_CACHE:
+    if (model_name, use_fast) not in _TOKENIZER_CACHE:
         print(f"[CACHE MISS] Loading tokenizer: {model_name}")
         _TOKENIZER_CACHE[model_name, use_fast] = AutoTokenizer.from_pretrained(model_name, use_fast=use_fast)
     else:
