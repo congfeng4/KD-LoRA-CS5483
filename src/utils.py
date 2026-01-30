@@ -9,6 +9,7 @@ from transformers.trainer_pt_utils import get_model_param_count
 from transformers import Trainer, TrainerCallback, AutoTokenizer
 import torch
 import torch.nn.functional as F
+from transformers.trainer_utils import set_seed
 
 
 GLUE_TASKS = [
@@ -385,15 +386,4 @@ def clear_gpu_memory():
     gc.collect()
     torch.cuda.empty_cache()
     print("GPU memory cleared.")
-
-import random
-
-def set_seed(seed=42):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    # 确保卷积等操作也是确定的（虽然 BERT 用得少，但建议加上）
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
 
