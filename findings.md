@@ -69,6 +69,34 @@
 
 **Need to examine typical NLP paper conventions** – look at existing LoRA papers for inspiration.
 
+### Immediate Task: Generate LaTeX table from results
+**User request:** Create LaTeX table like referenced image, using data in `results/`. Rows = methods, columns = tasks, cells = primary metric mean across seeds. Include all tasks and methods present.
+
+**Data exploration:**
+- Metrics.json contains `eval_matthews_correlation` for CoLA, `eval_accuracy` for MNLI, etc.
+- Need to map each task to its primary metric.
+- Methods: lora, dora, mrlora, mrlora-rs, olora, rslora
+- Tasks: cola, mnli, mrpc, qnli, qqp, rte, sst2, stsb, wnli
+- Seeds: 42, 123, 2024 (some missing combinations)
+- Model families: bert, roberta, deberta (separate tables per family)
+
+**Task-to-metric mapping:**
+- cola: eval_matthews_correlation
+- mnli: matched_accuracy
+- mrpc: eval_f1
+- qnli: eval_accuracy
+- qqp: eval_f1
+- rte: eval_accuracy
+- sst2: eval_accuracy
+- stsb: eval_spearman
+- wnli: eval_accuracy
+
+**Plan:**
+1. Write Python script to traverse results, extract metric based on mapping.
+2. Compute mean across seeds per (task, method, model_family).
+3. Generate three LaTeX tables (one per model family) with booktabs style.
+4. Format cells with 3 decimal places (e.g., 0.xxx).
+
 ### Next Steps
 - Examine MrLoRA/main.tex to see exact current table layouts.
 - Search for similar papers in the directory (maybe `paper/`).

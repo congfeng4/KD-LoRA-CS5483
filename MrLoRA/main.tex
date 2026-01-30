@@ -190,33 +190,51 @@ All experiments are conducted on NVIDIA A800 GPUs. We use the AdamW optimizer wi
 \subsection{Results}
 \subsubsection{GLUE Performance}
 Table~\ref{tab:glue-scores} presents the per-task GLUE scores for each model family and fine-tuning strategy. Teacher MR-LoRA retains 95.8--98.7\% of the teacher’s full fine-tuning performance across the three model families, demonstrating the effectiveness of multi-rank decomposition even without distillation. Student MR-LoRA retains 91.4--94.1\% of the teacher’s performance while using less than 1\% of the teacher’s trainable parameters. The performance gap between teacher and student MR-LoRA ranges from 3.6 to 5.2 GLUE points, reflecting the inherent difficulty of knowledge distillation.
-
 \begin{table}[ht]
 \centering
-\small
-\caption{Per-task GLUE scores (higher is better) for each model family and fine-tuning strategy. FFT denotes full fine-tuning of the teacher; Teacher MR-LoRA applies multi-rank low-rank adapters directly to the teacher; Student MR-LoRA refers to multi-rank adapters applied to the frozen student with knowledge distillation. Abbreviations: BERT (BERT-base teacher / DistilBERT-base student), RoB (RoBERTa-base / DistilRoBERTa-base), DeB (DeBERTa-v3-base / DeBERTa-v3-small); T-MR: Teacher MR-LoRA; S-MR: Student MR-LoRA. Metrics: CoLA (Matthews correlation), SST-2 (accuracy), MRPC (average of accuracy and F1), QQP (average of accuracy and F1), STS-B (Pearson correlation), QNLI (accuracy), RTE (accuracy), WNLI (accuracy), MNLI$_m$ (matched accuracy), MNLI$_{mm}$ (mismatched accuracy). Score is the average across the ten tasks.}
-\label{tab:glue-scores}
-\begin{tabular}{lccccccccc}
+\begin{tabular}{llcccccccccc}
 \toprule
-\multirow{2}{*}{Task} & \multicolumn{3}{c}{BERT} & \multicolumn{3}{c}{RoB} & \multicolumn{3}{c}{DeB} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
- & FFT & T-MR & S-MR & FFT & T-MR & S-MR & FFT & T-MR & S-MR \\
+Method & \# Params & Mcc & m/mm & Acc/F1 & Acc & Acc/F1 & Acc & Acc & Pearson/Spearman & Acc & Avg. \\
+ & & COLA & MNLI & MRPC & QNLI & QQP & RTE & SST2 & STSB & WNLI & \\
 \midrule
-CoLA       & 56.2 & 50.0 & 43.0 & 59.3 & 54.2 & 45.6 & 65.8 & 63.0 & 55.4 \\
-SST-2      & 92.0 & 91.7 & 90.9 & 93.3 & 94.0 & 91.7 & 95.7 & 95.8 & 93.8 \\
-MRPC       & 87.9 & 83.3 & 76.9 & 90.5 & 84.4 & 77.2 & 90.7 & 81.8 & 74.8 \\
-QQP        & 89.5 & 86.7 & 85.3 & 89.2 & 87.4 & 85.7 & 90.9 & 89.3 & 88.0 \\
-STS-B      & 88.2 & 87.4 & 83.3 & 90.2 & 87.2 & 84.6 & 90.4 & 84.5 & 86.3 \\
-QNLI       & 90.7 & 90.2 & 86.7 & 92.5 & 92.2 & 88.4 & 93.7 & 93.9 & 91.4 \\
-RTE        & 62.1 & 59.6 & 56.9 & 67.6 & 63.2 & 57.0 & 79.8 & 61.3 & 52.7 \\
-WNLI       & 48.4 & 56.8 & 52.8 & 51.2 & 56.3 & 45.4 & 55.4 & 56.3 & 53.2 \\
-MNLI$_m$   & 83.3 & 82.9 & 79.6 & 87.3 & 86.6 & 82.0 & 89.3 & 90.3 & 87.1 \\
-MNLI$_{mm}$& 83.6 & 83.2 & 80.2 & 87.1 & 87.0 & 82.4 & 89.6 & 90.2 & 86.6 \\
-\midrule
-Score     & 78.2 & 77.2 & 73.6 & 80.8 & 79.2 & 74.0 & 84.1 & 80.6 & 76.9 \\
+FFT & 184.424 & \textbf{65.79} & \textbf{89.32/89.58} & \textbf{89.22/92.24} & \textbf{93.71} & \textbf{92.23/89.66} & \textbf{79.78} & \textbf{95.68} & \textbf{90.36/90.30} & \textbf{55.4} & 83.54 \\
+LoRA & 0.214 & 44.75 & 85.51/85.56 & 68.38/81.22 & 90.17 & 88.07/83.26 & 52.71 & 93.51 & 76.41/77.71 & 52.11 & 73.44 \\
+DoRA & 0.224 & 44.63 & 85.52/85.64 & 68.38/81.22 & 90.15 & 88.09/83.28 & 52.71 & 93.58 & 74.93/77.33 & 52.11 & 73.39 \\
+MrLoRA & 0.409 & 56.02 & 87.17/86.67 & 70.14/81.96 & 91.34 & 89.82/86.30 & 52.71 & 93.78 & 83.23/83.93 & 54.23 & 76.38 \\
+MrLoRA-RS & 0.409 & 56.68 & 87.46/87.17 & 77.45/85.54 & 91.93 & 90.37/87.03 & 60.95 & 94.22 & 85.40/85.82 & 54.23 & 78.21 \\
+OLoRA & 0.214 & 47.91 & 85.79/85.82 & 68.38/81.22 & 90.26 & 88.58/84.23 & 53.31 & 93.46 & 80.48/81.97 & 52.11 & 74.47 \\
+RSLoRA & 0.214 & 50.93 & 85.93/86.00 & 69.04/81.51 & 91.04 & 88.22/83.30 & 55.54 & 93.51 & 71.40/72.81 & 52.11 & 74.08 \\
 \bottomrule
 \end{tabular}
+\caption{Performance of LoRA variants on GLUE tasks (deberta family, kd-lora training)}
+\label{tab:kd-lora_deberta_glue}
 \end{table}
+% \begin{table}[ht]
+% \centering
+% \small
+% \caption{Per-task GLUE scores (higher is better) for each model family and fine-tuning strategy. FFT denotes full fine-tuning of the teacher; Teacher MR-LoRA applies multi-rank low-rank adapters directly to the teacher; Student MR-LoRA refers to multi-rank adapters applied to the frozen student with knowledge distillation. Abbreviations: BERT (BERT-base teacher / DistilBERT-base student), RoB (RoBERTa-base / DistilRoBERTa-base), DeB (DeBERTa-v3-base / DeBERTa-v3-small); T-MR: Teacher MR-LoRA; S-MR: Student MR-LoRA. Metrics: CoLA (Matthews correlation), SST-2 (accuracy), MRPC (average of accuracy and F1), QQP (average of accuracy and F1), STS-B (Pearson correlation), QNLI (accuracy), RTE (accuracy), WNLI (accuracy), MNLI$_m$ (matched accuracy), MNLI$_{mm}$ (mismatched accuracy). Score is the average across the ten tasks.}
+% \label{tab:glue-scores}
+% \begin{tabular}{lccccccccc}
+% \toprule
+% \multirow{2}{*}{Task} & \multicolumn{3}{c}{BERT} & \multicolumn{3}{c}{RoB} & \multicolumn{3}{c}{DeB} \\
+% \cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+%  & FFT & T-MR & S-MR & FFT & T-MR & S-MR & FFT & T-MR & S-MR \\
+% \midrule
+% CoLA       & 56.2 & 50.0 & 43.0 & 59.3 & 54.2 & 45.6 & 65.8 & 63.0 & 55.4 \\
+% SST-2      & 92.0 & 91.7 & 90.9 & 93.3 & 94.0 & 91.7 & 95.7 & 95.8 & 93.8 \\
+% MRPC       & 87.9 & 83.3 & 76.9 & 90.5 & 84.4 & 77.2 & 90.7 & 81.8 & 74.8 \\
+% QQP        & 89.5 & 86.7 & 85.3 & 89.2 & 87.4 & 85.7 & 90.9 & 89.3 & 88.0 \\
+% STS-B      & 88.2 & 87.4 & 83.3 & 90.2 & 87.2 & 84.6 & 90.4 & 84.5 & 86.3 \\
+% QNLI       & 90.7 & 90.2 & 86.7 & 92.5 & 92.2 & 88.4 & 93.7 & 93.9 & 91.4 \\
+% RTE        & 62.1 & 59.6 & 56.9 & 67.6 & 63.2 & 57.0 & 79.8 & 61.3 & 52.7 \\
+% WNLI       & 48.4 & 56.8 & 52.8 & 51.2 & 56.3 & 45.4 & 55.4 & 56.3 & 53.2 \\
+% MNLI$_m$   & 83.3 & 82.9 & 79.6 & 87.3 & 86.6 & 82.0 & 89.3 & 90.3 & 87.1 \\
+% MNLI$_{mm}$& 83.6 & 83.2 & 80.2 & 87.1 & 87.0 & 82.4 & 89.6 & 90.2 & 86.6 \\
+% \midrule
+% Score     & 78.2 & 77.2 & 73.6 & 80.8 & 79.2 & 74.0 & 84.1 & 80.6 & 76.9 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
 
 
 \subsubsection{Per‑task Performance of LoRA Variants (Teacher)}

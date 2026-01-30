@@ -18,3 +18,19 @@
 - This progress entry.
 
 **Next:** Examine MrLoRA/main.tex to see exact table layouts, and search for similar papers in `paper/` directory.
+
+## 2026‑01‑29 (Immediate task: Generate LaTeX table from results)
+
+**Status:** in_progress
+**Actions:**
+- User requirements collected: rows=methods, columns=tasks, cells=primary metric mean across seeds.
+- Updated task_plan.md with Phase 0.
+- Updated findings.md with immediate task details.
+- Created todo list.
+- Explored data structure: mapped tasks to primary metrics, identified model families, seeds, methods.
+- Decided separate tables per model family (bert, roberta, deberta).
+- Wrote aggregation script `scripts/aggregate_metrics.py`; collected 650 data points, computed means.
+- Generated pivot CSV files for each model family.
+- Wrote LaTeX generation script `scripts/generate_latex.py`; produced three LaTeX tables with booktabs, captions, labels, bold best values, 3 decimal places.
+
+**Next:** Validate tables with user and adjust formatting if needed.
