@@ -25,3 +25,9 @@ rsync -avz --progress \
       -e "ssh -p 22" \
       /home/user/fc/kd-lora/opencode-ins \
     GPU25:/mnt/data2/congfeng/
+
+rsync -avz --progress \
+      -e "ssh -p 22" \
+      /home/user/fc/kd-lora/dataset/squad* \
+    GPU25:/mnt/data2/congfeng/kd-lora/dataset
+    
