@@ -336,15 +336,15 @@ class QADistillPipeline:
         self.metric = evaluate.load("squad_v2" if self.args.task == "squad-v2" else "squad")
 
         self.training_params = dict(
-            # eval_strategy="epoch",
+            eval_strategy="epoch",
             logging_strategy="epoch",
             save_strategy="epoch",
             per_device_train_batch_size=self.args.train_batch_size,
             per_device_eval_batch_size=self.args.eval_batch_size,
             num_train_epochs=self.args.num_train_epochs,
             weight_decay=self.args.weight_decay,
-            # load_best_model_at_end=True,
-            remove_unused_columns=False  # Important for distillation 'idx'
+            load_best_model_at_end=True,
+            # remove_unused_columns=False  # Important for distillation 'idx'
         )
 
     @functools.lru_cache(maxsize=None)
@@ -569,6 +569,7 @@ if __name__ == "__main__":
     parser.add_argument("--student_learning_rate", type=float, default=5e-4, help="Learning rate for the student model")
     parser.add_argument('--cache_dir', type=str, default='.')
     parser.add_argument('--pad_to_max_length', type=int, default=1)
+    parser.add_argument('--n_best_size', type=int, default=20)
     parser.add_argument('--max_answer_length', type=int, default=30)
     parser.add_argument('--preprocessing_num_workers', type=int, default=2)
 
