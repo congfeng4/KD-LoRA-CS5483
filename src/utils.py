@@ -359,28 +359,23 @@ def tokenize_function(args, tokenizer, with_indices=False):
     return func
 
 
+@functools.lru_cache(maxsize=None)
 def get_tokenized_dataset(task, tokenizer_name, with_indices=False, dataset_path=None, from_disk=True):
     """Get tokenized dataset with caching.
     
     Tokenized dataset is cached per (task, tokenizer_name, with_indices).
     dataset_path is required for first-time loading.
     """
-    key = (task, tokenizer_name, with_indices)
-    if key not in _TOKENIZED_DATASET_CACHE:
-        print(f"[CACHE MISS] Tokenizing dataset: task={task}, tokenizer={tokenizer_name}, with_indices={with_indices}")
-        if dataset_path is None:
-            raise ValueError("dataset_path must be provided for first-time tokenization")
-        raw_dataset = get_raw_dataset(dataset_path, task, from_disk)
-        tokenizer = get_tokenizer(tokenizer_name)
-        # Create tokenization function with the given task
-        args = type('Args', (), {'task': task})()
-        tokenize_fn = tokenize_function(args, tokenizer, with_indices=with_indices)
-        # Apply tokenization
-        tokenized = raw_dataset.map(tokenize_fn, batched=True, keep_in_memory=True, with_indices=with_indices)
-        _TOKENIZED_DATASET_CACHE[key] = tokenized
-    else:
-        print(f"[CACHE HIT] Using cached tokenized dataset: task={task}, tokenizer={tokenizer_name}, with_indices={with_indices}")
-    return _TOKENIZED_DATASET_CACHE[key]
+    if dataset_path is None:
+        raise ValueError("dataset_path must be provided for first-time tokenization")
+    raw_dataset = get_raw_dataset(dataset_path, task, from_disk)
+    tokenizer = get_tokenizer(tokenizer_name)
+    # Create tokenization function with the given task
+    args = type('Args', (), {'task': task})()
+    tokenize_fn = tokenize_function(args, tokenizer, with_indices=with_indices)
+    # Apply tokenization
+    tokenized = raw_dataset.map(tokenize_fn, batched=True, keep_in_memory=True, with_indices=with_indices)
+    return tokenized
 
 import torch
 import gc
