@@ -99,14 +99,19 @@ def get_target_modules(model_name):
 
 def get_peft_config(args, model_name, peft_method):
     target_modules = get_target_modules(model_name)
-
+    
+    # Determine task type based on bench argument (default to SEQ_CLS for GLUE)
+    task_type = "SEQ_CLS"
+    if hasattr(args, 'bench') and args.bench == 'QA':
+        task_type = "QUESTION_ANS"
+    
     lora_config = LoraConfig(
         r=args.rank,
         lora_alpha=args.lora_alpha,
         target_modules=target_modules,
         lora_dropout=args.lora_dropout,
         bias="none",
-        task_type="SEQ_CLS"
+        task_type=task_type
     )
     if peft_method == 'lora':
         return lora_config
@@ -139,7 +144,7 @@ def get_peft_config(args, model_name, peft_method):
             lora_alpha=args.lora_alpha,
             target_modules=target_modules,
             lora_dropout=args.lora_dropout,
-            task_type="SEQ_CLS",
+            task_type=task_type,
         )
         return adalora_config
 
@@ -153,7 +158,7 @@ def get_peft_config(args, model_name, peft_method):
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
             target_modules=target_modules,
-            task_type="SEQ_CLS",
+            task_type=task_type,
             use_rslora=args.use_rslora,
         )
         return mrlora_config

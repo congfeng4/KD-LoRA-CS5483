@@ -1,33 +1,50 @@
-# Task Plan: Fill missing cells in MrLoRA/main.tex
+# Task Plan: Redesign experimental presentation scheme for KD-LoRA results
 
 ## Goal
-Replace '--' placeholders in LaTeX tables with actual data from results directory.
+Design a clear, comprehensive presentation scheme for experimental results across multiple dimensions:
+- Benchmarks: GLUE (existing), SQuAD (future)
+- Tasks per benchmark (e.g., CoLA, MRPC, QQP, QNLI, RTE, WNLI, SST‑2, STS‑B for GLUE; v1.1, v2.0 for SQuAD)
+- Training variants: Full Fine‑Tuning (FFT), LoRA (teacher), Student/kd‑lora (distilled)
+- LoRA variants: LoRA, MR‑LoRA, AdaLoRA, DoRA, OLoRA, RS‑LoRA, MR‑LoRA‑RS
+- Model families: BERT, RoBERTa, DeBERTa‑v3
+- Metrics: task‑specific (accuracy, Matthews correlation, Spearman, etc.), parameter efficiency, memory reduction, inference speedup
+
+Primary objective: Showcase that MR‑LoRA is a more parameter‑efficient way to spend parameter budget compared to enlarging a singular LoRA matrix, while maintaining most of FFT performance.
+
+Constraints:
+- LoRA and Student training settings cannot be averaged together (different architectures)
+- Presentation medium is tables (LaTeX) suitable for academic paper
+- Need to highlight per‑task performance as well as task‑average across all tasks and LoRA variants
+- Should accommodate future SQuAD results
 
 ## Phases
 
-### Phase 1: Identify missing cells ✓
-- Located all '--' cells in main.tex tables (Tables 2, 3, 4)
-- Determined which missing values can be computed from existing data
+### Phase 1: Understand current data and presentation
+- Inventory existing results (GLUE tasks, model families, LoRA variants, metrics)
+- Examine current LaTeX tables in MrLoRA/ to understand current presentation style
+- Identify gaps (e.g., missing SQuAD, missing efficiency metrics for some variants)
 
-### Phase 2: Gather required data ✓
-- For teacher variants: STS‑B for MR‑LoRA‑RS missing (cannot fill)
-- For student variants: per‑task data for AdaLoRA, DoRA, OLoRA, RS‑LoRA, MR‑LoRA‑RS exists in results/kd‑lora/
-- For efficiency table: memory reduction and inference speedup data only available for LoRA and MR‑LoRA
+### Phase 2: Define presentation requirements and design principles
+- Determine what comparisons are most important (parameter efficiency vs. performance trade‑off)
+- Decide on table granularity (per‑benchmark, per‑model‑family, aggregated across families)
+- Design separate tables for teacher variants and student variants (cannot mix)
+- Plan how to incorporate parameter counts, memory, speedup
 
-### Phase 3: Compute missing values ✓
-- Wrote script to extract per‑task scores from metrics.json files
-- Computed percentages relative to teacher FFT baseline, averaged across model families
-- Results obtained for CoLA, MRPC, QQP, QNLI, RTE, WNLI; SST‑2 and STS‑B missing
+### Phase 3: Propose concrete table structure(s)
+- Sketch table layouts (number of tables, rows, columns)
+- Define how to present per‑task scores vs. averages
+- Integrate efficiency metrics (parameter budget, memory reduction, inference speedup)
+- Consider visual aids (e.g., bold best results, color coding) within LaTeX constraints
 
-### Phase 4: Update LaTeX file ✓
-- Edited main.tex Table 3 (student variants) with computed percentages
-- Preserved '--' for SST‑2 and STS‑B
-- Teacher variant STS‑B (MR‑LoRA‑RS) remains '--'
-- Efficiency table unchanged
+### Phase 4: Validate with existing data
+- Create mock‑up tables using existing GLUE data
+- Ensure all relevant dimensions are captured clearly
+- Check for readability and information density
 
-### Phase 5: Verification ✓
-- Updated tables reflect real data where possible
-- LaTeX file ready for compilation
+### Phase 5: Produce LaTeX template and documentation
+- Write LaTeX code for the proposed table(s)
+- Provide instructions for filling with future SQuAD results
+- Update AGENTS.md with new presentation conventions
 
 ## Conclusion
-Task completed. The '--' cells that could be filled with real data have been filled; remaining '--' cells correspond to missing measurements.
+Deliver a complete presentation scheme that can be used for the paper and future experiments.
