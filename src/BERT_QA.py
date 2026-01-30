@@ -253,13 +253,14 @@ class QADistillPipeline:
             callbacks=[callback],
         )
 
-        trainer.train()
+        trainer_output = trainer.train()
         results = trainer.evaluate()
 
         # Save soft labels for distillation
         predict_examples = raw_datasets["test"]
         predictions = trainer.predict(train_ds, predict_examples)
         if trainer.is_world_process_zero():
+            patch_results(results, args, get_train_metrics(trainer_output, model, callback), 'fft')
             torch.save(predictions.predictions, teacher_fft_dir / 'teacher_soft_labels.pth')
             with open(metrics_file, 'w', encoding='utf-8') as f:
                 json.dump(results, f, indent=4, ensure_ascii=False)
@@ -312,9 +313,10 @@ class QADistillPipeline:
         )
         trainer.teacher_logits = teacher_logits
 
-        trainer.train()
+        trainer_output=trainer.train()
         results = trainer.evaluate()
         if trainer.is_world_process_zero():
+            patch_results(results, self.args, get_train_metrics(trainer_output, model, callback), 'kd-lora')
             with open(metrics_file, 'w', encoding='utf-8') as f:
                 json.dump(results, f, indent=4, ensure_ascii=False)
             shutil.rmtree(ckpt_dir)
@@ -359,9 +361,10 @@ class QADistillPipeline:
             compute_metrics=self.compute_metrics,
             callbacks=[callback],
         )
-        trainer.train()
+        trainer_output=trainer.train()
         results = trainer.evaluate()
         if trainer.is_world_process_zero():
+            patch_results(results, self.args, get_train_metrics(trainer_output, model, callback), 'lora')
             with open(metrics_file, 'w', encoding='utf-8') as f:
                 json.dump(results, f, indent=4, ensure_ascii=False)
             shutil.rmtree(ckpt_dir)

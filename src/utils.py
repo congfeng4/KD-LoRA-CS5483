@@ -257,6 +257,10 @@ def add_model_name_to_config(model_family, config: dict):
     config['model_family'] = model_family
 
 
+def patch_results(results, args, train, variant):
+    results.update(args=args, train=train, variant=variant)
+
+
 def get_train_metrics(trainer_output, model, callback: MemoryTrackingCallback):
     trainable_params_count = get_trainable_param_count(model)
     train_time = trainer_output.metrics['train_runtime']
