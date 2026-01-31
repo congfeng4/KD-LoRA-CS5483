@@ -375,7 +375,7 @@ def get_tokenized_dataset(task, tokenizer_name, with_indices=False, dataset_path
     args = type('Args', (), {'task': task})()
     tokenize_fn = tokenize_function(args, tokenizer, with_indices=with_indices)
     # Apply tokenization
-    tokenized = raw_dataset.map(tokenize_fn, batched=True, keep_in_memory=True, with_indices=with_indices)
+    tokenized = raw_dataset.map(tokenize_fn, batched=True, keep_in_memory=True, with_indices=with_indices, num_proc=4)
     return tokenized
 
 import torch

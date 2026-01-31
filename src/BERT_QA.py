@@ -298,20 +298,22 @@ def train_question_answering(args, raw_datasets, model, tokenizer, training_args
     )
     if teacher_soft_labels is not None:
         trainer.teacher_soft_labels = teacher_soft_labels
-            
+    
+    print('Training')
     train_result = trainer.train()
-    trainer = trainer_cls(
-        model=model,
-        args=training_args,
-        train_dataset=None,
-        eval_dataset=eval_dataset,
-        eval_examples=eval_examples,
-        processing_class=tokenizer,
-        data_collator=data_collator,
-        post_process_function=post_processing_function,
-        compute_metrics=compute_metrics,
-        callbacks=[callback],
-    )
+    # trainer = trainer_cls(
+    #     model=model,
+    #     args=training_args,
+    #     train_dataset=None,
+    #     eval_dataset=eval_dataset,
+    #     eval_examples=eval_examples,
+    #     processing_class=tokenizer,
+    #     data_collator=data_collator,
+    #     post_process_function=post_processing_function,
+    #     compute_metrics=compute_metrics,
+    #     callbacks=[callback],
+    # )
+    print('Evaluate')
     metrics = trainer.evaluate()
 
     # Evaluation
@@ -319,6 +321,7 @@ def train_question_answering(args, raw_datasets, model, tokenizer, training_args
     patch_results(metrics, args, train_result, variant)
 
     if returns_predictions:
+        print('Preidcting')
         predictions = trainer.predict(train_dataset, raw_datasets['train']).predictions
         return metrics, trainer, predictions
 
@@ -344,6 +347,7 @@ class QADistillPipeline:
             num_train_epochs=self.args.num_train_epochs,
             weight_decay=self.args.weight_decay,
             load_best_model_at_end=True,
+            metric_for_best_model='eval_f1',
             # remove_unused_columns=False  # Important for distillation 'idx'
         )
 
