@@ -114,14 +114,21 @@ Another line of research, knowledge distillation (KD), mitigates the efficient d
 \cite{sanh2019distilbert} distilled BERT into DistilBERT, reducing the size of the model by 40\% and retaining 97\% of GLUE (\cite{wang2018glue}) performance.
 While traditional KD methods requires fully fine-tuning parameters of the student, KD-LoRA (\cite{pmlr-v262-kdlora}) takes a hybird approach that freezes the student weights and training LoRA adapters to approximate the teacher's outputs.
 Combing the benefits from both worlds, it achieves performance comparable to fully finetuning and LoRA, while significantly reduced the resource usages.
-However, the same expressiveness constrains of LoRA arise in the KD scenario, as the single rank matrix in each layer is often too coarse to account for the capacity discrepancies between teacher and student. 
+However, the same expressiveness constraint of LoRA remains in the KD scenario, as the single rank matrix in each layer is often too coarse to account for the capacity discrepancies between teacher and student. 
 
-We therefore ask: can we enrich the adapter's hypothesis space without sacrificing parameter efficiency? Our answer draws on classical matrix theory. The singular value decomposition (SVD) states that any matrix $A$ can be written as $A = U\Sigma V^T = \sum_i \sigma_i u_i v_i^T$, a weighted sum of rank-one matrices, where $\sigma_1 \geq \sigma_2 \geq \ldots \geq 0$ are singular values and $u_i,v_i$ are left and right singular vectors. This series form elegantly decomposes complex structure into simpler components, with dominant directions captured by early terms and fine details by later ones. However, using individual rank-one matrices is computationally wasteful: each requires separate optimization and storage. Instead, we propose grouping singular values into exponentially decaying rank blocks, each containing multiple singular vectors. This yields a series of matrices with rapidly decreasing ranks, more parameter-efficient than pure rank-one expansion while preserving the hierarchical approximation property.
+We propose \textbf{M}ulti-\textbf{R}ank \textbf{LoRA}, a LoRA variant that allocates trainable parameter budgets as a series of exponentially decaying rank matrices per linear layer. 
+Drawing on singular value decomposition (SVD), any matrix $A$ can be decomposed as $A = U\Sigma V^T = \sum_i \sigma_i u_i v_i^T$, a weighted sum of rank-one matrices, with singular values $\sigma_i$ as coefficients and orthogonal matrices $u_i v_i^T$ as bases.
+This series form elegantly decomposes complex structure into simpler components, with dominant directions captured by early terms and fine details by later ones.
+To avoid explicitly performing SVD,
+we draw on the exponential approximation idea of Taylor's series and transform the SVD form by grouping adjacent terms into exponentially decaying rank blocks.
+This yields a series of matrices with rapidly decreasing ranks, rendering the parameter count bounded while preserving the multi-rank flexibility.
 
-We evaluate MR-LoRA following standard knowledge distillation protocols, using the GLUE benchmark with three encoder-only language models: BERT (\cite{devlin-etal-2019-bert}), RoBERTa (\cite{liu2019roberta}), and DeBERTaV3 (\cite{he2021debertav3}). For each teacher model, we select student models from the same family (e.g., BERT-base as teacher with BERT-small as student). All experiments are conducted on NVIDIA A800 GPUs. We compare MR-LoRA with full fine-tuning (FFT) of the teacher model, and report baseline results for standard LoRA adaptation of the teacher and KD-LoRA (LoRA applied to the frozen student with knowledge distillation). We also benchmark against recent LoRA variants including AdaLoRA, OLoRA, DoRA, and RS-LoRA.
-
+We evaluate MR-LoRA on the GLUE benchmark with three encoder-only language models: BERT (\cite{devlin-etal-2019-bert}), RoBERTa (\cite{liu2019roberta}), and DeBERTa-V3 (\cite{he2021debertav3}). 
+We experiment with both LoRA finetuning and KD-LoRA-style distillation.
+For each teacher model, we select student models from the same family (e.g., BERT-base as teacher with BERT-small as student). All experiments are conducted on four NVIDIA GeForce RTX 4090 GPUs. 
+We also benchmark against recent LoRA variants including AdaLoRA, OLoRA, DoRA, and RS-LoRA.
 Our experimental results demonstrate the effectiveness of the multi-rank decomposition strategy:
-\begin{itemize}
+\begin{itemize}%TODO
     \item In teacher fine-tuning, MR-LoRA retains 95.8--98.7\% of the teacher’s full fine-tuning performance across BERT, RoBERTa, and DeBERTa, demonstrating that multi-rank decomposition enhances adapter expressiveness even without distillation.
     \item In student distillation, MR-LoRA retains 91.4--94.1\% of the teacher’s performance while adding only 0.13\% extra trainable parameters relative to the base model.
     \item Compared to full fine-tuning, MR-LoRA reduces trainable parameters by 99.4\%, memory footprint by ~82\% (student distillation), and accelerates inference by 3.3$\times$ (teacher) to 4.0$\times$ (student).
