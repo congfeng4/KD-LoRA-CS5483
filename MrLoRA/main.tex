@@ -88,59 +88,48 @@ Hong Kong\\
 \maketitle
 
 \begin{abstract}
-Large language models (LLMs) achieve strong performance in natural language processsing tasks but are prohibitively large for specialization and deployment. 
-Low-rank Adaptation (LoRA) freezes the weights of LLMs and injects trainable low-rank decomposed weights for parameter-efficient finetuning. Despite the high efficiency, a single rank of weights lacks the flexibly to capture task-specific nuances or student-teacher discrepancy.
-We propose \textbf{M}ulti-\textbf{R}ank \textbf{LoRA} (\textbf{MR-LoRA}), a LoRA enhancement that incorperates the sum of exponentially decaying multiple ranks of weights with learnable coefficients.
-Drawing inspiration from Singluar Value Decomposition and Taylor's series, the rapidly shrinking weights offer fine-grained complexity within bounded parameter budgets, while
-the learnable coefficients automatically adjust importance across ranks.
-Experiments on GLUE benchmark show MR-LoRA retains 92\% of the teacher’s full fine-tuning performance, using only 0.13\% additional trainable parameters relative to the base model, and achieves the highest performance in the knowledge distillation setting compared with four recent LoRA variants.
-Analysis confirms higher ranks capture coarse corrections early, while smaller ranks refine subtle mismatches. Our code will be released soon.
+Large language models (LLMs) achieve strong performance in natural language
+processing tasks, but are prohibitively large for specialization and deployment.
+Low-rank Adaptation (LoRA) freezes the weights of LLMs and injects trainable
+low-rank decomposed weights for parameter-efficient finetuning. Despite the
+high efficiency, a single rank of weights lacks the flexibility to capture task-specific
+nuances or student-teacher discrepancy. We propose \textbf{M}ulti-\textbf{R}ank \textbf{LoRA} (\textbf{MR-LoRA}), a LoRA enhancement that incorporates the sum of exponentially decaying
+multiple ranks of weights with learnable coefficients. Drawing inspiration from
+Singular Value Decomposition and Taylor’s series, the rapidly shrinking weights
+offer fine-grained complexity within bounded parameter budgets, while the learn-
+able coefficients automatically adjust importance across ranks. Experiments on
+the GLUE benchmark show that MR-LoRA retains 92\% of the teacher’s full fine-tuning
+performance, using only 0.13% additional trainable parameters relative to the base
+model, and achieves the highest performance in the knowledge distillation setting
+compared with four recent LoRA variants. Analysis confirms higher ranks capture
+coarse corrections early, while smaller ranks refine subtle mismatches. Our code
+will be released soon.
 \end{abstract}
 
 \section{Introduction}
 Scaling language models to billions of parameters has unleashed emergent capabilities in programming, mathematical reasoning, and multi-step problem solving. GPT-4 (\cite{openai2023gpt4}) and Gemini-Ultra (\cite{team2023gemini}) demonstrate expert-level performance on competitive programming benchmarks and graduate-level science exams, while smaller models like Llama-3-70B (\cite{llama31herdofmodels}) achieve strong results on tool use and long-context reasoning. However, the growth of model parameters brings prohibitive memory footprints, latency, and energy costs, making deployment on edge devices or task-specific specialization difficult.
 
-Parameter-efficient fine-tuning (PEFT) has been proposed as an efficient alternative to fully finetuning (FFT) for specializing LLMs on downstream tasks. Instead of updating all parameters, PEFT methods inject small trainable modules while freezing the pretrained backbone.
-\cite{houlsby2019parameter} proposes adapter layers with bottleneck architectures, achieving near full fine-tuning performance on natural language understanding tasks. Prefix-tuning (\cite{li-liang-2021-prefix}) prepends learnable tokens to keys and values, reducing trainable parameters to 0.1\% of original models. 
-LoRA (\cite{hu2022lora}) enables task adaptation with less than 0.01\% trainable parameters and no inference latency by adding decomposed low-rank matrices to linear layers.
-The successes of LoRA have motivated several following-up enhancements.
-AdaLoRA (\cite{zhang2023adalora}) dynamically allocates parameter budgets across layers according to the importance scores of the weights.
-RS-LoRA (\cite{kalajdzievski2023rslora}) introduces a rank stabilization scaling factor to address slow learning and performance bottleneck with higher ranks.
-OLoRA (\cite{buyukaz2024olora}) improves the LLMs training convergence with othonormal initialization of low-rank matrices.
-DoRA (\cite{liu2024dora}) decomposes pretrained weights into magnitude and direction components and applied LoRA to the direction component to minic the learning strategy of FFT, enhancing learning capacity without extra parameters.
-These LoRA variants have improved training stability, learning capacity, and convergence speed of LoRA. However, the fundamental expressiveness bottleneck of a single rank decomposition has not been addressed.
+Parameter-efficient fine-tuning (PEFT) has been proposed as an efficient alternative to fully finetuning (FFT) for specializing LLMs on downstream tasks. Instead of updating all parameters, PEFT methods inject small trainable modules while freezing the pretrained backbone. \cite{houlsby2019parameter} proposes adapter layers with bottleneck architectures, achieving near full fine-tuning performance on natural language understanding tasks. Prefix-tuning (\cite{li-liang-2021-prefix}) prepends learnable tokens to keys and values, reducing trainable parameters to 0.1\% of original models. LoRA (\cite{hu2022lora}) enables task adaptation with less than 0.01\% trainable parameters and no inference latency by adding decomposed low-rank matrices to linear layers. The successes of LoRA have motivated several follow-up enhancements. AdaLoRA (\cite{zhang2023adalora}) dynamically allocates parameter budgets across layers according to the importance scores of the weights. RS-LoRA (\cite{kalajdzievski2023rslora}) introduces a rank stabilization scaling factor to address slow learning and performance bottleneck with higher ranks. OLoRA (\cite{buyukaz2024olora}) improves the LLMs training convergence with orthogonal initialization of low-rank matrices. DoRA (\cite{liu2024dora}) decomposes pretrained weights into magnitude and direction components and applied LoRA to the direction component to minic the learning strategy of FFT, enhancing learning capacity without extra parameters. These LoRA variants have improved training stability, learning capacity, and convergence speed of LoRA. However, the fundamental expressiveness bottleneck of a single rank decomposition has not been addressed.
 
-Another line of research, knowledge distillation (KD), facilitates the efficient deployment of LLMs by transferring the teacher's predictive distribution to a much smaller student. \cite{hinton2015distilling} first showed that learning from soft targets improves generalization, retaining most of the accuracy while reducing parameters by orders of magnitude. Subsequent work has extended this to intermediate layer representations. 
-\cite{sanh2019distilbert} distilled BERT into DistilBERT, reducing the size of the model by 40\% and retaining 97\% of GLUE (\cite{wang2018glue}) performance.
-While traditional KD methods requires fully fine-tuning parameters of the student, KD-LoRA (\cite{pmlr-v262-kdlora}) takes a hybird approach that freezes the student's weights and training LoRA adapters to approximate the teacher's outputs.
-Combing benefits from both worlds, it achieves performance comparable to fully finetuning and LoRA, while significantly reduces the resource usages.
-However, the same expressiveness constraint of LoRA remains in the KD scenario, as the single rank matrix in each layer is often too coarse to address the knowledge discrepancies between teacher and student. 
+Another line of research, knowledge distillation (KD), facilitates the efficient deployment of LLMs by transferring the teacher's predictive distribution to a much smaller student. \cite{hinton2015distilling} first showed that learning from soft targets improves generalization, retaining most of the accuracy while reducing parameters by orders of magnitude. Subsequent work has extended this to intermediate layer representations. \cite{sanh2019distilbert} distilled BERT into DistilBERT, reducing the size of the model by 40\% and retaining 97\% of GLUE (\cite{wang2018glue}) performance. While traditional KD methods requires fully fine-tuning parameters of the student, KD-LoRA (\cite{pmlr-v262-kdlora}) takes a hybird approach that freezes the student's weights and training LoRA adapters to approximate the teacher's outputs. Combing benefits from both worlds, it achieves performance comparable to fully finetuning and LoRA, while significantly reducing the resource usage. However, the same expressiveness constraint of LoRA remains in the KD scenario, as the single rank matrix in each layer is often too coarse to address the knowledge discrepancies between teacher and student. 
 
-Our motivation is to explore a new hypothesis space for low-rank adapters with enhanced expressivenes and bounded parameter budgets.
-We propose \textbf{M}ulti-\textbf{R}ank \textbf{LoRA}, a LoRA variant that allocates trainable parameters as a series of exponentially decaying rank matrices per linear layer. 
-Based on singular value decomposition (SVD), any matrix $A$ can be decomposed as $A = U\Sigma V^T = \sum_i \sigma_i u_i v_i^T$, a weighted sum of rank-one matrices, with singular values $\sigma_i$ as coefficients and orthogonal matrices $u_i v_i^T$ as bases.
-This series elegantly decomposes complex structure into simpler components, with dominant directions captured by larger singular values and fine details by smaller ones.
-To avoid rank collapse and explicit orthonormalization,
-we draw on the exponential function approximation of Taylor's series and transform the SVD form into a group of exponentially decaying rank matrices.
-This yields a series of matrices with rapidly decreasing ranks, rendering bounded parameter count while preserving multi-rank flexibility. 
-An schematic illustration of our idea is shown in Fig.~\ref{fig:schematic}.
+Our motivation is to explore a new hypothesis space for low-rank adapters with enhanced expressiveness and bounded parameter budgets. We propose \textbf{M}ulti-\textbf{R}ank \textbf{LoRA}, a LoRA variant that allocates trainable parameters as a series of exponentially decaying rank matrices per linear layer. Based on singular value decomposition (SVD), any matrix $A$ can be decomposed as $A = U\Sigma V^T = \sum_i \sigma_i u_i v_i^T$, a weighted sum of rank-one matrices, with singular values $\sigma_i$ as coefficients and orthogonal matrices $u_i v_i^T$ as bases. This series elegantly decomposes complex structure into simpler components, with dominant directions captured by larger singular values and fine details by smaller ones. To avoid rank collapse and explicit orthonormalization, We draw on the exponential function approximation of Taylor's series and transform the SVD form into a group of exponentially decaying rank matrices. This yields a series of matrices with rapidly decreasing ranks, rendering a bounded parameter count while preserving multi-rank flexibility. A schematic illustration of our idea is shown in Fig.~\ref{fig:schematic}.
 
-We evaluate MR-LoRA on the GLUE benchmark with three encoder-only language models: BERT (\cite{devlin-etal-2019-bert}), RoBERTa (\cite{liu2019roberta}), and DeBERTa-V3 (\cite{he2021debertav3}). 
-We experiment with both LoRA finetuning and KD-LoRA-style distillation.
-For each teacher model, we select a student model from the same family (e.g., BERT-base as teacher with BERT-small as student).
-We also benchmark against recent LoRA variants including AdaLoRA, OLoRA, DoRA, and RS-LoRA.
-All experiments are conducted on four NVIDIA GeForce RTX 4090 GPUs. 
-Our experimental results demonstrate the effectiveness of the multi-rank low-rank adaptation:
+We evaluate MR-LoRA on the GLUE benchmark with three encoder-only language models: BERT (\cite{devlin-etal-2019-bert}), RoBERTa (\cite{liu2019roberta}), and DeBERTa-V3 (\cite{he2021debertav3}). We experiment with both LoRA finetuning and KD-LoRA-style distillation. For each teacher model, we select a student model from the same family (e.g., BERT-base as teacher with BERT-small as student). We also benchmark against recent LoRA variants, including AdaLoRA, OLoRA, DoRA, and RS-LoRA. All experiments are conducted on four NVIDIA GeForce RTX 4090 GPUs. Our experimental results demonstrate the effectiveness of the multi-rank low-rank adaptation:
 \begin{itemize}%TODO
+
     \item In teacher fine-tuning, MR-LoRA retains 95.8--98.7\% of the teacher’s full fine-tuning performance across BERT, RoBERTa, and DeBERTa, demonstrating that multi-rank decomposition enhances adapter expressiveness even without distillation.
+
     \item In student distillation, MR-LoRA retains 91.4--94.1\% of the teacher’s performance while adding only 0.13\% extra trainable parameters relative to the base model.
-    \item Compared to full fine-tuning, MR-LoRA reduces trainable parameters by 99.4\%, memory footprint by ~82\% (student distillation), and accelerates inference by 3.3$\times$ (teacher) to 4.0$\times$ (student).
+
+    \item Compared to full fine-tuning, MR-LoRA reduces trainable parameters by 99.4\%, memory footprint by nearly 82\% (student distillation), and accelerates inference by 3.3$\times$ (teacher) to 4.0$\times$ (student).
+
 \end{itemize}
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.6\textwidth]{figures/mrlora.pdf}
-\caption{The structure of a single MR-LoRA adapter coupled with a linear layer. The adapter consists of $(1+\log_2 R)$ low-rank blocks with exponentially decreasing ranks $R, R/2, R/4, \dots, 1$, where $R$ is the highest rank. Each block contains a pair of matrices $B_i, A_i$. The rank of $B_i A_i$ is $R/2^{k-1}$. The output of each block are summed after being scaled by learnable weights $\lambda_i$.
+\caption{The structure of a single MR-LoRA adapter coupled with a linear layer. The adapter consists of $(1+\log_2 R)$ low-rank blocks with exponentially decreasing ranks $R, R/2, R/4, \dots, 1$, where $R$ is the highest rank. Each block contains a pair of matrices $B_i, A_i$. The rank of $B_i A_i$ is $R/2^{k-1}$. The output of each block is summed after being scaled by learnable weights $\lambda_i$.
 }
 \label{fig:schematic}
 \end{figure}
@@ -177,15 +166,16 @@ With SVD, $\Delta W \in \mathbb{R}^{d \times k}$ can be written as:
 \end{align}
 
 where $\sigma_1 \geq \sigma_2 \geq \cdots > 0$ are non-zero singular values of $\Delta W $, $r = rank(\Delta W )$, and $u_i, v_i$ are left and right singular vectors.
-While Eq.~\ref{eq:svd} is exact, directly allocating a LoRA module to each $\sigma_i u_i v_i^\top$ term without the orthonormal constraint will likely lead to $\Delta W$ collapse to rank one in the worse case. This would result in a waste of budgets of $(r-1)(d+k)$ parameters since only one rank is retained.
+While Eq.~\ref{eq:svd} is exact, directly allocating a LoRA module to each $\sigma_i u_i v_i^\top$ term without the orthonormal constraint will likely lead to $\Delta W$ collapsing to rank one in the worst case. This would result in a waste of budgets of $(r-1)(d+k)$ parameters since only one rank is retained.
 To prevent the rank collapse, all the terms $\sigma_i u_i v_i^\top$ should be othonormalized, but that would require excessive computation.
 
-The Taylor's series can approximate a complicated function at point $a$ to any desirable precision by graduately adding more complicated terms $\frac{f^{(n)}(a)}{n!} (x-a)^n$ as needed. Inspired by this idea, we rewrite Eq.~\ref{eq:svd} by grouping the terms into blocks of exponentially decay ranks.
+A Taylor series can approximate a complicated function at a point $a$ to any desirable precision by gradually adding more complicated terms $f^{(n)}(a) (x-a)^n / n!$ as needed. Inspired by this idea, we rewrite Eq.~\ref{eq:svd} by grouping the terms into blocks of exponentially decaying ranks.
+
 \begin{align}
 \Delta W = \sum_{i=1}^{\log_2 (r+1)} \sum_{j \in \mathcal{I}_i} \sigma_j u_j v_j^\top
 \end{align}
 
-where $\mathcal{I}_i$ denotes the set of singular value indices belonging to block $i$, with $|\mathcal{I}_i| = r_i$ following the exponential decay schedule $r_i = r/2^{i-1}$. This grouping transforms the rank-1 combination of Eq.~\ref{eq:svd} into an exponentially decaying rank combination. Each block can be approximated by a low-rank matrix
+where $\mathcal{I}_i$ denotes the set of singular value indices belonging to block $i$, with $|\mathcal{I}_i| = r_i$ following the exponential decay schedule $r_i = R/2^{i-1}$. This grouping transforms the rank-1 combination of Eq.~\ref{eq:svd} into an exponentially decaying rank combination. Each block can be approximated by a low-rank matrix
 \begin{align}
   B_i A_i = \sum_{j \in \mathcal{I}_i} \sigma_j u_j v_j^\top
 \end{align}
@@ -195,7 +185,19 @@ where $B_i \in \mathbb{R}^{d \times r_i}$ aggregates the left singular vectors $
 \Delta W = \sum_{i=1}^{\log_2 (r+1)} \frac{\lambda_i \alpha_i}{r_i} \cdot B_i A_i \label{eq:mrlora}
 \end{align}
 
-where $\lambda_i \in \mathbb{R}$ are learnable scalar weights, $r_i$ is the rank of block $i$, $\alpha_i$ is a constant in $r_i$ as in \cite{liu2019roberta}, $r$ is the total rank and $R$ is highest rank. $R$ is alwasy a power of two. %, leading to a simple relation between the total rank $r$ and the highest rank $R$: $r = 2R - 1$.
+where $\lambda_i \in \mathbb{R}$ are learnable scalar weights, $r_i$ is the rank of block $i$, $\alpha_i$ is a constant in $r_i$ as in \cite{liu2019roberta}, $r$ is the total rank and $R$ is highest rank. $R$ is always a power of two.
+We note the Eq.~\ref{eq:mrlora} cannot prevent rank collapsing mathematically as in Eq.~\ref{eq:svd}. However, we find that in practice, the rank collapse is moderate and does not affect model's performance after finetuning.
+%TODO: can't prevent rank collapse from math even in the exponent decaying form!! 
+%TODO: Need to add comparison with eq-svd form!!
+% Eq.~\ref{eq:mrlora} is robust to rank collapsing without an explicit orthonormalization penalty.
+% From the lower bound of the rank of summation of $k$ matrices, we have
+% \begin{align}
+% {rank}\left(\sum_{i=1}^k B_i A_i\right) &\geq \max_{j} {rank}(B_j A_j) - \sum_{i \neq j} {rank}(B_i A_i) \\
+%  &= 2\cdot\max_j {rank}(B_j A_j) - \sum_{i=1}^k {rank}(B_i A_i) \\
+%  &= 2 R - r = 
+% \end{align}
+
+\textbf{Parameter Count.}
 For each block with rank $r_i$, the corresponding LoRA module incurs $r_i (d + k)$ parameters. Therefore, Eq.~\ref{eq:mrlora} incurs a parameter overhead of $\sum_i r_i (d+k) = r(d+k)$, which is the same as the original LoRA formulation. We note that MR-LoRA does not introduce extra parameters given fixed total budgets, but uses a more structural allocation scheme. In practice, we set $R = \lfloor (r+1) / 2 \rfloor$ given the total rank $r$.
 
 
