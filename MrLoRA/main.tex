@@ -38,7 +38,7 @@
 \usepackage{algorithm}
 \usepackage{algorithmic}
 
-\title{MR-LoRA: Multi-Rank Low Rank Adaptation for Efficient Knowledge Distillation of Large Language Models}
+\title{MR-LoRA: Exponentially Decaying Multi-Rank Low Rank of Large Language Models}
 
 % The \author macro works with any number of authors. There are two commands
 % used to separate the names and addresses of multiple authors: \And and \AND.
@@ -87,10 +87,17 @@ Hong Kong\\
 
 \maketitle
 
-
 \begin{abstract}
-Large language models achieve strong performance but are prohibitively large for deployment. Knowledge distillation transfers knowledge to smaller students, yet full fine-tuning is costly. KD-LoRA addresses this by freezing the student and training low-rank adapters, but its single low-rank matrix limits expressiveness. We propose Multi-Rank LoRA (MR-LoRA), which replaces each adapter with a weighted sum of exponentially decaying rank matrices. The learned weights flexibly allocate importance across ranks, enriching capacity without increasing parameters substantially. MR-LoRA better approximates the teacher-student performance gap while remaining efficient. Experiments on GLUE show MR-LoRA retains 92\% of the teacher’s full fine-tuning performance, using only 0.13\% additional trainable parameters relative to the base model. Analysis confirms higher ranks capture coarse corrections early, while smaller ranks refine subtle mismatches.
+Large language models (LLMs) achieve strong performance in Natural Language Processsing tasks but are prohibitively large for specialization and deployment. 
+Low-rank Adaptation (LoRA) freezes the weights of LLMs and injects trainable low-rank decomposed weights for parameter-efficient finetuning. Despite the high efficiency, a single rank of weights lacks the flexibly to capture task-specific nuances or student-teacher discrepancy.
+We propose \textbf{MR-LoRA}, a LoRA enhancement that incorperates the sum of exponentially decaying 
+\textbf{multiple ranks} of weights with learnable coefficients.
+Drawing inspiration from the Taylor's series and Singluar Value Decomposition, the swiftly shrinking weights capture fine-grained details with limited parameter budgets, while
+the learnable coefficients automatically allocate importance across ranks.
+Experiments on GLUE benchmark show MR-LoRA retains 92\% of the teacher’s full fine-tuning performance, using only 0.13\% additional trainable parameters relative to the base model, and achieves the highest performance in knowledge distillation compared with four recent LoRA variants.
+Analysis confirms higher ranks capture coarse corrections early, while smaller ranks refine subtle mismatches.
 \end{abstract}
+
 
 \section{Introduction}
 Scaling language models to tens or hundreds of billions of parameters has unlocked remarkable capabilities in coding, mathematical reasoning, and multi-step problem solving. GPT-4 (\citep{openai2023gpt4}) and Gemini-Ultra (\cite{team2023gemini}) demonstrate expert-level performance on competitive programming benchmarks and graduate-level science exams, while smaller models like Llama-3-70B (\cite{llama31herdofmodels}) achieve strong results on tool use and long-context reasoning. Yet the same growth brings prohibitive memory footprints, latency, and energy costs, making deployment on edge devices or high-throughput services impractical. Knowledge distillation offers an appealing remedy: by transferring the teacher's predictive distribution to a much smaller student, one can retain most of the accuracy while shrinking parameters by orders of magnitude. \cite{hinton2015distilling} first showed that matching soft targets improves generalization, and subsequent work has extended this to intermediate layer representations. \cite{sanh2019distilbert} distilled BERT into TinyBERT with only 4M parameters, retaining 96\% of GLUE (\citep{wang2018glue}) performance. More recently, \cite{gu2023knowledge} demonstrated that task-specific distillation from T5-XXL to T5-Small can match the teacher on closed-book QA with 60x fewer parameters. These successes motivate our focus on distillation as the primary mechanism for efficient deployment.
