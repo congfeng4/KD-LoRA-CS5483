@@ -140,7 +140,7 @@ Our experimental results demonstrate the effectiveness of the multi-rank low-ran
 \begin{figure}[ht]
 \centering
 \includegraphics[width=0.6\textwidth]{figures/mrlora.pdf}
-\caption{The structure of a single MR-LoRA adapter coupled with a linear layer. The adapter consists of $(1+\log_2 R)$ low-rank blocks with exponentially decreasing ranks $R, R/2, R/4, \dots, 1$, where $R$ is the highest rank. Each block contains a pair of matrices $B_{r_i}, A_{r_i}$, where $r_i$ is the rank of $i$th block. The output of each block are summed after being scaled by learnable weights $\lambda_i$.
+\caption{The structure of a single MR-LoRA adapter coupled with a linear layer. The adapter consists of $(1+\log_2 R)$ low-rank blocks with exponentially decreasing ranks $R, R/2, R/4, \dots, 1$, where $R$ is the highest rank. Each block contains a pair of matrices $B_i, A_i$. The rank of $B_i A_i$ is $R/2^{k-1}$. The output of each block are summed after being scaled by learnable weights $\lambda_i$.
 }
 \label{fig:schematic}
 \end{figure}
@@ -170,41 +170,33 @@ During fine-tuning, $W_0$ and $b$ remain frozen while $A$ and $B$ are updated.
 where $z^\mathcal{T}, z^\mathcal{S}$ are teacher and student logits, $\mathcal{L}_{\text{KD}}$ is typically KL divergence, $x,y$ are input features and labels, $\mathcal{L}_{\text{task}}$ is a task-specific loss, and $\alpha$ balances the two objectives.
 
 \textbf{Multi-Rank LoRA.} 
-With Singular Value Decomposition, any matrix $A \in \mathbb{R}^{d \times k}$ can be written as:
+With SVD, $\Delta W \in \mathbb{R}^{d \times k}$ can be written as:
 
 \begin{align}
-A = \sum_{i=1}^{r} \sigma_i u_i v_i^\top \label{eq:svd}
+\Delta W = \sum_{i=1}^{r} \sigma_i u_i v_i^\top \label{eq:svd}
 \end{align}
 
-where $\sigma_1 \geq \sigma_2 \geq \cdots > 0$ are non-zero singular values of $A$, $r = rank(A)$, and $u_i, v_i$ are left and right singular vectors. While Eq.~\ref{eq:svd} is exact, allocating a separate LoRA module to each term would not be wise. Sicne the importance of singular values decays exponentially, the first few terms of Eq.~\ref{eq:svd} will approximate $A$ quite well.
-If we allocate the rank budget $R$ uniformly as $R$ rank-1 LoRA modules, the model would have to figure out the exponentially decay of importance in the coefficients, since all $R$ rank-1 matrices are equally \textit{complex} in term of rank. However, not all terms are equally \textit{important} and 
+where $\sigma_1 \geq \sigma_2 \geq \cdots > 0$ are non-zero singular values of $\Delta W $, $r = rank(\Delta W )$, and $u_i, v_i$ are left and right singular vectors.
+While Eq.~\ref{eq:svd} is exact, directly allocating a LoRA module to each $\sigma_i u_i v_i^\top$ term without the orthonormal constraint will likely lead to $\Delta W$ collapse to rank one in the worse case. This would result in a waste of budgets of $(r-1)(d+k)$ parameters since only one rank is retained.
+To prevent the rank collapse, all the terms $\sigma_i u_i v_i^\top$ should be othonormalized, but that would require excessive computation.
 
-A Taylor's series approximates a complicated function by graduately adding exponentially more complicated terms
+The Taylor's series can approximate a complicated function at point $a$ to any desirable precision by graduately adding more complicated terms $\frac{f^{(n)}(a)}{n!} (x-a)^n$ as needed. Inspired by this idea, we rewrite Eq.~\ref{eq:svd} by grouping the terms into blocks of exponentially decay ranks.
 \begin{align}
-f(x) = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (x-a)^n \label{eq:taylor}
+\Delta W = \sum_{i=1}^{\log_2 (r+1)} \sum_{j \in \mathcal{I}_i} \sigma_j u_j v_j^\top
 \end{align}
 
-where the complexity of a term is encoded into the basis function $(x-a)^n / {n!}$.
-Inpired by Eq.~\ref{eq:taylor}, we propose encoding the complexity of a term a prior as the rank of its basis matrix, with learnable coefficients to adjust the importance of a term.
-
-Grouping them into blocks yields a more parameter-efficient approximation.
-Specifically, we partition the rank-$R$ decomposition into $K$ blocks with exponentially decaying ranks $\{R, R/2, R/4, \ldots, R/2^{K-1}\}$, where each block $k$ contains matrices $B_k \in \mathbb{R}^{d \times r_k}$ and $A_k \in \mathbb{R}^{r_k \times k}$ with $r_k = R/2^{k-1}$.
-
-Starting from the SVD decomposition (Eq.~\ref{eq:svd}), we note that each term $\sigma_i u_i v_i^\top$ is a rank-1 matrix. By associativity of addition, we can group terms into blocks of varying ranks:
+where $\mathcal{I}_i$ denotes the set of singular value indices belonging to block $i$, with $|\mathcal{I}_i| = r_i$ following the exponential decay schedule $r_i = r/2^{i-1}$. This grouping transforms the rank-1 combination of Eq.~\ref{eq:svd} into an exponentially decaying rank combination. Each block can be approximated by a low-rank matrix
 \begin{align}
-M = \sum_{k=1}^{K} \sum_{i \in \mathcal{I}_k} \sigma_i u_i v_i^\top,
+  B_i A_i = \sum_{j \in \mathcal{I}_i} \sigma_j u_j v_j^\top
 \end{align}
-where $\mathcal{I}_k$ denotes the set of singular value indices belonging to block $k$, with $|\mathcal{I}_k| = r_k$ following the exponential decay schedule $r_k = R/2^{k-1}$. This grouping transforms the rank-1 combination into an exponential-decaying rank combination. Each block can be approximated by a low-rank matrix $B_k A_k$, where $B_k \in \mathbb{R}^{d \times r_k}$ aggregates the left singular vectors $u_i$ and $A_k \in \mathbb{R}^{r_k \times k}$ aggregates the right singular vectors $v_i^\top$ weighted by $\sigma_i$. To allow flexible capacity allocation across blocks, we introduce learnable scalar weights $\lambda_k$, leading to the multi-rank adapter form:
+where $B_i \in \mathbb{R}^{d \times r_i}$ aggregates the left singular vectors $u_i$ and $A_i \in \mathbb{R}^{r_i \times k}$ aggregates the right singular vectors $v_i^\top$ weighted by $\sigma_i$. To allow flexible capacity adjustable across blocks, we introduce learnable scalar weights $\lambda_i$, leading to the multi-rank adapter form:
 
 \begin{align}
-\Delta W = \sum_{k=1}^{K} \lambda_k \cdot B_k A_k
+\Delta W = \sum_{i=1}^{\log_2 (r+1)} \frac{\lambda_i \alpha_i}{r_i} \cdot B_i A_i \label{eq:mrlora}
 \end{align}
 
-where $\lambda_k \in \mathbb{R}$ are learnable scalar weights initialized to favor higher ranks. The total parameter count is $\sum_{k=1}^{K} 2r_k(d+k) + K \approx 4R(d+k) + K$, compared to $2R(d+k)$ for standard LoRA with rank $R$—a modest 50\% increase that yields substantially richer expressiveness. This is far more efficient than $2R(d+k)$ parameters for $R$ separate rank-1 LoRAs, which would scale linearly with the number of components.
-
-The exponential decay schedule is motivated by empirical observations in adaptive LoRA methods (\cite{zhang2023adalora}): higher ranks dominate early training for coarse approximation, while smaller ranks refine fine-grained discrepancies. The learnable weights $\lambda_k$ allow the model to dynamically allocate capacity across scales without manual tuning.
-
-
+where $\lambda_i \in \mathbb{R}$ are learnable scalar weights, $r_i$ is the rank of block $i$, $\alpha_i$ is a constant in $r_i$ as in \cite{liu2019roberta}, $r$ is the total rank and $R$ is highest rank. $R$ is alwasy a power of two. %, leading to a simple relation between the total rank $r$ and the highest rank $R$: $r = 2R - 1$.
+For each block with rank $r_i$, the corresponding LoRA module incurs $r_i (d + k)$ parameters. Therefore, Eq.~\ref{eq:mrlora} incurs a parameter overhead of $\sum_i r_i (d+k) = r(d+k)$, which is the same as the original LoRA formulation. We note that MR-LoRA does not introduce extra parameters given fixed total budgets, but uses a more structural allocation scheme. In practice, we set $R = \lfloor (r+1) / 2 \rfloor$ given the total rank $r$.
 
 
 \section{Experiments}
@@ -226,7 +218,7 @@ We compare the following fine-tuning strategies:
 \end{itemize}
 
 \subsection{Implementation Details}
-All experiments are conducted on NVIDIA A800 GPUs. We use the AdamW optimizer with learning rate $2\times10^{-4}$, batch size 32, and linear learning-rate decay. The distillation weight $\alpha$ is set to 0.5. For LoRA and MR-LoRA we set the maximum rank $R=8$; MR-LoRA uses $K=3$ blocks with ranks $\{8,4,2\}$. The learnable weights $\lambda_k$ are initialized as $\{1,0.5,0.25\}$. We also evaluate MR-LoRA-RS, which combines MR-LoRA with the rank stabilization scaling factor from RS-LoRA \cite{kalajdzievski2023rslora}. We run each experiment with three random seeds and report the mean performance.
+All experiments are conducted on NVIDIA A800 GPUs. We use the AdamW optimizer with learning rate $2\times10^{-4}$, batch size 32, and linear learning-rate decay. The distillation weight $\alpha$ is set to 0.5. For LoRA and MR-LoRA we set the maximum rank $R=8$; MR-LoRA uses $K=3$ blocks with ranks $\{8,4,2\}$. The learnable weights $\lambda_i$ are initialized as $\{1,0.5,0.25\}$. We also evaluate MR-LoRA-RS, which combines MR-LoRA with the rank stabilization scaling factor from RS-LoRA \cite{kalajdzievski2023rslora}. We run each experiment with three random seeds and report the mean performance.
 
 \subsection{Results}
 \subsubsection{GLUE Performance}
@@ -349,7 +341,7 @@ MR‑LoRA‑RS & 99.4\% & 74.0\% & 2.4$\times$ \\
 
 
 \subsection{Analysis}
-\textbf{Why does multi-rank help?} The exponential rank schedule allows the adapter to capture coarse corrections (high-rank blocks) early in training and later refine subtle mismatches (low-rank blocks). The learned weights $\lambda_k$ automatically shift capacity toward the needed granularity. This benefit extends beyond knowledge distillation: when applied directly to teacher fine-tuning, MR-LoRA retains 95.8--98.7\% of the teacher’s full fine-tuning performance across model families (Table~\ref{tab:glue-scores}), confirming that multi-rank decomposition generally enhances adapter expressiveness.
+\textbf{Why does multi-rank help?} The exponential rank schedule allows the adapter to capture coarse corrections (high-rank blocks) early in training and later refine subtle mismatches (low-rank blocks). The learned weights $\lambda_i$ automatically shift capacity toward the needed granularity. This benefit extends beyond knowledge distillation: when applied directly to teacher fine-tuning, MR-LoRA retains 95.8--98.7\% of the teacher’s full fine-tuning performance across model families (Table~\ref{tab:glue-scores}), confirming that multi-rank decomposition generally enhances adapter expressiveness.
 
 \textbf{Efficiency--accuracy trade-off.} Tables~\ref{tab:teacher-variants} and~\ref{tab:student-variants} show that MR-LoRA achieves the best accuracy per parameter among LoRA variants, with MR-LoRA-RS (our variant combined with rank stabilization) achieving even better performance. In teacher fine-tuning, MR-LoRA retains 89.9\% of FFT performance using only 0.56\% of FFT parameters, while in student distillation it retains 92.4\% of teacher performance with 0.56\% of parameters. The inference speedup (Table~\ref{tab:efficiency}) shows that RS‑LoRA achieves the highest speedup (4.5$\times$) for teacher fine‑tuning, while MR‑LoRA provides a competitive 3.3$\times$ speedup without sacrificing accuracy.
 
