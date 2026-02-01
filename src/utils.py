@@ -62,11 +62,10 @@ MODEL_FAMILY = {
 }
 
 PEFT_FAMILY = [
-    # "lora",  # Vanilla lora
-    # "olora",  # orthonormal lora
-    # "dora",  # weight decomposed lora
-    # "rslora",  # Rank stablized lora
-    "mrlora", # Multi-Rank lora
+    "lora",  # Vanilla lora
+    "olora",  # orthonormal lora
+    "dora",  # weight decomposed lora
+    "rslora",  # Rank stablized lora
     "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
 ]
 
