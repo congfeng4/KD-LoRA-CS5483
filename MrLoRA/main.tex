@@ -37,6 +37,7 @@
 \usepackage{amsmath}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{multirow}
 
 \title{MR-LoRA: Multi-Rank Low Rank Adaptation of Large Language Models}
 
@@ -224,6 +225,26 @@ For each block with rank $r_i$, the corresponding LoRA module incurs $r_i (d + k
 % All experiments are conducted on NVIDIA A800 GPUs. We use the AdamW optimizer with learning rate $2\times10^{-4}$, batch size 32, and linear learning-rate decay. The distillation weight $\alpha$ is set to 0.5. For LoRA and MR-LoRA we set the maximum rank $R=8$; MR-LoRA uses $K=3$ blocks with ranks $\{8,4,2\}$. The learnable weights $\lambda_i$ are initialized as $\{1,0.5,0.25\}$. We also evaluate MR-LoRA-RS, which combines MR-LoRA with the rank stabilization scaling factor from RS-LoRA \cite{kalajdzievski2023rslora}. We run each experiment with three random seeds and report the mean performance.
 
 \subsection{Comparison with Fully Finetuning}
+
+\begin{tabular}{l|c|cccccccc}
+\toprule
+ &  & MNLI & SST-2 & CoLA & QQP & QNLI & RTE & MRPC & STS-B \\
+ &  & m/mm & Acc & Mcc & Acc/F1 & Acc & Acc & Acc & Pear/Spear \\
+Method & \# Params &  &  &  &  &  &  &  &  \\
+\midrule
+Full FT & 109.48M & 83.27/83.58 & 92.55 & 55.21 & 90.93/88.01 & 90.74 & 64.98 & 87.01 & 88.26/87.79 \\
+\cline{1-10}
+KD-LoRA$_{r=31}$ & 1.16M & 80.02/80.44 & 89.68 & 44.28 & 87.72/83.40 & 86.53 & 55.23 & 71.81 & 83.46/83.21 \\
+\cline{1-10}
+KD-LoRA$_{r=15}$ & 0.87M & 79.24/80.04 & 90.60 & 42.10 & 87.44/82.96 & 86.14 & 53.07 & 72.55 & 83.32/83.26 \\
+\cline{1-10}
+LoRA$_{r=31}$ & 1.14M & 82.80/83.43 & 91.28 & 50.23 & 89.07/85.27 & 90.44 & 55.96 & 78.92 & 87.78/87.62 \\
+\cline{1-10}
+LoRA$_{r=15}$ & 0.55M & 83.16/83.54 & 91.51 & 48.60 & 88.64/84.63 & 90.26 & 56.32 & 79.66 & 87.32/87.12 \\
+\cline{1-10}
+\bottomrule
+\end{tabular}
+
 \subsection{Comparison with LoRA Variants}
 \subsection{Convergence}
 \subsection{Ablation}
