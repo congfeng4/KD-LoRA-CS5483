@@ -421,10 +421,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
     # Model arguments
-    parser.add_argument("--teacher_model_name", type=str, default="./models/bert-base-uncased",
-                        help="Name of the teacher model")
-    parser.add_argument("--student_model_name", type=str, default="./models/distilbert-base-uncased",
-                        help="Name of the student model")
 
     # Dataset and training parameters
     parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
@@ -435,7 +431,6 @@ if __name__ == "__main__":
     parser.add_argument("--dir_name", type=str, default="./results", help="Directory name for saving models")
 
     # LoRA parameters
-    parser.add_argument("--rank", type=int, default=8, help="Rank of LoRA matrices")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
     parser.add_argument('--use_rslora', action='store_true',
                         help='Use rank-stabilized scaling for MrLoRA (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
@@ -444,12 +439,8 @@ if __name__ == "__main__":
     parser.add_argument("--teacher_learning_rate", type=float, default=2e-5, help="Learning rate for the teacher model")
     # TODO: lr.
     parser.add_argument("--student_learning_rate", type=float, default=1e-4, help="Learning rate for the student model")
-    parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
-    parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
-    parser.add_argument('--seed', type=int, default=42, help="Random seed")
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
-    parser.add_argument('--from_disk', type=int, default=1, help="If 1, use load_from_disk()")
 
     args_cmd = parser.parse_args()
     if args_cmd.type == 0:
