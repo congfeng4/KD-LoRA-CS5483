@@ -405,3 +405,15 @@ def clear_gpu_memory():
     gc.collect()
     torch.cuda.empty_cache()
     print("GPU memory cleared.")
+
+TASK_METRIC = {
+    "cola": ["eval_matthews_correlation"],
+    "mnli": ["matched_accuracy", "mismatched_accuracy"],
+    "mrpc": ["eval_f1", "eval_accuracy"],
+    "qnli": ["eval_accuracy"],
+    "qqp": ["eval_f1", "eval_accuracy", ],
+    "rte": ["eval_accuracy"],
+    "sst2": ["eval_accuracy"],
+    "stsb": ["eval_spearman", "eval_pearson", ],
+    "wnli": ["eval_accuracy"],
+}

@@ -35,6 +35,7 @@ class BertDistillPipeline:
         print(f"Model name: {args.teacher_model_name}")
         print(f"Model name: {args.student_model_name}")
         print(f"Teacher learning rate: {args.teacher_learning_rate}")
+        print(f"LoRA learning rate: {args.lora_learning_rate}")
         print(f"Student learning rate: {args.student_learning_rate}")
         print(f"Number of training epochs: {args.num_train_epochs}")
         print(f"Rank: {args.rank}")
@@ -47,6 +48,7 @@ class BertDistillPipeline:
         self.dir = Path(args.dir_name)
         self.results = self.args.copy()
         self.training_params = dict(
+            greater_is_better=True,
             eval_strategy="steps",  # Enable evaluation every epoch
             logging_strategy="steps",  # Enable logging
             save_strategy="steps",
@@ -57,7 +59,6 @@ class BertDistillPipeline:
             load_best_model_at_end=True,
             save_total_limit=2,  # 只保留最近的两个模型，省空间
             warmup_ratio=0.1,
-            remove_unused_columns=False,
         )
 
     def get_args(self):
@@ -145,6 +146,7 @@ class BertDistillPipeline:
         # 动态设置评估步数
         total_steps = (len(train_dataset) // args.train_batch_size) * MAX_EPOCHS
         EVAL_STEPS = max(10, total_steps // 50)  # 整个训练过程评估 50 次
+        print('total_steps', total_steps, 'eval_steps', EVAL_STEPS)
         # Define training arguments
         training_args = TrainingArguments(
             output_dir=str(ckpt_dir),
@@ -152,6 +154,8 @@ class BertDistillPipeline:
             eval_steps=EVAL_STEPS,
             save_steps=EVAL_STEPS,
             logging_steps=EVAL_STEPS,
+            metric_for_best_model=TASK_METRIC[args.task][0], # Core metric.
+            remove_unused_columns=teacher_soft_labels is None,
             **self.training_params,
         )
         if args.task == "mnli":
@@ -163,9 +167,9 @@ class BertDistillPipeline:
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics(args),
-            callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=5)],
+            callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=10)],
         )
-        if teacher_soft_labels:
+        if teacher_soft_labels is not None:
             trainer.teacher_soft_labels = teacher_soft_labels
 
         train_output = trainer.train()
@@ -248,8 +252,9 @@ class BertDistillPipeline:
               '#param', get_trainable_param_count(teacher_model))
 
         teacher_trainer, train_metrics = self.train_model(teacher_model, teacher_train_dataset, teacher_eval_dataset,
+                                                          ckpt_dir,
                                                           args.teacher_learning_rate,
-                                                          ckpt_dir)
+                                                          )
 
         teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
         self.patch_results(teacher_fft_results, args, train_metrics, 'fft')
@@ -295,8 +300,10 @@ class BertDistillPipeline:
 
         teacher_lora_trainer, train_metrics = self.train_model(teacher_lora_model, teacher_train_dataset,
                                                                teacher_eval_dataset,
+                                                               ckpt_dir,
                                                                args.lora_learning_rate,
-                                                               ckpt_dir)
+                                                            
+                                                               )
 
         teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
         self.patch_results(teacher_lora_results, args, train_metrics, 'lora')

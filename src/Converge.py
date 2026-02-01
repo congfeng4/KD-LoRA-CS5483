@@ -8,7 +8,7 @@ from pathlib import Path
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, EarlyStoppingCallback
 from peft import get_peft_model
-from src.BERT_Distill_LoRA import BertDistillPipeline
+from BERT_Distill_LoRA import BertDistillPipeline
 from utils import *
 
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
