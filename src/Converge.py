@@ -17,7 +17,9 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 # KD-LoRA paper uses rank 8,16,32,64 with alpha = rank, but we fix alpha = 16
 RANK_VALUES = [4]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
-seed_list = [42]
+# seed_list = [42]
+seed_list = [123, 2024]
+EVAL_STEPS = 10
 
 
 class BertDistillPipeline:
@@ -46,9 +48,12 @@ class BertDistillPipeline:
         self.dir = Path(args.dir_name)
         self.results = self.args.copy()
         self.training_params = dict(
-            eval_strategy="step",  # Enable evaluation every epoch
-            logging_strategy="epoch",  # Enable logging
-            save_strategy="epoch",
+            eval_strategy="steps",  # Enable evaluation every epoch
+            logging_strategy="steps",  # Enable logging
+            save_strategy="steps",
+            eval_steps=EVAL_STEPS,
+            save_steps=EVAL_STEPS,
+            logging_steps=EVAL_STEPS,
             per_device_train_batch_size=args.train_batch_size,
             per_device_eval_batch_size=args.eval_batch_size,
             num_train_epochs=args.num_train_epochs,
@@ -270,8 +275,6 @@ class BertDistillPipeline:
         teacher_fft_dir.mkdir(parents=True, exist_ok=True)
         ckpt_dir = teacher_fft_dir / 'ckpt'
         metrics_file = teacher_fft_dir / 'metrics.json'
-        if metrics_file.exists():
-            return
 
         print('Preparing teacher FFT...')
         teacher_dataset = self.load_dataset()
@@ -313,8 +316,7 @@ class BertDistillPipeline:
         args = self.args
         ckpt_dir = teacher_lora_dir / 'ckpt'
         metrics_file = teacher_lora_dir / 'metrics.json'
-        if metrics_file.exists():
-            return
+
         # 3. Teacher LoRA
         print("Begin Teacher LoRA...")
         teacher_dataset = self.load_dataset()
@@ -350,7 +352,8 @@ class BertDistillPipeline:
     def load_teacher_labels(self):
         args = self.args
         # Teacher labels are not related to lora settings.
-        teacher_fft_dir = self.teacher_fft_dir.parent # last level is lora config
+        teacher_fft_dir = Path('results/fft/') / self.config_dir
+        teacher_fft_dir = teacher_fft_dir.parent # last level is lora config
         teacher_soft_labels_path = next(teacher_fft_dir.rglob('teacher_soft_labels.pth'))
         teacher_soft_labels = torch.load(teacher_soft_labels_path, weights_only=False)
         print('Loaded teacher soft-labels.', args.task, teacher_soft_labels_path, teacher_soft_labels.shape)
@@ -366,8 +369,6 @@ class BertDistillPipeline:
         args.peft = 'lora'
         args.peft = ori_peft
         metrics_file = student_lora_dir / 'metrics.json'
-        if metrics_file.exists():
-            return
 
         teacher_soft_labels = self.load_teacher_labels()
 
@@ -515,11 +516,6 @@ if __name__ == "__main__":
     parser.add_argument('--from_disk', type=int, default=1, help="If 1, use load_from_disk()")
 
     args_cmd = parser.parse_args()
-    if args_cmd.type == 0:
-        main_teacher_fft(args_cmd)
-    elif args_cmd.type == 1:
-        main_lora(args_cmd, is_student=True)
-    elif args_cmd.type == 2:
-        main_lora(args_cmd, is_student=False)
-    else:
-        raise ValueError(f"Unknown command {args_cmd.type}")
+    main_teacher_fft(args_cmd)
+    main_lora(args_cmd, is_student=True)
+    main_lora(args_cmd, is_student=False)
