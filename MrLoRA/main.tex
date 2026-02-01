@@ -230,16 +230,17 @@ For each block with rank $r_i$, the corresponding LoRA module incurs $r_i (d + k
 \centering
 \setlength{\tabcolsep}{4pt} % Smaller column gap
 \renewcommand{\arraystretch}{1.2} % Better vertical spacing
-\begin{tabular}{l|c|cccccccc}
+\small
+\begin{tabular}{l|c|ccccccccc}
 \toprule
- \multirow{2}{*}{\textbf{Method}} & \multirow{2}{*}{\textbf{\# Params}} & MNLI & SST-2 & CoLA & QQP & QNLI & RTE & MRPC & STS-B \\
- &  & m/mm & Acc & Mcc & Acc/F1 & Acc & Acc & Acc & Pear/Spear \\
+ \multirow{2}{*}{\textbf{Method}} & \multirow{2}{*}{\textbf{\# Params}} & \textbf{MNLI} & \textbf{SST-2} & \textbf{CoLA} & \textbf{QQP} & \textbf{QNLI} & \textbf{RTE} & \textbf{MRPC} & \textbf{STS-B} & \textbf{All} \\
+ &  & m/mm & Acc & Mcc & Acc/F1 & Acc & Acc & Acc & Corr & Ave. \\
 \midrule
-Full FT & 109.48M & 83.27/83.58 & 92.55 & 55.21 & 90.93/88.01 & 90.74 & 64.98 & 87.01 & 88.26/87.79 \\
-KD-LoRA$_{r=31}$ & 1.16M & 80.02/80.44 & 89.68 & 44.28 & 87.72/83.40 & 86.53 & 55.23 & 71.81 & 83.46/83.21 \\
-KD-LoRA$_{r=15}$ & 0.87M & 79.24/80.04 & 90.60 & 42.10 & 87.44/82.96 & 86.14 & 53.07 & 72.55 & 83.32/83.26 \\
-LoRA$_{r=31}$ & 1.14M & 82.80/83.43 & 91.28 & 50.23 & 89.07/85.27 & 90.44 & 55.96 & 78.92 & 87.78/87.62 \\
-LoRA$_{r=15}$ & 0.55M & 83.16/83.54 & 91.51 & 48.60 & 88.64/84.63 & 90.26 & 56.32 & 79.66 & 87.32/87.12 \\
+FFT & 109.48M & 83.27/83.58 & 92.55 & 55.21 & 90.93/88.01 & 90.74 & 64.98 & 87.01 & 88.03 & 77.57 \\
+KD$_{r=31}$ & 1.16M & 80.02/80.44 & 89.68 & 44.28 & 87.72/83.40 & 86.53 & 55.23 & 71.81 & 83.34 & 74.38 \\
+KD$_{r=15}$ & 0.87M & 79.24/80.04 & 90.60 & 42.10 & 87.44/82.96 & 86.14 & 53.07 & 72.55 & 83.29 & 73.12 \\
+LoRA$_{r=31}$ & 1.14M & 82.80/83.43 & 91.28 & 50.23 & 89.07/85.27 & 90.44 & 55.96 & 78.92 & 87.70 & 77.05 \\
+LoRA$_{r=15}$ & 0.55M & 83.16/83.54 & 91.51 & 48.60 & 88.64/84.63 & 90.26 & 56.32 & 79.66 & 87.22 & 76.94 \\
 \bottomrule
 \end{tabular}
 
