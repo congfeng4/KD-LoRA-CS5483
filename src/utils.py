@@ -134,21 +134,43 @@ def get_peft_config(args, model_name, peft_method):
 
     if peft_method == 'adalora':
         from peft import AdaLoraConfig
-        adalora_config = AdaLoraConfig(
-            init_r=12,               # Start higher
-            target_r=8,              # Final average rank
-            beta1=0.85,              # Smoothing for importance score
-            beta2=0.85,              # Uncertainty for importance score
-            tinit=200,               # Steps before pruning starts
-            tfinal=1000,             # Steps when pruning ends
-            deltaT=10,               # Interval between pruning steps
-            orth_reg_weight=0.5,     # Orthogonal regularization coefficient
+        peft_config = AdaLoraConfig(
+            init_r=2*args.rank,  # Start higher
+            target_r=args.rank,  # Final average rank
             lora_alpha=args.lora_alpha,
             target_modules=target_modules,
             lora_dropout=args.lora_dropout,
             task_type=task_type,
         )
-        return adalora_config
+        """
+        场景需求,普通 LoRA r,AdaLoRA init_r,AdaLoRA target_r,说明
+        标准转换,8,12,8,最稳妥的配置，效果通常好于 LoRA。
+        激进压缩,8,16,4,初始给足空间，最后只保留极少数关键参数。
+        高性能模式,16,32,16,针对复杂任务（如逻辑推理、长文本）。
+        显存受限,4,8,2,极低显存下的尝试。
+        """
+        train_size = args.train_size
+        steps_per_epoch = (train_size + args.train_batch_size - 1) // args.train_batch_size
+        total_step = steps_per_epoch * args.num_train_epochs
+        peft_config.total_step = total_step
+        # Adjust tinit, tfinal, deltaT to be within total_step bounds
+        if total_step < peft_config.tinit + peft_config.tfinal:
+            # Scale proportionally
+            scale = total_step / (peft_config.tinit + peft_config.tfinal)
+            peft_config.tinit = max(1, int(peft_config.tinit * scale))
+            peft_config.tfinal = max(1, int(peft_config.tfinal * scale))
+            peft_config.deltaT = max(1, int(peft_config.deltaT * scale))
+            print(f"Scaled AdaLoRA pruning parameters: tinit={peft_config.tinit}, tfinal={peft_config.tfinal}, deltaT={peft_config.deltaT}")
+        # Ensure tinit < total_step - tfinal (pruning interval positive)
+        if peft_config.tinit >= total_step - peft_config.tfinal:
+            # Reduce tfinal so that there is at least one step for pruning
+            peft_config.tfinal = total_step - peft_config.tinit - 1
+            if peft_config.tfinal < 1:
+                peft_config.tfinal = 1
+                peft_config.tinit = total_step - 2
+            print(f"Adjusted tfinal={peft_config.tfinal}, tinit={peft_config.tinit}")
+        print(f"AdaLoRA total_step set to {total_step} (steps per epoch: {steps_per_epoch}, train size: {train_size})")
+        return peft_config
 
     if peft_method in ['mrlora', 'mrlora-rs']:
         from mrlora import MrLoraConfig
