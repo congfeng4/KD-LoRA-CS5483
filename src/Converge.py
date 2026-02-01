@@ -60,6 +60,7 @@ class BertDistillPipeline:
             num_train_epochs=args.num_train_epochs,
             weight_decay=args.weight_decay,
             load_best_model_at_end=True,
+            metric_for_best_model='eval_matthews_correlation'
         )
 
     def get_args(self):
@@ -452,7 +453,7 @@ def main_lora(args, is_student: bool):
         for seed in seed_list:
             for task in ['cola']:
                 for model_family in MODEL_FAMILY.keys():
-                    for peft_method in ['mrlora', 'mrlora-rs']:
+                    for peft_method in ['mrlora-rs']:
                         # Set alpha = 16 (fixed) as per our experimental setup
                         set_seed(seed)
                         config = args.__dict__.copy()
@@ -508,7 +509,7 @@ if __name__ == "__main__":
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
-    parser.add_argument("--student_learning_rate", type=float, default=5e-4, help="Learning rate for the student model")
+    parser.add_argument("--student_learning_rate", type=float, default=1e-4, help="Learning rate for the student model")
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
     parser.add_argument('--seed', type=int, default=42, help="Random seed")
@@ -519,4 +520,4 @@ if __name__ == "__main__":
     args_cmd = parser.parse_args()
     # main_teacher_fft(args_cmd)
     main_lora(args_cmd, is_student=True)
-    # main_lora(args_cmd, is_student=False)
+    main_lora(args_cmd, is_student=False)

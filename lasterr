@@ -32,3 +32,298 @@ W0130 21:13:40.911169 140337243358400 torch/distributed/elastic/multiprocessing/
 W0130 21:13:40.912084 140337243358400 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1892648 closing signal SIGTERM
 W0130 21:13:40.912298 140337243358400 torch/distributed/elastic/multiprocessing/api.py:858] Sending process 1892649 closing signal SIGTERM
 E0130 21:13:41.026683 140337243358400 torch/distributed/elastic/multiprocessing/api.py:833] failed (exitcode: 1) local_rank: 0 (pid: 1892646) of binary: /home/user/anaconda3/envs/lora/bin/python
+
+
+Map (num_proc=4): 100%|████████████████████████████████████████████████████████████████████████████████████████████| 71/71 [00:05<00:00, 13.07 examples/s]
+Map (num_proc=4): 100%|██████████████████████████████████████████████████████████████████████████████████████████| 146/146 [00:05<00:00, 27.94 examples/s]
+Loaded dataset & model #train 635 #eval 71 #param 184.423682
+Map (num_proc=4): 100%|██████████████████████████████████████████████████████████████████████████████████████████| 146/146 [00:05<00:00, 25.30 examples/s]
+Map (num_proc=4): 100%|██████████████████████████████████████████████████████████████████████████████████████████| 146/146 [00:05<00:00, 30.69 examples/s]Loaded dataset & model #train 635 #eval 71 #param 184.423682
+Map (num_proc=4): 100%|██████████████████████████████████████████████████████████████████████████████████████████| 146/146 [00:05<00:00, 27.29 examples/s]
+Loaded dataset & model #train 635 #eval 71 #param 184.423682
+Map (num_proc=4): 100%|██████████████████████████████████████████████████████████████████████████████████████████| 146/146 [00:04<00:00, 30.35 examples/s]
+Loaded dataset & model #train 635 #eval 71 #param 184.423682
+  0%|                                                                                                                              | 0/15 [00:00<?, ?it/s]Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
+Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 525, in <module>
+[rank2]:     main_teacher_fft(args_cmd)
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 445, in main_teacher_fft
+[rank2]:     raise e
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 442, in main_teacher_fft
+[rank2]:     pipe.run_teacher_fft()
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 285, in run_teacher_fft
+[rank2]:     teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
+[rank2]:   File "src/BERT_Distill_LoRA.py", line 207, in train_fft
+[rank2]:     train_output = trainer.train()
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank2]:     return inner_training_loop(
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2481, in _inner_training_loop
+[rank2]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3579, in training_step
+[rank2]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3633, in compute_loss
+[rank2]:     outputs = model(**inputs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 1636, in forward
+[rank2]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 1454, in _run_ddp_forward
+[rank2]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/accelerate/utils/operations.py", line 820, in forward
+[rank2]:     return model_forward(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/accelerate/utils/operations.py", line 808, in __call__
+[rank2]:     return convert_to_fp32(self.model_forward(*args, **kwargs))
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/amp/autocast_mode.py", line 43, in decorate_autocast
+[rank2]:     return func(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1297, in forward
+[rank2]:     outputs = self.deberta(
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1063, in forward
+[rank2]:     encoder_outputs = self.encoder(
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 507, in forward
+[rank2]:     output_states = layer_module(
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 355, in forward
+[rank2]:     attention_output = self.attention(
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 286, in forward
+[rank2]:     self_output = self.self(
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank2]:     return self._call_impl(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank2]:     return forward_call(*args, **kwargs)
+[rank2]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 711, in forward
+[rank2]:     attention_scores = torch.bmm(query_layer, key_layer.transpose(-1, -2) / scale.to(dtype=query_layer.dtype))
+[rank2]: RuntimeError: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
+Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 525, in <module>
+[rank0]:     main_teacher_fft(args_cmd)
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 445, in main_teacher_fft
+[rank0]:     raise e
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 442, in main_teacher_fft
+[rank0]:     pipe.run_teacher_fft()
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 285, in run_teacher_fft
+[rank0]:     teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
+[rank0]:   File "src/BERT_Distill_LoRA.py", line 207, in train_fft
+[rank0]:     train_output = trainer.train()
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank0]:     return inner_training_loop(
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2481, in _inner_training_loop
+[rank0]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3579, in training_step
+[rank0]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3633, in compute_loss
+[rank0]:     outputs = model(**inputs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 1636, in forward
+[rank0]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 1454, in _run_ddp_forward
+[rank0]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/accelerate/utils/operations.py", line 820, in forward
+[rank0]:     return model_forward(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/accelerate/utils/operations.py", line 808, in __call__
+[rank0]:     return convert_to_fp32(self.model_forward(*args, **kwargs))
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/amp/autocast_mode.py", line 43, in decorate_autocast
+[rank0]:     return func(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1297, in forward
+[rank0]:     outputs = self.deberta(
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1063, in forward
+[rank0]:     encoder_outputs = self.encoder(
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 507, in forward
+[rank0]:     output_states = layer_module(
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 355, in forward
+[rank0]:     attention_output = self.attention(
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 286, in forward
+[rank0]:     self_output = self.self(
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 711, in forward
+[rank0]:     attention_scores = torch.bmm(query_layer, key_layer.transpose(-1, -2) / scale.to(dtype=query_layer.dtype))
+[rank0]: RuntimeError: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
+Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
+[rank3]: Traceback (most recent call last):
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 525, in <module>
+[rank3]:     main_teacher_fft(args_cmd)
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 445, in main_teacher_fft
+[rank3]:     raise e
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 442, in main_teacher_fft
+[rank3]:     pipe.run_teacher_fft()
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 285, in run_teacher_fft
+[rank3]:     teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
+[rank3]:   File "src/BERT_Distill_LoRA.py", line 207, in train_fft
+[rank3]:     train_output = trainer.train()
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank3]:     return inner_training_loop(
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2481, in _inner_training_loop
+[rank3]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3579, in training_step
+[rank3]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3633, in compute_loss
+[rank3]:     outputs = model(**inputs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 1636, in forward
+[rank3]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 1454, in _run_ddp_forward
+[rank3]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/accelerate/utils/operations.py", line 820, in forward
+[rank3]:     return model_forward(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/accelerate/utils/operations.py", line 808, in __call__
+[rank3]:     return convert_to_fp32(self.model_forward(*args, **kwargs))
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/amp/autocast_mode.py", line 43, in decorate_autocast
+[rank3]:     return func(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1297, in forward
+[rank3]:     outputs = self.deberta(
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1063, in forward
+[rank3]:     encoder_outputs = self.encoder(
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 507, in forward
+[rank3]:     output_states = layer_module(
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 355, in forward
+[rank3]:     attention_output = self.attention(
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 286, in forward
+[rank3]:     self_output = self.self(
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank3]:     return self._call_impl(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank3]:     return forward_call(*args, **kwargs)
+[rank3]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 711, in forward
+[rank3]:     attention_scores = torch.bmm(query_layer, key_layer.transpose(-1, -2) / scale.to(dtype=query_layer.dtype))
+[rank3]: RuntimeError: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 525, in <module>
+[rank1]:     main_teacher_fft(args_cmd)
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 445, in main_teacher_fft
+[rank1]:     raise e
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 442, in main_teacher_fft
+[rank1]:     pipe.run_teacher_fft()
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 285, in run_teacher_fft
+[rank1]:     teacher_trainer, train_metrics = self.train_fft(teacher_model, teacher_train_dataset, teacher_eval_dataset,
+[rank1]:   File "src/BERT_Distill_LoRA.py", line 207, in train_fft
+[rank1]:     train_output = trainer.train()
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank1]:     return inner_training_loop(
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2481, in _inner_training_loop
+[rank1]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3579, in training_step
+[rank1]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3633, in compute_loss
+[rank1]:     outputs = model(**inputs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 1636, in forward
+[rank1]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/parallel/distributed.py", line 1454, in _run_ddp_forward
+[rank1]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/accelerate/utils/operations.py", line 820, in forward
+[rank1]:     return model_forward(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/accelerate/utils/operations.py", line 808, in __call__
+[rank1]:     return convert_to_fp32(self.model_forward(*args, **kwargs))
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/amp/autocast_mode.py", line 43, in decorate_autocast
+[rank1]:     return func(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1297, in forward
+[rank1]:     outputs = self.deberta(
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 1063, in forward
+[rank1]:     encoder_outputs = self.encoder(
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 507, in forward
+[rank1]:     output_states = layer_module(
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 355, in forward
+[rank1]:     attention_output = self.attention(
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 286, in forward
+[rank1]:     self_output = self.self(
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1553, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1562, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 711, in forward
+[rank1]:     attention_scores = torch.bmm(query_layer, key_layer.transpose(-1, -2) / scale.to(dtype=query_layer.dtype))
+[rank1]: RuntimeError: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
