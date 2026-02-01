@@ -17,8 +17,8 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 # KD-LoRA paper uses rank 8,16,32,64 with alpha = rank, but we fix alpha = 16
 RANK_VALUES = [4]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
-# seed_list = [42]
-seed_list = [123, 2024]
+seed_list = [42]
+# seed_list = [123, 2024]
 EVAL_STEPS = 10
 
 # TODO: Use bf16 for more stable training...
@@ -301,7 +301,7 @@ class BertDistillPipeline:
             torch.save(teacher_soft_labels.cpu(), str(soft_labels_path))
             print('Saved teacher soft-labels.', teacher_soft_labels.shape)
             assert soft_labels_path.exists(), "Soft labels file not created!"
-            shutil.rmtree(ckpt_dir)
+            # shutil.rmtree(ckpt_dir)
             teacher_dataset.cleanup_cache_files()
 
         if hasattr(teacher_trainer, "accelerator"):
@@ -339,7 +339,7 @@ class BertDistillPipeline:
         if teacher_lora_trainer.is_world_process_zero():
             with open(metrics_file, 'w', encoding='utf-8') as f:
                 json.dump(teacher_lora_results, f, indent=4, ensure_ascii=False)
-            shutil.rmtree(ckpt_dir)
+            # shutil.rmtree(ckpt_dir)
             teacher_dataset.cleanup_cache_files()
 
         if hasattr(teacher_lora_trainer, "accelerator"):
@@ -415,7 +415,7 @@ class BertDistillPipeline:
         if student_trainer.is_world_process_zero():
             with open(metrics_file, 'w', encoding='utf-8') as f:
                 json.dump(student_lora_results, f, indent=4, ensure_ascii=False)
-            shutil.rmtree(ckpt_dir)
+            # shutil.rmtree(ckpt_dir)
             teacher_dataset.cleanup_cache_files()
 
         if hasattr(student_trainer, "accelerator"):
@@ -517,6 +517,6 @@ if __name__ == "__main__":
     parser.add_argument('--from_disk', type=int, default=1, help="If 1, use load_from_disk()")
 
     args_cmd = parser.parse_args()
-    main_teacher_fft(args_cmd)
+    # main_teacher_fft(args_cmd)
     main_lora(args_cmd, is_student=True)
-    main_lora(args_cmd, is_student=False)
+    # main_lora(args_cmd, is_student=False)
