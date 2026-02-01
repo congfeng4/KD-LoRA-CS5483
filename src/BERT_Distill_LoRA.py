@@ -18,7 +18,6 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 RANK_VALUES = [8, 16, 32, 64]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024, 2026, 999]
-EVAL_STEPS = 10
 MAX_EPOCHS = 20
 
 
@@ -54,13 +53,11 @@ class BertDistillPipeline:
             per_device_train_batch_size=args.train_batch_size,
             per_device_eval_batch_size=args.eval_batch_size,
             num_train_epochs=MAX_EPOCHS,
-            eval_steps=EVAL_STEPS,
-            save_steps=EVAL_STEPS,
-            logging_steps=EVAL_STEPS,
             weight_decay=args.weight_decay,
             load_best_model_at_end=True,
             save_total_limit=2,  # 只保留最近的两个模型，省空间
             warmup_ratio=0.1,
+            remove_unused_columns=False,
         )
 
     def get_args(self):
@@ -143,12 +140,18 @@ class BertDistillPipeline:
             eval_dataset = tokenized_datasets["validation"]
             return train_dataset, eval_dataset
 
-    def train_model(self, model, train_dataset, eval_dataset, ckpt_dir, teacher_soft_labels=None):
+    def train_model(self, model, train_dataset, eval_dataset, ckpt_dir, lr, teacher_soft_labels=None):
         args = self.args
+        # 动态设置评估步数
+        total_steps = (len(train_dataset) // args.train_batch_size) * MAX_EPOCHS
+        EVAL_STEPS = max(10, total_steps // 50)  # 整个训练过程评估 50 次
         # Define training arguments
         training_args = TrainingArguments(
             output_dir=str(ckpt_dir),
-            learning_rate=args.student_learning_rate,
+            learning_rate=lr,
+            eval_steps=EVAL_STEPS,
+            save_steps=EVAL_STEPS,
+            logging_steps=EVAL_STEPS,
             **self.training_params,
         )
         if args.task == "mnli":
@@ -245,6 +248,7 @@ class BertDistillPipeline:
               '#param', get_trainable_param_count(teacher_model))
 
         teacher_trainer, train_metrics = self.train_model(teacher_model, teacher_train_dataset, teacher_eval_dataset,
+                                                          args.teacher_learning_rate,
                                                           ckpt_dir)
 
         teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
@@ -290,7 +294,9 @@ class BertDistillPipeline:
               '#param', get_trainable_param_count(teacher_lora_model))
 
         teacher_lora_trainer, train_metrics = self.train_model(teacher_lora_model, teacher_train_dataset,
-                                                               teacher_eval_dataset, ckpt_dir)
+                                                               teacher_eval_dataset,
+                                                               args.lora_learning_rate,
+                                                               ckpt_dir)
 
         teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
         self.patch_results(teacher_lora_results, args, train_metrics, 'lora')
@@ -346,7 +352,8 @@ class BertDistillPipeline:
 
         student_trainer, train_metrics = self.train_model(student_model, student_train_dataset,
                                                           student_eval_dataset,
-                                                          ckpt_dir, teacher_soft_labels)
+                                                          ckpt_dir, args.student_learning_rate,
+                                                          teacher_soft_labels)
 
         student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
         self.patch_results(student_lora_results, args, train_metrics, 'kd-lora')
@@ -435,8 +442,9 @@ if __name__ == "__main__":
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=2e-5, help="Learning rate for the teacher model")
-    # TODO: lr.
     parser.add_argument("--student_learning_rate", type=float, default=1e-4, help="Learning rate for the student model")
+    parser.add_argument("--lora_learning_rate", type=float, default=2e-4, help="Learning rate for the student model")
+
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
 
