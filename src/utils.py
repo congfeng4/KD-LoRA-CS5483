@@ -159,11 +159,14 @@ def get_peft_config(args, model_name, peft_method):
         print(f"AdaLoRA total_step set to {total_step} (steps per epoch: {steps_per_epoch}, train size: {train_size})")
         return peft_config
 
-    if peft_method in ['mrlora', 'mrlora-rs']:
+    if 'mrlora' in peft_method:
         from mrlora import MrLoraConfig
         # For 'mrlora-rs' variant, force use_rslora=True
-        if peft_method == 'mrlora-rs':
+        if '-rs' in peft_method:
             args.use_rslora = True
+        if '-olora' in peft_method:
+            args.init_type = 'olora'
+
         mrlora_config = MrLoraConfig(
             total_rank=args.rank,
             lora_alpha=args.lora_alpha,
@@ -171,6 +174,7 @@ def get_peft_config(args, model_name, peft_method):
             target_modules=target_modules,
             task_type=task_type,
             use_rslora=args.use_rslora,
+            init_type=args.init_type,
         )
         return mrlora_config
 

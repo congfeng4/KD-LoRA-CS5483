@@ -1,5 +1,5 @@
 import math
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 import torch
 import torch.nn as nn
@@ -19,8 +19,12 @@ def generate_mrlora_ranks(highest_rank):
 
 
 class MrLoraLayer(nn.Module, LoraLayer):
-    def __init__(self, in_features, out_features, total_rank, lora_alpha, lora_dropout, use_rslora=True, **kwargs):
+    def __init__(self, in_features, out_features, total_rank, lora_alpha, lora_dropout,
+                 init_type: Literal['standard', 'olora']='standard',
+                 use_rslora=True,
+                 **kwargs):
         nn.Module.__init__(self)
+        self.init_type = init_type
         LoraLayer.__init__(self, base_layer=kwargs.get("base_layer"))
         assert total_rank % 2 == 0, total_rank
         self.highest_rank = total_rank // 2
@@ -55,6 +59,61 @@ class MrLoraLayer(nn.Module, LoraLayer):
         self.reset_mr_parameters()
 
     def reset_mr_parameters(self):
+        if self.init_type == 'standard':
+            self.reset_mr_parameters_standard()
+        elif self.init_type == 'olora':
+            self.reset_mr_parameters_olora()
+
+    def reset_mr_parameters_olora(self):
+        """
+        实现基于 OLoRA 思想的 SVD 能量切片初始化：
+        1. 对原始权重 W 进行 SVD 分解。
+        2. 按奇异值从高到低，将对应的正交基分配给 Rank 4, 2, 1 等矩阵。
+        """
+        # 1. 获取基础层的权重数据
+        with torch.no_grad():
+            # 获取 base_layer 权重 [out_features, in_features]
+            weight = self.get_base_layer().weight.data.float()
+
+            # 2. 执行 SVD 分解
+            # U: [out_features, K], S: [K], Vh: [K, in_features]
+            # 这里 K = min(out_features, in_features)
+            U, S, Vh = torch.linalg.svd(weight, full_matrices=False)
+
+            # 3. 按照你的计划进行“能量切片”分配
+            current_idx = 0
+            for i, r_str in enumerate(self.ranks_str):
+                r_int = self.ranks_int[i]
+
+                # 在 SVD 结果中提取对应的分量
+                # 取出第 current_idx 到 current_idx + r_int 个奇异向量
+                u_slice = U[:, current_idx: current_idx + r_int]
+                s_slice = S[current_idx: current_idx + r_int]
+                vh_slice = Vh[current_idx: current_idx + r_int, :]
+
+                # 4. 初始化 A：分配右奇异向量 (正交基)
+                # lora_A 的形状通常是 [r, in_features]
+                self.lora_A[r_str].weight.data.copy_(vh_slice.to(self.lora_A[r_str].weight.dtype))
+
+                # 5. 初始化 B：分配左奇异向量并结合奇异值
+                # 理论上 AB = u_slice @ diag(s_slice) @ vh_slice
+                # 为了抵消 forward 中的 scaling_factor，这里需要除以它
+                b_init = u_slice @ torch.diag(s_slice)
+                b_init = b_init / self.scaling_factors[i]
+
+                self.lora_B[r_str].weight.data.copy_(b_init.to(self.lora_B[r_str].weight.dtype))
+
+                # 索引递增，确保下一个分支拿到的是更小的奇异值对应的正交基
+                current_idx += r_int
+
+            # 6. 初始化可学习系数 alphas 为 1.0
+            # 这样初始状态下，模型会保留 SVD 分解后的主要能量
+            nn.init.ones_(self.alphas)
+
+        # 显式清理大矩阵占用的内存
+        del U, S, Vh, weight
+
+    def reset_mr_parameters_standard(self):
         # Kaiming init for A, Zeros for B (ensures adapter starts as identity-zero)
         for a in self.lora_A.values():
             nn.init.kaiming_uniform_(a.weight, a=math.sqrt(5))
@@ -114,6 +173,6 @@ class MrLoraLayer(nn.Module, LoraLayer):
 
 
 class MrLoraLinear(MrLoraLayer):
-    def __init__(self, base_layer, total_rank, lora_alpha, lora_dropout, use_rslora=False, **kwargs):
+    def __init__(self, base_layer, total_rank, lora_alpha, lora_dropout, use_rslora=False, init_type='standard', **kwargs):
         super().__init__(base_layer.in_features, base_layer.out_features, total_rank, lora_alpha, lora_dropout,
-                         use_rslora=use_rslora, base_layer=base_layer)
+                         use_rslora=use_rslora, init_type=init_type, base_layer=base_layer)
