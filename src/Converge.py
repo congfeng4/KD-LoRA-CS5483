@@ -6,7 +6,7 @@ from addict import Addict
 from copy import deepcopy
 from pathlib import Path
 
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments
+from transformers import AutoModelForSequenceClassification, TrainingArguments
 from peft import get_peft_model
 from utils import *
 
@@ -15,10 +15,9 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 
 # Hyperparameter search space (rank)
 # KD-LoRA paper uses rank 8,16,32,64 with alpha = rank, but we fix alpha = 16
-RANK_VALUES = [2, 4]
-# RANK_VALUES = [8, 16, 32, 64]
+RANK_VALUES = [4]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
-seed_list = [42, 123, 2024]
+seed_list = [42]
 
 
 class BertDistillPipeline:
@@ -47,7 +46,7 @@ class BertDistillPipeline:
         self.dir = Path(args.dir_name)
         self.results = self.args.copy()
         self.training_params = dict(
-            eval_strategy="epoch",  # Enable evaluation every epoch
+            eval_strategy="step",  # Enable evaluation every epoch
             logging_strategy="epoch",  # Enable logging
             save_strategy="epoch",
             per_device_train_batch_size=args.train_batch_size,
@@ -365,7 +364,6 @@ class BertDistillPipeline:
 
         ori_peft = args.peft
         args.peft = 'lora'
-        teacher_fft_dir = self.teacher_fft_dir
         args.peft = ori_peft
         metrics_file = student_lora_dir / 'metrics.json'
         if metrics_file.exists():
@@ -429,7 +427,7 @@ class BertDistillPipeline:
 
 def main_teacher_fft(args):
     for seed in seed_list:
-        for task in GLUE_TASKS:
+        for task in ['cola']:
             for model_family in MODEL_FAMILY.keys():
                 set_seed(seed)
                 config = args.__dict__.copy()
@@ -443,15 +441,16 @@ def main_teacher_fft(args):
                 except Exception as e:
                     print(e)
                     raise e
+
     print('All finish')
 
 
 def main_lora(args, is_student: bool):
     for rank in RANK_VALUES:
         for seed in seed_list:
-            for task in GLUE_TASKS:
+            for task in ['cola']:
                 for model_family in MODEL_FAMILY.keys():
-                    for peft_method in PEFT_FAMILY:
+                    for peft_method in ['mrlora', 'mrlora-rs']:
                         # Set alpha = 16 (fixed) as per our experimental setup
                         set_seed(seed)
                         config = args.__dict__.copy()
@@ -480,16 +479,6 @@ def main_lora(args, is_student: bool):
     print('All finish')
 
 
-def main_mrlora(args):
-    config = args.__dict__.copy()
-    config['peft'] = 'mrlora'
-    model_family = 'bert'
-    add_model_name_to_config(model_family, config)
-    pipe = BertDistillPipeline(**config)
-    pipe.run_teacher_lora()
-    # pipe.run_student_lora()
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
@@ -507,7 +496,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_train_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
 
-    parser.add_argument("--dir_name", type=str, default="./results", help="Directory name for saving models")
+    parser.add_argument("--dir_name", type=str, default="./converge", help="Directory name for saving models")
 
     # LoRA parameters
     parser.add_argument("--rank", type=int, default=8, help="Rank of LoRA matrices")
@@ -521,7 +510,7 @@ if __name__ == "__main__":
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
     parser.add_argument('--seed', type=int, default=42, help="Random seed")
-    parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2, 3),
+    parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
     parser.add_argument('--from_disk', type=int, default=1, help="If 1, use load_from_disk()")
 
@@ -532,7 +521,5 @@ if __name__ == "__main__":
         main_lora(args_cmd, is_student=True)
     elif args_cmd.type == 2:
         main_lora(args_cmd, is_student=False)
-    elif args_cmd.type == 3:
-        main_mrlora(args_cmd)
     else:
         raise ValueError(f"Unknown command {args_cmd.type}")

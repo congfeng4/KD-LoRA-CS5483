@@ -36,13 +36,13 @@ def main(args):
     # Split tokenized datasets for training and evaluation
     if args.task == "mnli":
         # MNLI requires evaluation on both matched and mismatched datasets
-        train_dataset = tokenized_datasets["train"].shuffle(seed=42)
-        eval_matched_dataset = tokenized_datasets["validation_matched"].shuffle(seed=42)
-        eval_mismatched_dataset = tokenized_datasets["validation_mismatched"].shuffle(seed=42)
+        train_dataset = tokenized_datasets["train"].shuffle()
+        eval_matched_dataset = tokenized_datasets["validation_matched"].shuffle()
+        eval_mismatched_dataset = tokenized_datasets["validation_mismatched"].shuffle()
     else:
         # Standard train-validation split for other datasets
-        train_dataset = tokenized_datasets["train"].shuffle(seed=42)
-        eval_dataset = tokenized_datasets["validation"].shuffle(seed=42)
+        train_dataset = tokenized_datasets["train"].shuffle()
+        eval_dataset = tokenized_datasets["validation"].shuffle()
 
     # Load model for sequence classification with appropriate number of labels
     if args.task == "stsb" or args.task == "mnli":
