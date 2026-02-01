@@ -18,7 +18,6 @@ GLUE_TASKS = [
    "mnli", "cola", "sst2",
 ]
 
-
 def generate_mrlora_ranks(highest_rank):
     """Generate MrLoRA ranks list from highest_rank down to 1 by halving."""
     ranks = []

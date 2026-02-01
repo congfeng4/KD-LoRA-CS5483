@@ -21,6 +21,7 @@ RANK_VALUES = [4]
 seed_list = [123, 2024]
 EVAL_STEPS = 10
 
+# TODO: Use bf16 for more stable training...
 
 class BertDistillPipeline:
     """
