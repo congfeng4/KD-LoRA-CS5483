@@ -11,14 +11,11 @@ import torch
 import torch.nn.functional as F
 from transformers.trainer_utils import set_seed
 
-
 GLUE_TASKS = [
-   "rte", "qnli",
+    "rte", "qnli",
     "mrpc", "qqp", "stsb",
-   "mnli", "cola", "sst2",
+    "mnli", "cola", "sst2",
 ]
-#  "wnli",
-
 
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
@@ -28,6 +25,7 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 def get_raw_dataset(dataset_path, task, from_disk=True):
     """Load raw GLUE dataset with caching."""
     return load_glue_dataset(dataset_path, task, from_disk)
+
 
 @functools.lru_cache(maxsize=None)
 def get_tokenizer(model_name, use_fast=False):
@@ -89,12 +87,12 @@ def get_target_modules(model_name):
 
 def get_peft_config(args, model_name, peft_method):
     target_modules = get_target_modules(model_name)
-    
+
     # Determine task type based on bench argument (default to SEQ_CLS for GLUE)
     task_type = "SEQ_CLS"
     if hasattr(args, 'bench') and args.bench == 'QA':
         task_type = "QUESTION_ANS"
-    
+
     lora_config = LoraConfig(
         r=args.rank,
         lora_alpha=args.lora_alpha,
@@ -123,7 +121,7 @@ def get_peft_config(args, model_name, peft_method):
     if peft_method == 'adalora':
         from peft import AdaLoraConfig
         peft_config = AdaLoraConfig(
-            init_r=2*args.rank,  # Start higher
+            init_r=2 * args.rank,  # Start higher
             target_r=args.rank,  # Final average rank
             lora_alpha=args.lora_alpha,
             target_modules=target_modules,
@@ -148,7 +146,8 @@ def get_peft_config(args, model_name, peft_method):
             peft_config.tinit = max(1, int(peft_config.tinit * scale))
             peft_config.tfinal = max(1, int(peft_config.tfinal * scale))
             peft_config.deltaT = max(1, int(peft_config.deltaT * scale))
-            print(f"Scaled AdaLoRA pruning parameters: tinit={peft_config.tinit}, tfinal={peft_config.tfinal}, deltaT={peft_config.deltaT}")
+            print(
+                f"Scaled AdaLoRA pruning parameters: tinit={peft_config.tinit}, tfinal={peft_config.tfinal}, deltaT={peft_config.deltaT}")
         # Ensure tinit < total_step - tfinal (pruning interval positive)
         if peft_config.tinit >= total_step - peft_config.tfinal:
             # Reduce tfinal so that there is at least one step for pruning
@@ -194,7 +193,7 @@ def distillation_loss(student_logits, teacher_logits, labels, temperature=2.0, a
         # Classification task
         # Ensure labels are long integers for cross-entropy
         labels = labels.long()
-        
+
         soft_loss = F.kl_div(
             F.log_softmax(student_logits / temperature, dim=-1),
             F.softmax(teacher_logits / temperature, dim=-1),
@@ -294,7 +293,7 @@ def compute_metrics(args):
         else:
             # Already class predictions (1D array)
             predictions = predictionss
-            
+
         if args.task == "mrpc":
             accuracy = accuracy_score(labels, predictions)
             f1 = f1_score(labels, predictions, average="binary")
@@ -327,7 +326,7 @@ def compute_metrics(args):
         if args.task == "mnli":
             accuracy = accuracy_score(labels, predictions)
             return {"accuracy": accuracy}
-        
+
         # Default return for unknown tasks
         return {}
 
@@ -340,23 +339,32 @@ def tokenize_function(args, tokenizer, with_indices=False):
 
         # Tokenize based on dataset-specific requirements
         if args.task == "mrpc":
-            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation='longest_first', max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length",
+                             truncation='longest_first', max_length=128, return_overflowing_tokens=False)
         if args.task == "cola":
-            return tokenizer(examples["sentence"], truncation='longest_first', padding="max_length", max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["sentence"], truncation='longest_first', padding="max_length", max_length=128,
+                             return_overflowing_tokens=False)
         if args.task == "sst2":
-            return tokenizer(examples["sentence"], truncation='longest_first', padding="max_length",max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["sentence"], truncation='longest_first', padding="max_length", max_length=128,
+                             return_overflowing_tokens=False)
         if args.task == "wnli":
-            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation='longest_first',max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length",
+                             truncation='longest_first', max_length=128, return_overflowing_tokens=False)
         if args.task == "rte":
-            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation='longest_first',max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length",
+                             truncation='longest_first', max_length=128, return_overflowing_tokens=False)
         if args.task == "qqp":
-            return tokenizer(examples["question1"], examples["question2"], padding="max_length", truncation='longest_first',max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["question1"], examples["question2"], padding="max_length",
+                             truncation='longest_first', max_length=128, return_overflowing_tokens=False)
         if args.task == "stsb":
-            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length", truncation='longest_first',max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["sentence1"], examples["sentence2"], padding="max_length",
+                             truncation='longest_first', max_length=128, return_overflowing_tokens=False)
         if args.task == "qnli":
-            return tokenizer(examples["question"], examples["sentence"], padding="max_length", truncation='longest_first',max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["question"], examples["sentence"], padding="max_length",
+                             truncation='longest_first', max_length=128, return_overflowing_tokens=False)
         if args.task == "mnli":
-            return tokenizer(examples["premise"], examples["hypothesis"], padding="max_length", truncation='longest_first',max_length=128, return_overflowing_tokens=False)
+            return tokenizer(examples["premise"], examples["hypothesis"], padding="max_length",
+                             truncation='longest_first', max_length=128, return_overflowing_tokens=False)
         raise ValueError(f"Unsupported task: {args.task}")
 
     if with_indices:
@@ -388,6 +396,7 @@ def get_tokenized_dataset(task, tokenizer_name, with_indices=False, dataset_path
     tokenized = raw_dataset.map(tokenize_fn, batched=True, keep_in_memory=True, with_indices=with_indices, num_proc=4)
     return tokenized
 
+
 import torch
 import gc
 
@@ -396,4 +405,3 @@ def clear_gpu_memory():
     gc.collect()
     torch.cuda.empty_cache()
     print("GPU memory cleared.")
-
