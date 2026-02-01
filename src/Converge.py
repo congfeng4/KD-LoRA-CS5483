@@ -453,7 +453,7 @@ def main_lora(args, is_student: bool):
         for seed in seed_list:
             for task in ['cola']:
                 for model_family in MODEL_FAMILY.keys():
-                    for peft_method in ['lora']: #'mrlora-rs']:
+                    for peft_method in ['mrlora-rs']:
                         # Set alpha = 16 (fixed) as per our experimental setup
                         set_seed(seed)
                         config = args.__dict__.copy()

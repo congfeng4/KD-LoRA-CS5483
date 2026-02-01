@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, List
 
 import torch
 import torch.nn as nn
@@ -85,7 +85,7 @@ class MrLoraLayer(nn.Module, LoraLayer):
 
         return result + mr_adapter
 
-    def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
+    def merge(self, safe_merge: bool = False, adapter_names: Optional[List[str]] = None) -> None:
         # 将 ΔW 加到 base_layer 的权重上
         delta_w = self.get_delta_weight()
         self.get_base_layer().weight.data += delta_w
@@ -114,6 +114,6 @@ class MrLoraLayer(nn.Module, LoraLayer):
 
 
 class MrLoraLinear(MrLoraLayer):
-    def __init__(self, base_layer, ranks, lora_alpha, lora_dropout, use_rslora=False, **kwargs):
-        super().__init__(base_layer.in_features, base_layer.out_features, ranks, lora_alpha, lora_dropout,
+    def __init__(self, base_layer, total_rank, lora_alpha, lora_dropout, use_rslora=False, **kwargs):
+        super().__init__(base_layer.in_features, base_layer.out_features, total_rank, lora_alpha, lora_dropout,
                          use_rslora=use_rslora, base_layer=base_layer)

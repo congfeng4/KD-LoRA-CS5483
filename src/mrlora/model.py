@@ -35,7 +35,7 @@ class MrLoraModel(BaseTuner):
         if isinstance(target, torch.nn.Linear):
             new_module = MrLoraLinear(
                 target,
-                ranks=peft_config.ranks,
+                total_rank=peft_config.total_rank,
                 lora_alpha=peft_config.lora_alpha,
                 lora_dropout=peft_config.lora_dropout,
                 use_rslora=peft_config.use_rslora
