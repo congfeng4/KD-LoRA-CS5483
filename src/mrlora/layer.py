@@ -5,14 +5,28 @@ import torch.nn.functional as F
 from peft.tuners.lora import LoraLayer
 
 
+def generate_mrlora_ranks(highest_rank):
+    """Generate MrLoRA ranks list from highest_rank down to 1 by halving."""
+    ranks = []
+    r = highest_rank
+    while r >= 1:
+        ranks.append(r)
+        r = r // 2
+    # Ensure at least two ranks
+    if len(ranks) == 1:
+        ranks.append(ranks[0] // 2)
+    return ranks
+
+
 class MrLoraLayer(nn.Module, LoraLayer):
-    def __init__(self, in_features, out_features, ranks, lora_alpha, lora_dropout, use_rslora=True, **kwargs):
+    def __init__(self, in_features, out_features, total_rank, lora_alpha, lora_dropout, use_rslora=True, **kwargs):
         nn.Module.__init__(self)
         LoraLayer.__init__(self, base_layer=kwargs.get("base_layer"))
-
+        assert total_rank % 2 == 0, total_rank
+        self.highest_rank = total_rank // 2
         self.lora_alpha = lora_alpha
         self.use_rslora = use_rslora
-        self.ranks_int = ranks
+        self.ranks_int = generate_mrlora_ranks(self.highest_rank)
         self.ranks_str = [str(r) for r in ranks]
 
         # 1. Pre-compute scaling factors to avoid math in the forward pass
@@ -70,6 +84,29 @@ class MrLoraLayer(nn.Module, LoraLayer):
         mr_adapter = torch.einsum('rbsh,r->bsh', rank_outputs, combined_scale)
 
         return result + mr_adapter
+
+    def merge(self):
+        if self.merged:
+            return
+        
+        # Calculate the combined delta weight
+        # delta_W = sum(alpha_i * scale_i * (B_i @ A_i))
+        combined_weight = 0
+        for i, r_str in enumerate(self.ranks_str):
+            weight_A = self.lora_A[r_str].weight # [rank, in_features]
+            weight_B = self.lora_B[r_str].weight # [out_features, rank]
+            
+            # Matrix multiplication to get [out_features, in_features]
+            wa_b = weight_B @ weight_A
+            combined_weight += self.alphas[i] * self.scaling_factors[i] * wa_b
+            
+        # Add to base layer
+        self.get_base_layer().weight.data += combined_weight
+        self.merged = True
+
+    def unmerge(self):
+        # Implementation to subtract the weight back out...
+        pass
 
 
 class MrLoraLinear(MrLoraLayer):

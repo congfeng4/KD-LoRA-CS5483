@@ -17,7 +17,7 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 # KD-LoRA paper uses rank 8,16,32,64 with alpha = rank, but we fix alpha = 16
 RANK_VALUES = [2, 4, 8, 16, 32, 64]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
-seed_list = [42, 123, 2024]
+seed_list = [42, 123, 2024, 2026, 999]
 
 
 class BertDistillPipeline:
@@ -461,11 +461,6 @@ def main_lora(args, is_student: bool):
                         config['seed'] = seed
                         config['rank'] = rank
                         config['lora_alpha'] = 16
-                        
-                        # For MrLoRA, generate ranks list from highest rank down to 1
-                        # unless user provided custom lora_ranks (non-default)
-                        if 'mrlora' in peft_method:
-                            config['lora_ranks'] = generate_mrlora_ranks(rank)
                         
                         add_model_name_to_config(model_family, config)
                         pipe = BertDistillPipeline(**config)

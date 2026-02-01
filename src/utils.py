@@ -18,18 +18,6 @@ GLUE_TASKS = [
    "mnli", "cola", "sst2",
 ]
 
-def generate_mrlora_ranks(highest_rank):
-    """Generate MrLoRA ranks list from highest_rank down to 1 by halving."""
-    ranks = []
-    r = highest_rank
-    while r >= 1:
-        ranks.append(r)
-        r = r // 2
-    # Ensure at least two ranks
-    if len(ranks) == 1:
-        ranks.append(ranks[0] // 2)
-    return ranks
-
 
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
@@ -176,7 +164,7 @@ def get_peft_config(args, model_name, peft_method):
         if peft_method == 'mrlora-rs':
             args.use_rslora = True
         mrlora_config = MrLoraConfig(
-            ranks=args.lora_ranks,
+            total_rank=args.rank,
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
             target_modules=target_modules,

@@ -5,8 +5,8 @@ from peft.config import PeftConfig
 
 @dataclass
 class MrLoraConfig(PeftConfig):
-    ranks: List[int] = field(default_factory=lambda: [32, 16, 8, 4, 2],
-                             metadata={"help": "List of ranks for multi-rank adaptation"})
+    total_rank: int = field(default=8,
+                             metadata={"help": "Total rank for multi-rank adaptation"})
     target_modules: Optional[Union[List[str], str]] = field(default=None, metadata={
         "help": "List of module names to apply Mr. LoRA to"})
     lora_alpha: int = field(default=16, metadata={"help": "The alpha parameter for LoRA scaling"})
