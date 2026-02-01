@@ -1,4 +1,6 @@
 import math
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,9 +14,7 @@ def generate_mrlora_ranks(highest_rank):
     while r >= 1:
         ranks.append(r)
         r = r // 2
-    # Ensure at least two ranks
-    if len(ranks) == 1:
-        ranks.append(ranks[0] // 2)
+
     return ranks
 
 
@@ -27,29 +27,29 @@ class MrLoraLayer(nn.Module, LoraLayer):
         self.lora_alpha = lora_alpha
         self.use_rslora = use_rslora
         self.ranks_int = generate_mrlora_ranks(self.highest_rank)
-        self.ranks_str = [str(r) for r in ranks]
+        self.ranks_str = [str(r) for r in self.ranks_int]
 
         # 1. Pre-compute scaling factors to avoid math in the forward pass
         if use_rslora:
             # RS-LoRA: alpha / sqrt(r)
-            scalings = [lora_alpha / math.sqrt(r) for r in ranks]
+            scalings = [lora_alpha / math.sqrt(r) for r in self.ranks_int]
         else:
             # Standard: alpha / r (or alpha / max_r as per your original logic)
             # Standard LoRA usually uses alpha / r. 
-            scalings = [lora_alpha / r for r in ranks]
+            scalings = [lora_alpha / r for r in self.ranks_int]
         
         # Register as buffer so it moves with the model to GPU
         self.register_buffer("scaling_factors", torch.tensor(scalings, dtype=torch.float32))
 
         # Multi-rank components
         self.lora_A = nn.ModuleDict({r_str: nn.Linear(in_features, r_int, bias=False) 
-                                     for r_str, r_int in zip(self.ranks_str, ranks)})
+                                     for r_str, r_int in zip(self.ranks_str, self.ranks_int)})
         self.lora_B = nn.ModuleDict({r_str: nn.Linear(r_int, out_features, bias=False) 
-                                     for r_str, r_int in zip(self.ranks_str, ranks)})
+                                     for r_str, r_int in zip(self.ranks_str, self.ranks_int)})
         
         # Learnable coefficients (initialized to 1.0 or small normal)
         # Using ones_ helps maintain the initial magnitude of the pre-computed scalings
-        self.alphas = nn.Parameter(torch.ones(len(ranks)))
+        self.alphas = nn.Parameter(torch.ones(len(self.ranks_int)))
 
         self.lora_dropout = nn.Dropout(p=lora_dropout) if lora_dropout > 0 else nn.Identity()
         self.reset_mr_parameters()
@@ -69,7 +69,7 @@ class MrLoraLayer(nn.Module, LoraLayer):
 
         # 2. Optimized Mr. LoRA forward
         # Apply dropout once to the input to save compute and improve consistency
-        dropped_x = self.lora_dropout(x)
+        x_dropped = self.lora_dropout(x)
         
         # 3. Vectorized Multi-Rank Path
         # List comprehension is still necessary for ModuleDict access,
@@ -85,28 +85,32 @@ class MrLoraLayer(nn.Module, LoraLayer):
 
         return result + mr_adapter
 
-    def merge(self):
-        if self.merged:
-            return
-        
-        # Calculate the combined delta weight
-        # delta_W = sum(alpha_i * scale_i * (B_i @ A_i))
-        combined_weight = 0
-        for i, r_str in enumerate(self.ranks_str):
-            weight_A = self.lora_A[r_str].weight # [rank, in_features]
-            weight_B = self.lora_B[r_str].weight # [out_features, rank]
-            
-            # Matrix multiplication to get [out_features, in_features]
-            wa_b = weight_B @ weight_A
-            combined_weight += self.alphas[i] * self.scaling_factors[i] * wa_b
-            
-        # Add to base layer
-        self.get_base_layer().weight.data += combined_weight
-        self.merged = True
+    def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
+        # 将 ΔW 加到 base_layer 的权重上
+        delta_w = self.get_delta_weight()
+        self.get_base_layer().weight.data += delta_w
 
     def unmerge(self):
-        # Implementation to subtract the weight back out...
-        pass
+        # 减去 ΔW 还原权重
+        delta_w = self.get_delta_weight()
+        self.get_base_layer().weight.data -= delta_w
+
+    def get_delta_weight(self):
+        """计算所有 rank 组合后的 ΔW"""
+        device = self.alphas.device
+        dtype = self.lora_A[self.ranks_str[0]].weight.dtype
+        out_features, in_features = self.get_base_layer().weight.shape
+
+        # 初始化一个全零的 ΔW
+        total_delta_w = torch.zeros(out_features, in_features, device=device, dtype=dtype)
+
+        for i, r_str in enumerate(self.ranks_str):
+            # W = B @ A
+            delta_w = self.lora_B[r_str].weight @ self.lora_A[r_str].weight
+            # Apply alpha and pre-computed scaling
+            total_delta_w += self.alphas[i] * self.scaling_factors[i] * delta_w
+
+        return total_delta_w
 
 
 class MrLoraLinear(MrLoraLayer):

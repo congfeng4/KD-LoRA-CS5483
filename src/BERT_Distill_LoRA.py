@@ -215,7 +215,7 @@ class BertDistillPipeline:
 
     def evaluate_model(self, trainer, eval_dataset):
         args = self.args
-        set_seed(args.seed, deterministic=True)
+        # set_seed(args.seed, deterministic=True) # Some kernel not supported.
         if args.task == "mnli":
             eval_matched_dataset, eval_mismatched_dataset = eval_dataset
             eval_results_matched = trainer.evaluate(eval_dataset=eval_matched_dataset)
@@ -512,6 +512,7 @@ if __name__ == "__main__":
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=5e-5, help="Learning rate for the teacher model")
+    # TODO: lr.
     parser.add_argument("--student_learning_rate", type=float, default=5e-4, help="Learning rate for the student model")
     parser.add_argument('--task', type=str, default="wnli", choices=tuple(GLUE_TASKS), help="Name of the task")
     parser.add_argument('--peft', type=str, default="lora", choices=tuple(PEFT_FAMILY), help="PEFT method name")
