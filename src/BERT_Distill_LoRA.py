@@ -1,7 +1,6 @@
 import argparse
 import json
 import shutil
-import logging
 
 from addict import Addict
 from copy import deepcopy
