@@ -13,9 +13,9 @@ from transformers.trainer_utils import set_seed
 
 
 GLUE_TASKS = [
-  "wnli", "rte", "qnli",
-     "mrpc", "qqp", "stsb",
-   "mnli", "cola", "sst2",
+ # "wnli", "rte", "qnli",
+    "mrpc", "qqp", "stsb",
+#    "mnli", "cola", "sst2",
 ]
 
 
@@ -67,8 +67,8 @@ PEFT_FAMILY = [
     "olora",  # orthonormal lora
     "dora",  # weight decomposed lora
     "rslora",  # Rank stablized lora
-    "mrlora", # Multi-Rank lora
-    "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
+    # "mrlora", # Multi-Rank lora
+    # "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
 ]
 
 
