@@ -453,7 +453,7 @@ def main_lora(args, is_student: bool):
         for seed in seed_list:
             for task in ['cola']:
                 for model_family in MODEL_FAMILY.keys():
-                    for peft_method in ['mrlora-rs']:
+                    for peft_method in ['lora']: #'mrlora-rs']:
                         # Set alpha = 16 (fixed) as per our experimental setup
                         set_seed(seed)
                         config = args.__dict__.copy()
@@ -463,11 +463,6 @@ def main_lora(args, is_student: bool):
                         config['seed'] = seed
                         config['rank'] = rank
                         config['lora_alpha'] = 16
-                        
-                        # For MrLoRA, generate ranks list from highest rank down to 1
-                        # unless user provided custom lora_ranks (non-default)
-                        if 'mrlora' in peft_method:
-                            config['lora_ranks'] = generate_mrlora_ranks(rank)
                         
                         add_model_name_to_config(model_family, config)
                         pipe = BertDistillPipeline(**config)

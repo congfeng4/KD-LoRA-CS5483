@@ -13,10 +13,11 @@ from transformers.trainer_utils import set_seed
 
 
 GLUE_TASKS = [
- "wnli", "rte", "qnli",
+   "rte", "qnli",
     "mrpc", "qqp", "stsb",
    "mnli", "cola", "sst2",
 ]
+#  "wnli",
 
 
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
@@ -54,7 +55,8 @@ PEFT_FAMILY = [
     "olora",  # orthonormal lora
     "dora",  # weight decomposed lora
     "rslora",  # Rank stablized lora
-    "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
+    "adalora",
+    # "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
 ]
 
 
