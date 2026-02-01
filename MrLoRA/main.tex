@@ -200,7 +200,7 @@ We note the Eq.~\ref{eq:mrlora} cannot prevent rank collapsing mathematically as
 
 \textbf{Parameter Count.}
 % The learnable coefficient is just a scalar, ignore it.
-For each block with rank $r_i$, the corresponding LoRA module incurs $r_i (d + k + 1)$ parameters. Therefore, Eq.~\ref{eq:mrlora} incurs a parameter overhead of $\sum_i r_i (d+k) = r(d+k)$, which is the same as the original LoRA formulation. We note that MR-LoRA does not introduce extra parameters given fixed total budgets, but uses a more structural allocation scheme. In practice, we set $R = \lfloor (r+1) / 2 \rfloor$ given the total rank $r$.
+For each block with rank $r_i$, the corresponding LoRA module incurs $r_i (d + k + 1)$ parameters. Therefore, Eq.~\ref{eq:mrlora} incurs a parameter overhead of $\sum_i r_i (d+k) = r(d+k)$, which is the same as the original LoRA formulation. We note that MR-LoRA does not introduce extra parameters given fixed total budgets, but uses a more structural allocation scheme. In practice, we set $R = r / 2$ given that the total rank $r$ is even.
 
 
 \section{Empirical Experiments}

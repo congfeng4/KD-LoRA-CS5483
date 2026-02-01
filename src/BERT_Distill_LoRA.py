@@ -130,12 +130,12 @@ class BertDistillPipeline:
 
         if args.task == "mnli":
             # MNLI requires evaluation on both matched and mismatched datasets
-            eval_matched_dataset = tokenized_datasets["validation_matched"].shuffle(args.seed)
-            eval_mismatched_dataset = tokenized_datasets["validation_mismatched"].shuffle(args.seed)
+            eval_matched_dataset = tokenized_datasets["validation_matched"]
+            eval_mismatched_dataset = tokenized_datasets["validation_mismatched"]
             return train_dataset, (eval_matched_dataset, eval_mismatched_dataset)
         else:
             # Standard train-validation split for other datasets
-            eval_dataset = tokenized_datasets["validation"].shuffle(args.seed)
+            eval_dataset = tokenized_datasets["validation"]
             return train_dataset, eval_dataset
 
     def train_lora(self, model, train_dataset, eval_dataset, ckpt_dir):
@@ -215,6 +215,7 @@ class BertDistillPipeline:
 
     def evaluate_model(self, trainer, eval_dataset):
         args = self.args
+        set_seed(args.seed, deterministic=True)
         if args.task == "mnli":
             eval_matched_dataset, eval_mismatched_dataset = eval_dataset
             eval_results_matched = trainer.evaluate(eval_dataset=eval_matched_dataset)
@@ -430,7 +431,7 @@ def main_teacher_fft(args):
     for seed in seed_list:
         for task in GLUE_TASKS:
             for model_family in MODEL_FAMILY.keys():
-                set_seed(seed)
+                set_seed(seed, deterministic=False)
                 config = args.__dict__.copy()
                 config['model_family'] = model_family
                 config['task'] = task
@@ -452,7 +453,7 @@ def main_lora(args, is_student: bool):
                 for model_family in MODEL_FAMILY.keys():
                     for peft_method in PEFT_FAMILY:
                         # Set alpha = 16 (fixed) as per our experimental setup
-                        set_seed(seed)
+                        set_seed(seed, deterministic=False)
                         config = args.__dict__.copy()
                         config['model_family'] = model_family
                         config['task'] = task
