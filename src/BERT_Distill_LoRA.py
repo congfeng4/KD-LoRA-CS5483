@@ -68,7 +68,7 @@ class BertDistillPipeline:
 
     def load_dataset(self):
         args = self.args
-        teacher_dataset = load_glue_dataset(args.dataset_path, args.task, from_disk=bool(args.from_disk))
+        teacher_dataset = load_glue_dataset(args.dataset_path, args.task)
         print('Loaded dataset', teacher_dataset)
         return teacher_dataset
 
@@ -109,7 +109,6 @@ class BertDistillPipeline:
             tokenizer_name=args.teacher_model_name,
             with_indices=False,
             dataset_path=args.dataset_path,
-            from_disk=bool(args.from_disk)
         )
         return tokenized_teacher_dataset
 
@@ -121,7 +120,6 @@ class BertDistillPipeline:
             tokenizer_name=args.student_model_name,
             with_indices=True,
             dataset_path=args.dataset_path,
-            from_disk=bool(args.from_disk)
         )
         return tokenized_student_dataset
 

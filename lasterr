@@ -327,3 +327,24 @@ Deterministic behavior was enabled with either `torch.use_deterministic_algorith
 [rank1]:   File "/mnt/data2/congfeng/miniconda3/envs/lora/lib/python3.8/site-packages/transformers/models/deberta_v2/modeling_deberta_v2.py", line 711, in forward
 [rank1]:     attention_scores = torch.bmm(query_layer, key_layer.transpose(-1, -2) / scale.to(dtype=query_layer.dtype))
 [rank1]: RuntimeError: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility
+
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "src/Converge.py", line 443, in <module>
+[rank2]:     main_lora(args_cmd, is_student=True)
+[rank2]:   File "src/Converge.py", line 416, in main_lora
+[rank2]:     raise e
+[rank2]:   File "src/Converge.py", line 411, in main_lora
+[rank2]:     pipe.run_student_lora()
+[rank2]:   File "src/Converge.py", line 349, in run_student_lora
+[rank2]:     student_trainer, train_metrics = self.train_model(student_model, student_train_dataset,
+[rank2]:   File "src/Converge.py", line 170, in train_model
+[rank2]:     train_output = trainer.train()
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2123, in train
+[rank2]:     return inner_training_loop(
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 2481, in _inner_training_loop
+[rank2]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank2]:   File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/transformers/trainer.py", line 3579, in training_step
+[rank2]:     loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+[rank2]:   File "/home/user/fc/kd-lora/src/utils.py", line 212, in compute_loss
+[rank2]:     idx = inputs.pop('idx').long().cpu()
+[rank2]: KeyError: 'idx'

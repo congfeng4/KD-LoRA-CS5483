@@ -23,7 +23,7 @@ MAX_EPOCHS = 20
 GLUE_TASKS = ['cola']
 PEFT_FAMILY = ['mrlora-rs']
 
-
+# TODO: merge this class
 class BertDistillPipeline:
     """
     BERT Distillation Pipeline.
@@ -70,7 +70,7 @@ class BertDistillPipeline:
 
     def load_dataset(self):
         args = self.args
-        teacher_dataset = load_glue_dataset(args.dataset_path, args.task, from_disk=bool(args.from_disk))
+        teacher_dataset = load_glue_dataset(args.dataset_path, args.task)
         print('Loaded dataset', teacher_dataset)
         return teacher_dataset
 
@@ -111,7 +111,6 @@ class BertDistillPipeline:
             tokenizer_name=args.teacher_model_name,
             with_indices=False,
             dataset_path=args.dataset_path,
-            from_disk=bool(args.from_disk)
         )
         return tokenized_teacher_dataset
 
@@ -123,7 +122,6 @@ class BertDistillPipeline:
             tokenizer_name=args.student_model_name,
             with_indices=True,
             dataset_path=args.dataset_path,
-            from_disk=bool(args.from_disk)
         )
         return tokenized_student_dataset
 
@@ -166,7 +164,7 @@ class BertDistillPipeline:
             compute_metrics=compute_metrics(args),
             callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=5)],
         )
-        if teacher_soft_labels:
+        if teacher_soft_labels is not None:
             trainer.teacher_soft_labels = teacher_soft_labels
 
         train_output = trainer.train()
@@ -253,7 +251,7 @@ class BertDistillPipeline:
 
         teacher_fft_results = self.evaluate_model(teacher_trainer, teacher_eval_dataset)
         self.patch_results(teacher_fft_results, args, train_metrics, 'fft')
-        print(f"teacher fft results: {teacher_fft_results}")
+        # print(f"teacher fft results: {teacher_fft_results}")
         teacher_soft_labels = self.get_teacher_soft_labels(teacher_trainer, tokenized_teacher_dataset)
 
         if teacher_trainer.is_world_process_zero():
@@ -298,7 +296,7 @@ class BertDistillPipeline:
 
         teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
         self.patch_results(teacher_lora_results, args, train_metrics, 'lora')
-        print(f"teacher lora results: {teacher_lora_results}")
+        # print(f"teacher lora results: {teacher_lora_results}")
 
         if teacher_lora_trainer.is_world_process_zero():
             with open(metrics_file, 'w', encoding='utf-8') as f:
@@ -354,7 +352,7 @@ class BertDistillPipeline:
 
         student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
         self.patch_results(student_lora_results, args, train_metrics, 'kd-lora')
-        print(f"student lora results: {student_lora_results}")
+        # print(f"student lora results: {student_lora_results}")
 
         if student_trainer.is_world_process_zero():
             with open(metrics_file, 'w', encoding='utf-8') as f:
