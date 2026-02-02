@@ -19,6 +19,8 @@ RANK_VALUES = [8, 16, 32, 64]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024, 2026, 999]
 MAX_EPOCHS = 100
+EVAL_STEPS = 10
+PATIENT = 10
 
 
 class BertDistillPipeline:
@@ -145,7 +147,7 @@ class BertDistillPipeline:
         args = self.args
         # 动态设置评估步数
         total_steps = (len(train_dataset) // args.train_batch_size) * MAX_EPOCHS
-        EVAL_STEPS = max(10, total_steps // 50)  # 整个训练过程评估 50 次
+        # EVAL_STEPS = max(10, total_steps // 50)  # 整个训练过程评估 50 次
         print('total_steps', total_steps, 'eval_steps', EVAL_STEPS)
         # Define training arguments
         training_args = TrainingArguments(
@@ -167,7 +169,7 @@ class BertDistillPipeline:
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics(args),
-            callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=5)],
+            callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=PATIENT)],
         )
         if teacher_soft_labels is not None:
             trainer.teacher_soft_labels = teacher_soft_labels
