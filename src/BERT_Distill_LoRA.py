@@ -457,6 +457,7 @@ if __name__ == "__main__":
     parser.add_argument("--peft", type=str, default='lora', help="Number of training epochs")
     parser.add_argument("--rank", type=int, default=8, help="Number of training epochs")
     parser.add_argument("--lora_alpha", type=float, default=16, help="Number of training epochs")
+    parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
 
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
