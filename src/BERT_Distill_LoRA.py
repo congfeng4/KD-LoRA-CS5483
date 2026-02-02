@@ -167,7 +167,7 @@ class BertDistillPipeline:
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics(args),
-            callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=10)],
+            callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=5)],
         )
         if teacher_soft_labels is not None:
             trainer.teacher_soft_labels = teacher_soft_labels
