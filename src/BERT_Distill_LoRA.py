@@ -19,7 +19,7 @@ RANK_VALUES = [8, 16, 32, 64]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024, 2026, 999]
 MAX_EPOCHS = 100
-EVAL_STEPS = 10
+EVAL_STEPS = 100
 PATIENT = 10
 
 
@@ -169,7 +169,7 @@ class BertDistillPipeline:
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             compute_metrics=compute_metrics(args),
-            callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=PATIENT)],
+            callbacks=[callback, EarlyStoppingCallback(early_stopping_patience=PATIENT, early_stopping_threshold=0.001)],
         )
         if teacher_soft_labels is not None:
             trainer.teacher_soft_labels = teacher_soft_labels

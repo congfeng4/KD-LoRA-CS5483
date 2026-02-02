@@ -348,3 +348,32 @@ Deterministic behavior was enabled with either `torch.use_deterministic_algorith
 [rank2]:   File "/home/user/fc/kd-lora/src/utils.py", line 212, in compute_loss
 [rank2]:     idx = inputs.pop('idx').long().cpu()
 [rank2]: KeyError: 'idx'
+
+  return func(*args, **kwargs)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/pyplot.py", line 840, in figure
+    manager = new_figure_manager(
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/pyplot.py", line 384, in new_figure_manager
+    return _get_backend_mod().new_figure_manager(*args, **kwargs)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backend_bases.py", line 3574, in new_figure_manager
+    return cls.new_figure_manager_given_figure(num, fig)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backend_bases.py", line 3579, in new_figure_manager_given_figure
+    return cls.FigureCanvas.new_manager(figure, num)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backend_bases.py", line 1742, in new_manager
+    return cls.manager_class.create_with_canvas(cls, figure, num)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backends/_backend_tk.py", line 507, in create_with_canvas
+    manager = cls(canvas, num, window)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backends/_backend_tk.py", line 457, in __init__
+    super().__init__(canvas, num)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backend_bases.py", line 2832, in __init__
+    self.toolbar = self._toolbar2_class(self.canvas)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backends/_backend_tk.py", line 630, in __init__
+    self._buttons[text] = button = self._Button(
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backends/_backend_tk.py", line 834, in _Button
+    NavigationToolbar2Tk._set_image_for_button(self, b)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/matplotlib/backends/_backend_tk.py", line 770, in _set_image_for_button
+    image = ImageTk.PhotoImage(im.resize((size, size)), master=self)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/PIL/Image.py", line 2305, in resize
+    im = im.resize(size, resample, box)
+  File "/home/user/anaconda3/envs/lora/lib/python3.8/site-packages/PIL/Image.py", line 2328, in resize
+    return self._new(self.im.resize(size, resample, box))
+ValueError: height and width must be > 0

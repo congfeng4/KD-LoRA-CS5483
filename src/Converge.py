@@ -95,6 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--lora_learning_rate", type=float, default=2e-4, help="Learning rate for the student model")
 
     args_cmd = parser.parse_args()
+    
+    main_lora(args_cmd, is_student=False)
     main_teacher_fft(args_cmd)
     main_lora(args_cmd, is_student=True)
-    main_lora(args_cmd, is_student=False)
