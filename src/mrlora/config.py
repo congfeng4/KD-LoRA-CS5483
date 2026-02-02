@@ -5,7 +5,7 @@ from peft.config import PeftConfig
 
 @dataclass
 class MrLoraConfig(PeftConfig):
-    init_type: str = 'standard'
+    init_weights: str = 'standard'
     total_rank: int = field(default=8,
                              metadata={"help": "Total rank for multi-rank adaptation"})
     target_modules: Optional[Union[List[str], str]] = field(default=None, metadata={
