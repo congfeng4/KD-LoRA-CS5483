@@ -1,10 +1,14 @@
 import math
+import warnings
 from typing import Optional, List, Literal
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from peft.tuners.lora import LoraLayer
+
+from peft.tuners.tuners_utils import check_adapters_to_merge
+from peft.utils import transpose
 
 
 def generate_mrlora_ranks(highest_rank):
@@ -144,15 +148,44 @@ class MrLoraLayer(nn.Module, LoraLayer):
 
         return result + mr_adapter
 
-    def merge(self, safe_merge: bool = False, adapter_names: Optional[List[str]] = None) -> None:
-        # 将 ΔW 加到 base_layer 的权重上
-        delta_w = self.get_delta_weight()
-        self.get_base_layer().weight.data += delta_w
+    def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
+        """
+        Merge the active adapter weights into the base weights
 
-    def unmerge(self):
-        # 减去 ΔW 还原权重
-        delta_w = self.get_delta_weight()
-        self.get_base_layer().weight.data -= delta_w
+        Args:
+            safe_merge (`bool`, *optional*):
+                If True, the merge operation will be performed in a copy of the original weights and check for NaNs
+                before merging the weights. This is useful if you want to check if the merge operation will produce
+                NaNs. Defaults to `False`.
+            adapter_names (`list[str]`, *optional*):
+                The list of adapter names that should be merged. If None, all active adapters will be merged. Defaults
+                to `None`.
+        """
+
+        base_layer = self.get_base_layer()
+        if safe_merge:
+            # Note that safe_merge will be slower than the normal merge
+            # because of the copy operation.
+            orig_weights = base_layer.weight.data.clone()
+            delta_weight = self.get_delta_weight()
+            orig_weights += delta_weight
+            if not torch.isfinite(orig_weights).all():
+                raise ValueError(
+                    f"NaNs detected in the merged weights."
+                )
+
+            base_layer.weight.data = orig_weights
+        else:
+            delta_weight = self.get_delta_weight()
+            base_layer.weight.data += delta_weight
+
+    def unmerge(self) -> None:
+        """
+        This method unmerges all merged adapter layers from the base weights.
+        """
+        weight = self.get_base_layer().weight
+        delta_weight = self.get_delta_weight()
+        weight.data -= delta_weight
 
     def get_delta_weight(self):
         """计算所有 rank 组合后的 ΔW"""
@@ -170,9 +203,3 @@ class MrLoraLayer(nn.Module, LoraLayer):
             total_delta_w += self.alphas[i] * self.scaling_factors[i] * delta_w
 
         return total_delta_w
-
-
-class MrLoraLinear(MrLoraLayer):
-    def __init__(self, base_layer, total_rank, lora_alpha, lora_dropout, use_rslora=False, init_type='standard', **kwargs):
-        super().__init__(base_layer.in_features, base_layer.out_features, total_rank, lora_alpha, lora_dropout,
-                         use_rslora=use_rslora, init_type=init_type, base_layer=base_layer)
