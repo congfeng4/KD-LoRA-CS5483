@@ -205,9 +205,9 @@ def plot_converge_function(df, TASK, MODEL_FAMILY, SEED):
         hue_order=target_order, # This forces the legend order
                     linewidth=3)
 
-    # for _, row in df.iterrows():
-    #     plt.axhline(y=row['value'], color=palette[row['Method']],
-    #                 linestyle='--', linewidth=1.2, alpha=0.8)
+    for _, row in df.iterrows():
+        plt.axhline(y=row['value'], #color=palette[row['Method']],
+                    linestyle='--', linewidth=1.2, alpha=0.8)
 
     # 6. Professional Formatting
     task_name = TASK_NAME_MAP[TASK]

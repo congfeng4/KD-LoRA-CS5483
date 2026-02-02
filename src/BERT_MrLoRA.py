@@ -1,77 +1,115 @@
 import argparse
-import logging
+import json
+import shutil
+
+from addict import Addict
+from copy import deepcopy
+from pathlib import Path
+from BERT_Distill_LoRA import *
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, EarlyStoppingCallback
 from peft import get_peft_model
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
-from mrlora import MrLoraConfig
 from utils import *
 
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
+RANK_VALUES = [8]
 
-def main(args):
-    # Determine labels
-    num_labels = get_num_labels(args)
 
-    # Load dataset and tokenizer
-    # dataset = load_dataset('glue', args.task, cache_dir=args.dataset_path)
-    dataset = load_glue_dataset(args.dataset_path, args.task)
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    tokenized_datasets = dataset.map(tokenize_function(args, tokenizer), batched=True)
-    print(tokenized_datasets)
+PEFT_FAMILY = [
+    # Baselines
+    "lora",  # Vanilla lora
+    "olora",  # orthonormal lora
+    "dora",  # weight decomposed lora
+    "rslora",  # Rank stablized lora
+    "adalora", # Adaptive LoRA
 
-    # Prepare model
-    model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=num_labels)
+    # Ours
+    "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
+    "mrlora-rs-olora", # Multi-Rank LoRA with rank-stabilized scaling
+    "mrlora-olora", # Multi-Rank LoRA with rank-stabilized scaling
+    "mrlora", # Plain mrlora
+]
 
-    # 1. Define Mr. LoRA Config instead of standard LoraConfig
-    mr_lora_config = MrLoraConfig(
-        ranks=args.ranks,
-        lora_alpha=args.lora_alpha,
-        target_modules=["query", "value"],
-        lora_dropout=args.lora_dropout,
-        task_type="SEQ_CLS",
-        use_rslora=args.use_rslora
-    )
 
-    # 2. Apply Mr. LoRA
-    # Using the custom tuner:
-    model_lora = get_peft_model(model, mr_lora_config)
+def main_teacher_fft(args):
+    for seed in seed_list:
+        for task in GLUE_TASKS:
+            for model_family in MODEL_FAMILY.keys():
+                set_seed(seed, deterministic=False)
+                config = args.__dict__.copy()
+                config['model_family'] = model_family
+                config['task'] = task
+                config['seed'] = seed
+                add_model_name_to_config(model_family, config)
+                pipe = BertDistillPipeline(**config)
+                try:
+                    pipe.run_teacher_fft()
+                except Exception as e:
+                    print(e)
+                    raise e
+    print('All finish')
 
-    # Define training arguments
-    training_args = TrainingArguments(
-        output_dir="./results",
-        eval_strategy="epoch",
-        learning_rate=5e-4,
-        per_device_train_batch_size=32,
-        num_train_epochs=args.num_train_epochs,
-        logging_strategy="epoch",  # Changed from "no" to see progress
-        save_strategy="epoch",
-        load_best_model_at_end=True,
-    )
-    print('training_args', training_args)
 
-    # Initialize Trainer
-    trainer = Trainer(
-        model=model_lora,
-        args=training_args,
-        train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["validation"],
-        compute_metrics=compute_metrics(args),
-    )
+def main_lora(args, is_student: bool):
+    for rank in RANK_VALUES:
+        for seed in seed_list:
+            for task in GLUE_TASKS:
+                for model_family in MODEL_FAMILY.keys():
+                    for peft_method in PEFT_FAMILY:
+                        # Set alpha = 16 (fixed) as per our experimental setup
+                        set_seed(seed, deterministic=False)
+                        config = args.__dict__.copy()
+                        config['model_family'] = model_family
+                        config['task'] = task
+                        config['peft'] = peft_method
+                        config['seed'] = seed
+                        config['rank'] = rank
+                        config['lora_alpha'] = 2 * rank
 
-    trainer.train()
-    print(trainer.evaluate())
+                        add_model_name_to_config(model_family, config)
+                        pipe = BertDistillPipeline(**config)
+                        try:
+                            if is_student:
+                                pipe.run_student_lora()
+                            else:
+                                pipe.run_teacher_lora()
+                        except Exception as e:
+                            print(e)
+                            raise e
+    print('All finish')
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset_path", type=str, default="./dataset")
-    parser.add_argument("--model_name", type=str, default="./models/bert-base-uncased")
-    parser.add_argument("--lora_alpha", type=int, default=16)
-    parser.add_argument("--lora_dropout", type=float, default=0.05)
-    parser.add_argument("--num_train_epochs", type=int, default=3)
-    parser.add_argument('--task', type=str, default="wnli")
-    parser.add_argument('--ranks', type=int, nargs='+', default=[32, 16, 8, 4, 2])
-    parser.add_argument('--use_rslora', action='store_true', help='Use rank-stabilized scaling (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
+    parser = argparse.ArgumentParser(description="Knowledge Distillation with LoRA-enhanced Student Model")
 
-    main(parser.parse_args())
+    # Model arguments
+
+    # Dataset and training parameters
+    parser.add_argument("--dataset_path", type=str, default="./dataset", help="Path to the dataset")
+    parser.add_argument("--train_batch_size", type=int, default=32, help="Training batch size")
+    parser.add_argument("--eval_batch_size", type=int, default=32, help="Evaluation batch size")
+    parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
+
+    parser.add_argument("--dir_name", type=str, default="./results", help="Directory name for saving models")
+
+    # LoRA parameters
+    parser.add_argument('--use_rslora', action='store_true',
+                        help='Use rank-stabilized scaling for MrLoRA (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
+
+    # Learning rates for teacher and student
+    parser.add_argument("--teacher_learning_rate", type=float, default=2e-5, help="Learning rate for the teacher model")
+    parser.add_argument("--student_learning_rate", type=float, default=1e-4, help="Learning rate for the student model")
+    parser.add_argument("--lora_learning_rate", type=float, default=2e-4, help="Learning rate for the student model")
+    parser.add_argument("--num_train_epochs", type=int, default=MAX_EPOCHS, help="Number of training epochs")
+    parser.add_argument("--peft", type=str, default='lora', help="Number of training epochs")
+    parser.add_argument("--rank", type=int, default=8, help="Number of training epochs")
+    parser.add_argument("--lora_alpha", type=float, default=16, help="Number of training epochs")
+    parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
+
+    parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
+                        help='0 => fft, 1 => student-lora, 2 => teacher-lora')
+
+    args_cmd = parser.parse_args()
+    # Only LoRA...
+    main_lora(args_cmd, is_student=False)
