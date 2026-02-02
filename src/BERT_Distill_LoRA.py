@@ -19,8 +19,9 @@ RANK_VALUES = [8, 16, 32, 64]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024, 2026, 999]
 MAX_EPOCHS = 100
-EVAL_STEPS = 100
-PATIENT = 10
+EVAL_STEPS = 200
+PATIENT = 5
+# If 1000 steps no improvement, then stop.
 
 
 class BertDistillPipeline:
@@ -445,7 +446,6 @@ if __name__ == "__main__":
     parser.add_argument("--dir_name", type=str, default="./results", help="Directory name for saving models")
 
     # LoRA parameters
-    parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
     parser.add_argument('--use_rslora', action='store_true',
                         help='Use rank-stabilized scaling for MrLoRA (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
 
@@ -454,6 +454,9 @@ if __name__ == "__main__":
     parser.add_argument("--student_learning_rate", type=float, default=1e-4, help="Learning rate for the student model")
     parser.add_argument("--lora_learning_rate", type=float, default=2e-4, help="Learning rate for the student model")
     parser.add_argument("--num_train_epochs", type=int, default=MAX_EPOCHS, help="Number of training epochs")
+    parser.add_argument("--peft", type=str, default='lora', help="Number of training epochs")
+    parser.add_argument("--rank", type=int, default=8, help="Number of training epochs")
+    parser.add_argument("--lora_alpha", type=float, default=16, help="Number of training epochs")
 
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')

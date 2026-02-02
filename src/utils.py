@@ -239,8 +239,8 @@ class MemoryTrackingCallback(TrainerCallback):
         self.epochs.append(state.epoch)
         self.memory_allocated.append(allocated_memory)
         self.memory_reserved.append(reserved_memory)
-        print(
-            f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
+        # print(
+            # f"Epoch {state.epoch}: Allocated Memory: {allocated_memory:.2f} MB, Reserved Memory: {reserved_memory:.2f} MB")
 
 
 def check_model_family():
