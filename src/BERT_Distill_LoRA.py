@@ -451,6 +451,7 @@ if __name__ == "__main__":
     parser.add_argument("--teacher_learning_rate", type=float, default=2e-5, help="Learning rate for the teacher model")
     parser.add_argument("--student_learning_rate", type=float, default=1e-4, help="Learning rate for the student model")
     parser.add_argument("--lora_learning_rate", type=float, default=2e-4, help="Learning rate for the student model")
+    parser.add_argument("--num_train_epochs", type=int, default=MAX_EPOCHS, help="Number of training epochs")
 
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')
