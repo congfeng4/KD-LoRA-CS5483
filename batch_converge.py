@@ -147,83 +147,120 @@ def aggregate_experiment_results(root_dir):
 
 df = aggregate_experiment_results('./results/')
 
-
-# %%
-def get_method_name(row):
-    if row['variant'] == 'fft':
-        return 'FFT'
-    elif row['variant'] == 'lora':
-        return f"LoRA-{row['peft']}"
-    elif row['variant'] == 'kd-lora':
-        return f"KDLoRA-{row['peft']}"
-    return row['variant']
-
-df['Method'] = df.apply(get_method_name, axis=1)
-
-# %%
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
+import numpy as np
+from pathlib import Path
 
-# 设置为 'talk' 模式，这会自动放大所有元素，非常接近论文插图的需求
-sns.set_context("talk") 
 
-# 或者手动精细调整
-plt.rcParams.update({
-    "font.family": "serif",  # 论文通常使用衬线字体
-    "font.serif": ["Times New Roman"], # 匹配 LaTeX 默认字体
-    "axes.labelsize": 16,
-    "xtick.labelsize": 14,
-    "ytick.labelsize": 14,
-    "legend.fontsize": 14,
-    "figure.figsize": (8, 6) # 控制画布大小，画布越小，相对字号就越大
-})
+# --- Keep your existing MAP dictionaries and extraction logic ---
 
-# 2. Setup Figure Style
-sns.set_theme(style="whitegrid")
-plt.figure(figsize=(7, 5)) # Smaller figsize makes text look relatively larger
+def get_method_name(row):
+    """
+    Refined to match the labels in your target image: FFT, LoRA, KD-LoRA
+    """
+    v = str(row['variant']).lower()
+    if v == 'fft':
+        return 'FFT'
+    elif v == 'lora':
+        return 'LoRA'
+    elif v == 'kd-lora':
+        return 'KD-LoRA'
+    return v
 
-# 3. Process Data for Plotting
-def plot_converge_function(df, TASK, MODEL_FAMILY, SEED):
+
+def plot_converge_function(df, TASK, MODEL_FAMILY, SEED, METRIC, PEFT):
+    # 1. Process Data for Plotting
     plot_rows = []
     for _, row in df.iterrows():
+        # Ensure we only plot the specific variants we care about
+        if row['Method'] not in ['FFT', 'LoRA', 'KD-LoRA']:
+            continue
+
         for i, val in enumerate(row['history']):
             plot_rows.append({
                 'Method': row['Method'],
-                'Steps': i,
+                'Steps': i*200,
                 'Metric': val
             })
-        print(TASK, MODEL_FAMILY, SEED, i)
+
+    if not plot_rows:
+        return
+
     history_df = pd.DataFrame(plot_rows)
 
-    # 4. Define Color Palette
-    palette = {'FFT': '#31689b', 'MR': '#e68339', 'KD-MR': '#519e3e'}
-    target_order = ['FFT', 'MR', 'KD-MR']
+    # 2. Styling (Matching the reference image)
+    sns.set_theme(style="white")  # Reference has a plain white background
+    plt.figure(figsize=(10, 6))
 
-    # 5. Plot Curves and Baselines
-    ax = sns.lineplot(data=history_df, x='Steps', y='Metric', hue='Method', legend=False,
-                    # palette=palette,
-        hue_order=target_order, # This forces the legend order
-                    linewidth=3)
+    # Matching the specific colors from your image
+    # Blue: FFT, Orange: LoRA, Green: KD-LoRA
+    palette = {
+        'FFT': '#377eb8',
+        'LoRA': '#ff7f00',
+        'KD-LoRA': '#4daf4a'
+    }
+    target_order = ['FFT', 'LoRA', 'KD-LoRA']
 
-    for _, row in df.iterrows():
-        plt.axhline(y=row['value'], #color=palette[row['Method']],
-                    linestyle='--', linewidth=1.2, alpha=0.8)
+    # 3. Plot Curves
+    ax = sns.lineplot(
+        data=history_df,
+        x='Steps',
+        y='Metric',
+        hue='Method',
+        palette=palette,
+        hue_order=target_order,
+        linewidth=4  # Thicker lines like the image
+    )
 
-    # 6. Professional Formatting
-    task_name = TASK_NAME_MAP[TASK]
-    family_name = FAMILY_NAME_MAP[MODEL_FAMILY]
-    plt.title(f'Fine-Tuning Convergence ({task_name}, {family_name})', fontsize=18, pad=15)
-    plt.xlabel('Training Steps', fontsize=15)
-    plt.ylabel('Matthews correlation', fontsize=15)
-    # plt.ylim(-0.05, 0.65) # Adjust range to match reference
+    # 4. Add Baseline Horizontal Lines (Dashed)
+    # We grab the final 'value' for each method in this specific slice
+    for method in target_order:
+        method_final = df[df['Method'] == method]
+        if not method_final.empty:
+            final_val = method_final.iloc[0]['value']
+            plt.axhline(y=final_val, color=palette[method],
+                        linestyle='--', linewidth=1.5, alpha=0.8)
 
-    # Move legend to a clear spot
-    # plt.legend(title='Method', loc='lower right', frameon=True)
+    # 5. Professional Formatting
+    task_name = TASK_NAME_MAP.get(TASK, TASK).upper()
+    # Handle family name (e.g., "BERT/DistilBERT" from your image title)
+    family_display = FAMILY_NAME_MAP.get(MODEL_FAMILY, MODEL_FAMILY)
+
+    plt.title(f'Fine-Tuning {family_display} on {task_name}', fontsize=24, pad=20)
+    plt.xlabel('Steps', fontsize=20)
+
+    # Map metric key to readable label
+    metric_label = METRIC_NAME_MAP.get(df.iloc[0]['metric'], 'Score')
+    if df.iloc[0]['metric'] == 'eval_matthews_correlation':
+        metric_label = "Matthews correlation"
+
+    plt.ylabel(metric_label, fontsize=20)
+
+    # Grid and Ticks
+    plt.grid(True, axis='y', linestyle='-', alpha=0.3)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+
+    # Legend - Large and at bottom right as requested
+    plt.legend(prop={'size': 20}, loc='lower right', frameon=True)
 
     plt.tight_layout()
-    # 7. Save and Show
-    plt.savefig(f'./converge/{family_name}-{task_name}-{SEED}.pdf', bbox_inches='tight')
+
+    # 6. Save
+    output_dir = Path('./converge')
+    output_dir.mkdir(exist_ok=True)
+    plt.savefig(output_dir / f'{MODEL_FAMILY}-{TASK}-{METRIC}-{PEFT}-seed{SEED}.png', dpi=300)
+    plt.close()  # Close to free up memory during batch processing
 
 
-for (task, family, seed), sub_df in df.groupby(['task', 'family', 'seed', ]):
-    plot_converge_function(sub_df, task, family, seed)
+# --- Execution ---
+# Ensure 'Method' is assigned before grouping
+df['Method'] = df.apply(get_method_name, axis=1)
+
+# Group by the experimental setup and generate plots
+for (task, family, seed, metric, peft), sub_df in df.groupby(['task', 'family', 'seed', 'metric', 'peft']):
+    print(f"Generating plot for {family} | {task} | Seed: {seed}")
+    print(sub_df)
+    plot_converge_function(sub_df, task, family, seed, metric, peft)

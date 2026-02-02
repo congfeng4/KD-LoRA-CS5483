@@ -5,28 +5,14 @@
 \caption{Results on GLUE development set for BERT-base (BERT-b), DeBERTa-v3-base (DeB-b), and RoBERTa-base (RoB-b). We compare different fine-tuning strategies: Fully Fine-Tuning (FFT), MR-LoRA Fine-Tuning (MR), and Knowledge Distillation MR-LoRA Fine-Tuning (KD). Results of two total ranks $r=15, 31$ are reported. We report the average correlation for STS-B. We report mean of 3 runs using different random seeds. }
 \label{tab:perf-params}
 \resizebox{\textwidth}{!}{% <--- Start resize
-\begin{tabular}{l|l|c|cccccccccc}
+\begin{tabular}{l|l|c|cccccc}
 \toprule
- \multirow{2}{*}{\textbf{Model}} & \multirow{2}{*}{\textbf{Method}} & \multirow{2}{*}{\textbf{\# Params}} & \textbf{MNLI} & \textbf{SST-2} & \textbf{CoLA} & \textbf{QQP} & \textbf{QNLI} & \textbf{RTE} & \textbf{MRPC} & \textbf{STS-B} & \textbf{WNLI} & \textbf{All} \\
- &  &  & m/mm & Acc & Mcc & Acc/F1 & Acc & Acc & Acc & Corr & Acc & Ave. \\
+ \multirow{2}{*}{\textbf{Model}} & \multirow{2}{*}{\textbf{Method}} & \multirow{2}{*}{\textbf{\# Params}} & \textbf{QQP} & \textbf{QNLI} & \textbf{RTE} & \textbf{MRPC} & \textbf{STS-B} & \textbf{All} \\
+ &  &  & Acc/F1 & Acc & Acc & Acc & Corr & Ave. \\
 \midrule
-\multirow[c]{5}{*}{BERT-b} & FFT & 109.48M & 83.28/83.60 & 91.97 & 56.19 & 91.00/88.07 & 90.67 & 62.09 & 85.70 & 87.99 & 48.36 & 77.57 \\
- & KD$_{r=31}$ & 1.16M & 80.72/81.52 & 90.02 & 48.09 & 88.55/84.59 & 88.49 & 59.09 & 80.88 & 84.81 & 56.34 & 75.41 \\
- & KD$_{r=15}$ & 0.87M & 80.28/80.86 & 90.41 & 45.38 & 88.13/83.88 & 88.22 & 57.40 & 79.58 & 84.59 & 46.48 & 73.57 \\
- & MR$_{r=31}$ & 1.14M & 82.98/83.84 & 92.38 & 51.84 & 89.43/85.69 & 90.74 & 63.06 & 84.56 & 88.56 & 54.93 & 77.70 \\
- & MR$_{r=15}$ & 0.55M & 82.40/83.12 & 91.29 & 51.67 & 89.03/85.16 & 90.75 & 62.21 & 83.41 & 88.25 & 56.34 & 77.36 \\
-\midrule
-\multirow[c]{5}{*}{DeB-b} & FFT & 184.42M & 89.32/89.58 & 95.68 & 65.79 & 92.23/89.67 & 93.71 & 79.78 & 89.22 & 90.33 & 55.40 & 83.54 \\
- & KD$_{r=31}$ & 0.57M & 87.53/87.31 & 94.19 & 57.54 & 90.54/87.18 & 91.95 & 62.09 & 79.17 & 86.40 & 56.34 & 78.61 \\
- & KD$_{r=15}$ & 0.28M & 87.37/87.13 & 94.19 & 55.42 & 90.27/86.97 & 91.90 & 59.81 & 75.73 & 84.75 & 52.11 & 77.15 \\
- & MR$_{r=31}$ & 1.14M & 90.16/90.11 & 95.64 & 66.55 & 91.55/88.79 & 94.23 & 71.24 & 87.91 & 86.88 & 56.34 & 82.30 \\
- & MR$_{r=15}$ & 0.55M & 90.17/90.21 & 95.03 & 66.26 & 91.28/88.43 & 94.12 & 68.23 & 84.15 & 49.84 & 56.34 & 77.36 \\
-\midrule
-\multirow[c]{5}{*}{RoB-b} & FFT & 124.65M & 87.27/87.07 & 93.27 & 59.29 & 90.61/87.75 & 92.53 & 67.63 & 88.89 & 90.13 & 51.18 & 80.09 \\
- & KD$_{r=31}$ & 1.16M & 83.06/83.18 & 92.32 & 49.28 & 88.89/85.06 & 89.07 & 60.05 & 77.37 & 85.46 & 56.34 & 76.01 \\
- & KD$_{r=15}$ & 0.87M & 82.53/82.89 & 91.09 & 48.67 & 88.40/84.22 & 89.38 & 60.65 & 75.57 & 85.19 & 52.58 & 75.19 \\
- & MR$_{r=31}$ & 1.74M & 52.57/52.36 & 94.16 & 52.47 & 80.88/57.61 & 64.57 & 60.77 & 82.11 & 70.17 & 56.34 & 67.26 \\
- & MR$_{r=15}$ & 1.15M & 86.83/86.88 & 94.23 & 51.72 & 89.44/86.05 & 78.53 & 59.81 & 85.54 & 87.89 & 56.34 & 76.75 \\
+BERT-b & FFT & 109.48M & 88.81/85.45 & 91.14 & 64.98 & 84.56 & 89.34 & 83.92 \\
+DeB-b & FFT & 184.42M & 90.39/87.39 & 93.81 & 83.03 & 89.22 & 91.16 & 89.53 \\
+RoB-b & FFT & 124.65M & 87.66/84.44 & 92.37 & 79.06 & 88.48 & 90.93 & 87.72 \\
 \bottomrule
 \end{tabular}% <--- End resize
 }
