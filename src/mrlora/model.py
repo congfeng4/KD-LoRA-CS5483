@@ -4,7 +4,7 @@ import torch
 from peft.tuners.tuners_utils import BaseTuner
 
 from . import MrLoraConfig
-from .layer import MrLoraLinear, MrLoraLayer
+from .layer import MrLoraLayer
 
 
 class MrLoraModel(BaseTuner):
@@ -31,9 +31,9 @@ class MrLoraModel(BaseTuner):
         self.active_adapter = adapters
 
     def _create_and_replace(self, peft_config, adapter_name, target, target_name, parent, **optional_kwargs):
-        # Replace Linear with MrLoRALinear
+        # Replace Linear with MrLoraLayer
         if isinstance(target, torch.nn.Linear):
-            new_module = MrLoraLinear(
+            new_module = MrLoraLayer(
                 target,
                 total_rank=peft_config.total_rank,
                 lora_alpha=peft_config.lora_alpha,
@@ -80,11 +80,11 @@ class MrLoraModel(BaseTuner):
     def disable_adapter_layers(self):
         # Logic to skip the MrLoRA forward pass (use only base layer)
         for module in self.model.modules():
-            if isinstance(module, MrLoraLinear):
+            if isinstance(module, MrLoraLayer):
                 module.disable_adapters = True
 
     def enable_adapter_layers(self):
         # Logic to "turn on" the MrLoRA forward pass
         for module in self.model.modules():
-            if isinstance(module, MrLoraLinear):
+            if isinstance(module, MrLoraLayer):
                 module.disable_adapters = False

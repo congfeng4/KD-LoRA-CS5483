@@ -33,6 +33,8 @@ PEFT_FAMILY_OURS = [
     "mrlora", # Plain mrlora
 ]
 
+GLUE_TASKS = ['wnli']
+
 
 def main_teacher_fft(args):
     for seed in seed_list:

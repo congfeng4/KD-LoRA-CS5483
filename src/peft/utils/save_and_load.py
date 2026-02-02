@@ -209,7 +209,7 @@ def get_peft_model_state_dict(
         ]
     elif config.peft_type == PeftType.MR_LORA:
         to_return = {k: state_dict[k] for k in state_dict if "mrlora_" in k}
-
+        print('LOAD MR-LORA:', to_return.keys())
     else:
         raise ValueError(f"Unknown PEFT type passed: {config.peft_type}")
 
@@ -452,6 +452,7 @@ def set_peft_model_state_dict(
     elif config.peft_type == PeftType.XLORA:
         peft_model_state_dict = state_dict
     elif config.peft_type == PeftType.MR_LORA:
+        print('SAVE MR-LORA', state_dict.keys())
         peft_model_state_dict = state_dict
     else:
         raise NotImplementedError

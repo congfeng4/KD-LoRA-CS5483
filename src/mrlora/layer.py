@@ -148,7 +148,7 @@ class MrLoraLayer(nn.Module, LoraLayer):
 
         return result + mr_adapter
 
-    def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
+    def merge(self, safe_merge: bool = False, adapter_names = None) -> None:
         """
         Merge the active adapter weights into the base weights
 
