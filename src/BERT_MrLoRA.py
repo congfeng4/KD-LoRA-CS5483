@@ -16,14 +16,16 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 RANK_VALUES = [8]
 
 
-PEFT_FAMILY = [
+PEFT_FAMILY_BASELINES = [
     # Baselines
     "lora",  # Vanilla lora
     "olora",  # orthonormal lora
     "dora",  # weight decomposed lora
     "rslora",  # Rank stablized lora
     "adalora", # Adaptive LoRA
+]
 
+PEFT_FAMILY_OURS = [
     # Ours
     "mrlora-rs", # Multi-Rank LoRA with rank-stabilized scaling
     "mrlora-rs-olora", # Multi-Rank LoRA with rank-stabilized scaling
@@ -52,6 +54,7 @@ def main_teacher_fft(args):
 
 
 def main_lora(args, is_student: bool):
+    PEFT_FAMILY = PEFT_FAMILY_OURS if args.ours else PEFT_FAMILY_BASELINES
     for rank in RANK_VALUES:
         for seed in seed_list:
             for task in GLUE_TASKS:
@@ -106,6 +109,7 @@ if __name__ == "__main__":
     parser.add_argument("--rank", type=int, default=8, help="Number of training epochs")
     parser.add_argument("--lora_alpha", type=float, default=16, help="Number of training epochs")
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
+    parser.add_argument("--ours", action='store_true')
 
     parser.add_argument('--type', '-t', type=int, choices=(0, 1, 2),
                         help='0 => fft, 1 => student-lora, 2 => teacher-lora')

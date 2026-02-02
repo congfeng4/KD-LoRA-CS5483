@@ -1,4 +1,3 @@
 conda activate lora
-export CUDA_VISIBLE_DEVICES=6
 
-python src/BERT_MrLoRA.py
+accelerate launch --main_process_port 2505 src/BERT_MrLoRA.py --ours
