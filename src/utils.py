@@ -412,7 +412,7 @@ def clear_gpu_memory():
 
 TASK_METRIC = {
     "cola": ["eval_matthews_correlation"],
-    "mnli": ["matched_accuracy", "mismatched_accuracy"],
+    "mnli": ["eval_accuracy"],
     "mrpc": ["eval_f1", "eval_accuracy"],
     "qnli": ["eval_accuracy"],
     "qqp": ["eval_f1", "eval_accuracy", ],
