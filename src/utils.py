@@ -99,7 +99,8 @@ def get_peft_config(args, model_name, peft_method):
         target_modules=target_modules,
         lora_dropout=args.lora_dropout,
         bias="none",
-        task_type=task_type
+        task_type=task_type,
+        modules_to_save=['classifier', 'score'],
     )
     if peft_method == 'lora':
         return lora_config

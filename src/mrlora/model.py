@@ -1,19 +1,62 @@
-from typing import Union
+from typing import Any
 
 import torch
-from peft.tuners.tuners_utils import BaseTuner
+from torch import nn
 
-from . import MrLoraConfig
-from .layer import MrLoraLayer
+from peft.tuners.tuners_utils import BaseTuner, BaseTunerLayer, check_target_module_exists
+from peft.utils import (
+    TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING,
+)
+
+from .config import MrLoraConfig
+from .layer import Linear, MrLoraLayer
+from peft import LoraModel
 
 
-class MrLoraModel(BaseTuner):
-    # Required class attributes for BaseTuner
-    prefix: str = "mrlora_"  # Prefix for your adapter parameters
-    tuner_layer_cls = MrLoraLayer  # <-- THIS IS THE MISSING ATTRIBUTE
+class MrLoraModel(LoraModel):
+    prefix: str = "mrlora_"
 
-    def __init__(self, model, config, adapter_name, low_cpu_mem_usage: bool = False) -> None:
-        super().__init__(model, config, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage)
+    @staticmethod
+    def _check_target_module_exists(config, key):
+        return check_target_module_exists(config, key)
+
+    @staticmethod
+    def _create_and_replace(
+        self,
+        mrlora_config: MrLoraConfig,
+        adapter_name: str,
+        target: nn.Module,
+        target_name: str,
+        parent: nn.Module,
+        **optional_kwargs: Any,
+    ):
+        if isinstance(target, MrLoraLayer):
+            target.update_layer(adapter_name, mrlora_config)
+        else:
+            new_module = self._create_new_module(
+                mrlora_config,
+                adapter_name,
+                target,
+            )
+            if adapter_name not in self.active_adapters:
+                # adding an additional adapter: it is not automatically trainable
+                new_module.requires_grad_(False)
+            self._replace_module(parent, target_name, new_module, target)
+
+    @staticmethod
+    def _create_new_module(mrlora_config, adapter_name, target, **kwargs):
+        if isinstance(target, BaseTunerLayer):
+            target_base_layer = target.get_base_layer()
+        else:
+            target_base_layer = target
+
+        if isinstance(target_base_layer, torch.nn.Linear):
+            return Linear(target, adapter_name, mrlora_config, **kwargs)
+        else:
+            raise ValueError(
+                f"Target module {target} is not supported. Currently, only the following modules are supported: "
+                "`torch.nn.Linear`."
+            )
 
     def __getattr__(self, name: str):
         """Forward missing attributes to the wrapped module."""
@@ -24,67 +67,12 @@ class MrLoraModel(BaseTuner):
                 raise
             return getattr(self.model, name)
 
+    @staticmethod
     def _prepare_adapter_config(self, peft_config, model_config):
-        return peft_config
-
-    def set_adapter(self, adapters):
-        self.active_adapter = adapters
-
-    def _create_and_replace(self, peft_config, adapter_name, target, target_name, parent, **optional_kwargs):
-        # Replace Linear with MrLoraLayer
-        if isinstance(target, torch.nn.Linear):
-            new_module = MrLoraLayer(
-                target,
-                total_rank=peft_config.total_rank,
-                lora_alpha=peft_config.lora_alpha,
-                lora_dropout=peft_config.lora_dropout,
-                use_rslora=peft_config.use_rslora
+        if peft_config.target_modules is None:
+            if model_config["model_type"] not in TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING:
+                raise ValueError("Please specify `target_modules` in `peft_config`")
+            peft_config.target_modules = set(
+                TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING[model_config["model_type"]]
             )
-            self._replace_module(parent, target_name, new_module, target)
-
-    def _replace_module(self, parent, child_name, new_module, old_module):
-        setattr(parent, child_name, new_module)
-        # Ensure base layer is accessible
-        if hasattr(old_module, "base_layer"):
-            new_module.base_layer = old_module.base_layer
-        else:
-            new_module.base_layer = old_module
-
-    def _check_target_module_exists(self, peft_config, key):
-        # Basic check if the current module name matches target_modules
-        return any(target in key for target in peft_config.target_modules)
-
-    def _mark_only_adapters_as_trainable(self, model: torch.nn.Module) -> None:
-        """
-        Marks only MrLoRA parameters (lora_A, lora_B, alphas) 
-        and specifically requested modules (like classifier) as trainable.
-        """
-        # 1. Freeze everything first
-        for p in model.parameters():
-            p.requires_grad = False
-
-        # 2. Unfreeze MrLoRA specific weights and the classification head
-        print('self.active_adapter', self.active_adapter)
-        print('self.peft_config', self.peft_config)
-
-        config = self.peft_config[self.active_adapter[0]]
-        for n, p in model.named_parameters():
-            # Unfreeze if it's part of our Multi-Rank adapters
-            if "lora_" in n or "alphas" in n:
-                p.requires_grad = True
-
-            # Unfreeze modules_to_save (e.g., ['classifier'])
-            if config.modules_to_save and any(m in n for m in config.modules_to_save):
-                p.requires_grad = True
-
-    def disable_adapter_layers(self):
-        # Logic to skip the MrLoRA forward pass (use only base layer)
-        for module in self.model.modules():
-            if isinstance(module, MrLoraLayer):
-                module.disable_adapters = True
-
-    def enable_adapter_layers(self):
-        # Logic to "turn on" the MrLoRA forward pass
-        for module in self.model.modules():
-            if isinstance(module, MrLoraLayer):
-                module.disable_adapters = False
+        return peft_config
