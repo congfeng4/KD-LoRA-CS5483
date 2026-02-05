@@ -17,6 +17,8 @@ class MrLoraConfig(PeftConfig):
         "help": "List of modules apart from LoRA layers to be set as trainable"})
     use_rslora: bool = field(default=False, metadata={
         "help": "When True, uses rank-stabilized scaling (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))"})
+    learn_coefficients: bool = field(default=False, metadata={
+        "help": "When True, uses rank-stabilized scaling (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))"})
 
     def __post_init__(self):
         self.peft_type = "MR_LORA"

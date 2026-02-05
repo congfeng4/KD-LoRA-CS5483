@@ -166,7 +166,9 @@ def get_peft_config(args, model_name, peft_method):
         if '-rs' in peft_method:
             args.use_rslora = True
         if '-olora' in peft_method:
-            args.init_type = 'olora'
+            args.init_weights = 'olora'
+        if '-lcoef' in peft_method:
+            args.learn_coefficients = True
 
         mrlora_config = MrLoraConfig(
             total_rank=args.rank,
@@ -175,7 +177,8 @@ def get_peft_config(args, model_name, peft_method):
             target_modules=target_modules,
             task_type=task_type,
             use_rslora=args.use_rslora,
-            init_type=args.init_type,
+            init_weights=args.init_weights,
+            learn_coefficients=args.learn_coefficients,
         )
         return mrlora_config
 

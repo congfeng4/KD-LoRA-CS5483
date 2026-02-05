@@ -55,7 +55,8 @@ class MrLoraLayer(BaseTunerLayer):
             self.mrlora_A[r_str] = nn.Linear(in_features=self.in_features, out_features=r_int, bias=False)
             self.mrlora_B[r_str] = nn.Linear(in_features=r_int, out_features=self.out_features, bias=False)
         
-        self.mrlora_lambdas = nn.Parameter(torch.ones(len(self.ranks_int)))
+        self.mrlora_lambdas = nn.Parameter(torch.ones(len(self.ranks_int)),
+                                           requires_grad=mrlora_config.learn_coefficients)
         
         lora_dropout = mrlora_config.lora_dropout
         if lora_dropout > 0.0:
