@@ -50,6 +50,7 @@ class BertDistillPipeline:
         self.num_labels = get_num_labels(args)
         self.dir = Path(args.dir_name)
         self.results = self.args.copy()
+        eval_steps = kwargs.get('eval_steps', EVAL_STEPS)
         self.training_params = dict(
             greater_is_better=True,
             eval_strategy="steps",  # Enable evaluation every epoch
@@ -57,10 +58,13 @@ class BertDistillPipeline:
             save_strategy="steps",
             per_device_train_batch_size=args.train_batch_size,
             per_device_eval_batch_size=args.eval_batch_size,
-            num_train_epochs=MAX_EPOCHS,
+            num_train_epochs=kwargs.get('max_epochs', MAX_EPOCHS),
             weight_decay=args.weight_decay,
             load_best_model_at_end=True,
             save_total_limit=2,  # 只保留最近的两个模型，省空间
+            eval_steps=eval_steps,
+            save_steps=eval_steps,
+            logging_steps=eval_steps,
             warmup_ratio=0.1,
         )
 
@@ -154,9 +158,6 @@ class BertDistillPipeline:
         training_args = TrainingArguments(
             output_dir=str(ckpt_dir),
             learning_rate=lr,
-            eval_steps=EVAL_STEPS,
-            save_steps=EVAL_STEPS,
-            logging_steps=EVAL_STEPS,
             metric_for_best_model=TASK_METRIC[args.task][0], # Core metric.
             remove_unused_columns=teacher_soft_labels is None,
             **self.training_params,

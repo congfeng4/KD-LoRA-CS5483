@@ -21,9 +21,8 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 RANK_VALUES = [8]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42]
-EVAL_STEPS = 10
-MAX_EPOCHS = 20
-GLUE_TASKS = ['cola']
+
+GLUE_TASKS = ['rte']
 PEFT_FAMILY = ['mrlora', 'lora']
 MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef']
 
@@ -50,7 +49,7 @@ def main_lora(args, is_student: bool):
                         config['lora_alpha'] = 2 * rank
 
                         add_model_name_to_config(model_family, config)
-                        pipe = BertDistillPipeline(**config)
+                        pipe = BertDistillPipeline(max_epochs=1, eval_steps=10, **config)
                         try:
                             if is_student:
                                 pipe.run_student_lora()

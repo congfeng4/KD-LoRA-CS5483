@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from .config import MrLoraConfig
-from src.peft.tuners.tuners_utils import BaseTunerLayer
+from peft.tuners.tuners_utils import BaseTunerLayer
 
 
 def generate_mrlora_ranks(highest_rank):
@@ -20,9 +20,9 @@ def generate_mrlora_ranks(highest_rank):
 
 class MrLoraLayer(BaseTunerLayer):
     # All names of layers that may contain (trainable) adapter weights
-    adapter_layer_names = ("mrlora_A", "mrlora_B", "mrlora_lambda")
+    adapter_layer_names = ("mrlora_A", "mrlora_B", "mrlora_lambdas", "scaling_factors")
     # All names of other parameters that may contain adapter-related parameters
-    other_param_names = ("ranks_int", "ranks_str", "scaling_factors")
+    other_param_names = ("ranks_int", "ranks_str", )
 
     def __init__(self, base_layer: nn.Module, **kwargs) -> None:
         self.base_layer = base_layer
@@ -31,8 +31,9 @@ class MrLoraLayer(BaseTunerLayer):
         self.ranks_str = []
         self.mrlora_A = nn.ParameterDict()
         self.mrlora_B = nn.ParameterDict()
-        self.mrlora_lambdas = None
-        self.scaling_factors = None
+        self.mrlora_lambdas = nn.ParameterDict()
+        self.scaling_factors = nn.ParameterDict()
+        self.learn_coefficients = False
 
         base_layer = self.get_base_layer()
         if isinstance(base_layer, nn.Linear):
@@ -44,6 +45,7 @@ class MrLoraLayer(BaseTunerLayer):
         self.out_features = out_features
 
     def update_layer(self, adapter_name, mrlora_config):
+        self.learn_coefficients = mrlora_config.learn_coefficients
         if mrlora_config.total_rank <= 0:
             raise ValueError(f"`total_rank` should be a positive integer value but the value passed is {mrlora_config.total_rank}")
         if mrlora_config.total_rank % 2 != 0:
@@ -55,8 +57,8 @@ class MrLoraLayer(BaseTunerLayer):
             self.mrlora_A[r_str] = nn.Linear(in_features=self.in_features, out_features=r_int, bias=False)
             self.mrlora_B[r_str] = nn.Linear(in_features=r_int, out_features=self.out_features, bias=False)
         
-        self.mrlora_lambdas = nn.Parameter(torch.ones(len(self.ranks_int)),
-                                           requires_grad=mrlora_config.learn_coefficients)
+        self.mrlora_lambdas.update(dict(lambdas=nn.Parameter(torch.ones(len(self.ranks_int)),
+                                           requires_grad=mrlora_config.learn_coefficients)))
         
         lora_dropout = mrlora_config.lora_dropout
         if lora_dropout > 0.0:
@@ -76,8 +78,8 @@ class MrLoraLayer(BaseTunerLayer):
             # Standard LoRA usually uses alpha / r.
             scalings = [lora_alpha / r for r in self.ranks_int]
 
-        # # Register as buffer so it moves with the model to GPU
-        self.register_buffer("scaling_factors", torch.tensor(scalings, dtype=torch.float32))
+        self.scaling_factors.update(dict(
+            factors=torch.nn.Parameter(torch.tensor(scalings), requires_grad=False)))
 
         self.reset_mr_parameters(adapter_name, init_weights=mrlora_config.init_weights)
 
@@ -146,12 +148,13 @@ class MrLoraLayer(BaseTunerLayer):
         for b in self.mrlora_B.values():
             nn.init.zeros_(b.weight)
         # Initialize learnable coefficients to 1.0
-        nn.init.ones_(self.mrlora_lambdas)
+        if self.learn_coefficients:
+            nn.init.ones_(self.mrlora_lambdas)
 
 
 class Linear(nn.Module, MrLoraLayer):
 
-    def __len__(self,
+    def __init__(self,
                 base_layer,
                 adapter_name: str,
                 mrlora_config: MrLoraConfig,
@@ -183,7 +186,7 @@ class Linear(nn.Module, MrLoraLayer):
             ])  # Shape: [num_ranks, batch, seq, out_features]
 
             # Alternative to stack + sum
-            combined_scale = self.mrlora_lambdas * self.scaling_factors
+            combined_scale = self.mrlora_lambdas['lambdas'] * self.scaling_factors['factors']
             result += torch.einsum('rbsh,r->bsh', rank_outputs, combined_scale)
 
         result = result.to(previous_dtype)

@@ -162,13 +162,10 @@ def get_peft_config(args, model_name, peft_method):
 
     if 'mrlora' in peft_method:
         from mrlora import MrLoraConfig
-        # For 'mrlora-rs' variant, force use_rslora=True
-        if '-rs' in peft_method:
-            args.use_rslora = True
-        if '-olora' in peft_method:
-            args.init_weights = 'olora'
-        if '-lcoef' in peft_method:
-            args.learn_coefficients = True
+
+        args.use_rslora = '-rs' in peft_method
+        args.init_weights = '-olora' in peft_method
+        args.learn_coefficients = '-lcoef' in peft_method
 
         mrlora_config = MrLoraConfig(
             total_rank=args.rank,

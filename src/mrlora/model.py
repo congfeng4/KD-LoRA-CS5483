@@ -9,7 +9,7 @@ from peft.utils import (
 )
 
 from .config import MrLoraConfig
-from .layer import Linear, MrLoraLayer
+from .layer import Linear as MrLoraLinear, MrLoraLayer
 from peft import LoraModel
 
 
@@ -20,7 +20,7 @@ class MrLoraModel(LoraModel):
     def _check_target_module_exists(config, key):
         return check_target_module_exists(config, key)
 
-    @staticmethod
+    # @staticmethod
     def _create_and_replace(
         self,
         mrlora_config: MrLoraConfig,
@@ -51,7 +51,7 @@ class MrLoraModel(LoraModel):
             target_base_layer = target
 
         if isinstance(target_base_layer, torch.nn.Linear):
-            return Linear(target, adapter_name, mrlora_config, **kwargs)
+            return MrLoraLinear(target, adapter_name, mrlora_config, **kwargs)
         else:
             raise ValueError(
                 f"Target module {target} is not supported. Currently, only the following modules are supported: "
@@ -67,7 +67,6 @@ class MrLoraModel(LoraModel):
                 raise
             return getattr(self.model, name)
 
-    @staticmethod
     def _prepare_adapter_config(self, peft_config, model_config):
         if peft_config.target_modules is None:
             if model_config["model_type"] not in TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING:
