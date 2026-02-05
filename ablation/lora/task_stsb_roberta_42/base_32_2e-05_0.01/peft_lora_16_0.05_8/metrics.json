@@ -1,0 +1,132 @@
+{
+    "eval_loss": 2.3064889907836914,
+    "eval_pearson": 0.05031682694530632,
+    "eval_spearman": 0.15855808259129311,
+    "eval_runtime": 1.6015,
+    "eval_samples_per_second": 936.623,
+    "eval_steps_per_second": 7.493,
+    "epoch": 1.0,
+    "log_history": [
+        {
+            "loss": 7.8515,
+            "grad_norm": 29.186384201049805,
+            "learning_rate": 0.000175,
+            "epoch": 0.2222222222222222,
+            "step": 10
+        },
+        {
+            "eval_loss": 4.06337833404541,
+            "eval_pearson": -0.04188446495653132,
+            "eval_spearman": -0.03839316706492938,
+            "eval_runtime": 1.4423,
+            "eval_samples_per_second": 1039.993,
+            "eval_steps_per_second": 8.32,
+            "epoch": 0.2222222222222222,
+            "step": 10
+        },
+        {
+            "loss": 3.7707,
+            "grad_norm": 7.120017051696777,
+            "learning_rate": 0.000125,
+            "epoch": 0.4444444444444444,
+            "step": 20
+        },
+        {
+            "eval_loss": 2.323098659515381,
+            "eval_pearson": -0.014264633038781905,
+            "eval_spearman": 0.016026377593771263,
+            "eval_runtime": 1.7391,
+            "eval_samples_per_second": 862.496,
+            "eval_steps_per_second": 6.9,
+            "epoch": 0.4444444444444444,
+            "step": 20
+        },
+        {
+            "loss": 2.8986,
+            "grad_norm": 2.0169942378997803,
+            "learning_rate": 7.500000000000001e-05,
+            "epoch": 0.6666666666666666,
+            "step": 30
+        },
+        {
+            "eval_loss": 2.299961805343628,
+            "eval_pearson": 0.010462889667677428,
+            "eval_spearman": 0.09178946548012111,
+            "eval_runtime": 1.6582,
+            "eval_samples_per_second": 904.59,
+            "eval_steps_per_second": 7.237,
+            "epoch": 0.6666666666666666,
+            "step": 30
+        },
+        {
+            "loss": 2.4873,
+            "grad_norm": 7.884129524230957,
+            "learning_rate": 2.5e-05,
+            "epoch": 0.8888888888888888,
+            "step": 40
+        },
+        {
+            "eval_loss": 2.3064889907836914,
+            "eval_pearson": 0.05031682694530632,
+            "eval_spearman": 0.15855808259129311,
+            "eval_runtime": 1.7149,
+            "eval_samples_per_second": 874.666,
+            "eval_steps_per_second": 6.997,
+            "epoch": 0.8888888888888888,
+            "step": 40
+        },
+        {
+            "train_runtime": 18.3243,
+            "train_samples_per_second": 313.736,
+            "train_steps_per_second": 2.456,
+            "total_flos": 382066069913088.0,
+            "train_loss": 4.063928476969401,
+            "epoch": 1.0,
+            "step": 45
+        },
+        {
+            "eval_loss": 2.3064889907836914,
+            "eval_pearson": 0.05031682694530632,
+            "eval_spearman": 0.15855808259129311,
+            "eval_runtime": 1.6015,
+            "eval_samples_per_second": 936.623,
+            "eval_steps_per_second": 7.493,
+            "epoch": 1.0,
+            "step": 45
+        }
+    ],
+    "args": {
+        "max_epochs": 1,
+        "eval_steps": 10,
+        "dataset_path": "./dataset",
+        "train_batch_size": 32,
+        "eval_batch_size": 32,
+        "weight_decay": 0.01,
+        "dir_name": "./ablation",
+        "lora_dropout": 0.05,
+        "use_rslora": false,
+        "teacher_learning_rate": 2e-05,
+        "student_learning_rate": 0.0001,
+        "lora_learning_rate": 0.0002,
+        "model_family": "roberta",
+        "task": "stsb",
+        "peft": "lora",
+        "seed": 42,
+        "rank": 8,
+        "lora_alpha": 16,
+        "student_model_name": "./models/distilroberta-base",
+        "teacher_model_name": "./models/roberta-base",
+        "train_size": 5749
+    },
+    "train": {
+        "train_time": 18.3243,
+        "trainable_params_count": 0.886273,
+        "memory_allocated": [
+            529.539072
+        ],
+        "memory_reserved": [
+            3003.121664
+        ]
+    },
+    "variant": "lora"
+}

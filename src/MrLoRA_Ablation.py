@@ -22,7 +22,13 @@ RANK_VALUES = [8]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42]
 
-GLUE_TASKS = ['rte']
+# GLUE_TASKS = ['rte']
+MODEL_FAMILY = {
+    'roberta': {
+        'teacher': 'roberta-base',
+        'student': 'distilroberta-base',
+    },
+}
 PEFT_FAMILY = ['mrlora', 'lora']
 MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef']
 
