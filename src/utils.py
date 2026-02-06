@@ -164,8 +164,8 @@ def get_peft_config(args, model_name, peft_method):
         from mrlora import MrLoraConfig
 
         args.use_rslora = '-rs' in peft_method
-        args.init_weights = '-olora' in peft_method
-        args.learn_coefficients = '-lcoef' in peft_method
+        args.use_olora = '-olora' in peft_method
+        args.use_lcoef = '-lcoef' in peft_method
 
         mrlora_config = MrLoraConfig(
             total_rank=args.rank,
@@ -174,8 +174,8 @@ def get_peft_config(args, model_name, peft_method):
             target_modules=target_modules,
             task_type=task_type,
             use_rslora=args.use_rslora,
-            init_weights=args.init_weights,
-            learn_coefficients=args.learn_coefficients,
+            use_olora=args.use_olora,
+            use_lcoef=args.use_lcoef,
         )
         return mrlora_config
 

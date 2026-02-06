@@ -29,7 +29,7 @@ MODEL_FAMILY = {
         'student': 'distilroberta-base',
     },
 }
-PEFT_FAMILY = ['mrlora', 'lora']
+PEFT_FAMILY = ['mrlora']#, 'lora']
 MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef']
 
 for i in range(len(MRLORA_VARIANTS)):
@@ -55,7 +55,7 @@ def main_lora(args, is_student: bool):
                         config['lora_alpha'] = 2 * rank
 
                         add_model_name_to_config(model_family, config)
-                        pipe = BertDistillPipeline(max_epochs=1, eval_steps=10, **config)
+                        pipe = BertDistillPipeline(**config)
                         try:
                             if is_student:
                                 pipe.run_student_lora()
@@ -82,6 +82,8 @@ if __name__ == "__main__":
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
     parser.add_argument('--use_rslora', action='store_true',
                         help='Use rank-stabilized scaling for MrLoRA (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
+    parser.add_argument('--use_olora', action='store_true',
+                        help='Use orthonormal initialization for MrLoRA')
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=2e-5, help="Learning rate for the teacher model")

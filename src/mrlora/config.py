@@ -5,7 +5,7 @@ from peft.config import PeftConfig
 
 @dataclass
 class MrLoraConfig(PeftConfig):
-    init_weights: str = 'standard'
+    use_olora: bool = False
     total_rank: int = field(default=8,
                              metadata={"help": "Total rank for multi-rank adaptation"})
     target_modules: Optional[Union[List[str], str]] = field(default=None, metadata={
@@ -17,7 +17,7 @@ class MrLoraConfig(PeftConfig):
         "help": "List of modules apart from LoRA layers to be set as trainable"})
     use_rslora: bool = field(default=False, metadata={
         "help": "When True, uses rank-stabilized scaling (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))"})
-    learn_coefficients: bool = field(default=False, metadata={
+    use_lcoef: bool = field(default=False, metadata={
         "help": "When True, uses rank-stabilized scaling (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))"})
 
     layer_replication: Optional[List[Tuple[int, int]]] = field(
