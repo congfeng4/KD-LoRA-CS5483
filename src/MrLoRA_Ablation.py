@@ -21,7 +21,7 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 RANK_VALUES = [8]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42]
-
+GLUE_TASKS = ['qqp']
 # GLUE_TASKS = ['rte']
 MODEL_FAMILY = {
     'roberta': {
@@ -31,6 +31,7 @@ MODEL_FAMILY = {
 }
 PEFT_FAMILY = ['mrlora']#, 'lora']
 MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef', '-bias']
+# MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef', '-bias']
 
 for i in range(len(MRLORA_VARIANTS)):
     PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
