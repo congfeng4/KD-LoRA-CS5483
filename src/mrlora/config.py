@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, List, Union, Tuple
+from typing import Optional, List, Union, Tuple, Literal
 from peft.config import PeftConfig
 
 
@@ -13,6 +13,9 @@ class MrLoraConfig(PeftConfig):
     lora_alpha: int = field(default=16, metadata={"help": "The alpha parameter for LoRA scaling"})
     lora_dropout: float = field(default=0.0, metadata={"help": "The dropout probability for LoRA layers"})
     use_bias: bool = False
+    bias: Literal["none", "all", "lora_only"] = field(
+        default="none", metadata={"help": "Bias type for Lora. Can be 'none', 'all' or 'lora_only'"}
+    )
     modules_to_save: Optional[List[str]] = field(default=None, metadata={
         "help": "List of modules apart from LoRA layers to be set as trainable"})
     use_rslora: bool = field(default=False, metadata={
