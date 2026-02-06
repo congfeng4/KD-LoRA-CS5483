@@ -7,30 +7,34 @@ from .config import MrLoraConfig
 from peft.tuners.tuners_utils import BaseTunerLayer
 
 
-def generate_mrlora_ranks(highest_rank):
-    """Generate MrLoRA ranks list from highest_rank down to 1 by halving."""
+def generate_mrlora_ranks(total_rank: int):
+    # total_rank=8: 1,2,5
+    assert total_rank % 2 == 0, total_rank
+
+    highest_rank = total_rank//2 + 1
     ranks = []
     r = highest_rank
     while r >= 1:
         ranks.append(r)
         r = r // 2
 
+    assert sum(ranks) == total_rank, (ranks, total_rank)
     return ranks
 
 
 class MrLoraLayer(BaseTunerLayer):
     # All names of layers that may contain (trainable) adapter weights
-    adapter_layer_names = ("mrlora_A", "mrlora_B", "mrlora_lambdas", "scaling_factors")
+    adapter_layer_names = ("mrlora_A", "mrlora_B")
     # All names of other parameters that may contain adapter-related parameters
-    other_param_names = ("ranks_int", "ranks_str", )
+    other_param_names = ("ranks_int", "ranks_str", "mrlora_lambdas", "scaling_factors")
 
     def __init__(self, base_layer: nn.Module, **kwargs) -> None:
         self.base_layer = base_layer
         self.kwargs = kwargs
         self.ranks_int = []
         self.ranks_str = []
-        self.mrlora_A = nn.ParameterDict()
-        self.mrlora_B = nn.ParameterDict()
+        self.mrlora_A = nn.ModuleDict()
+        self.mrlora_B = nn.ModuleDict()
         self.mrlora_lambdas = nn.ParameterDict()
         self.scaling_factors = nn.ParameterDict()
         self.use_lcoef = False
@@ -52,14 +56,18 @@ class MrLoraLayer(BaseTunerLayer):
             raise ValueError(f"`total_rank` should be an even integer value but the value passed is {mrlora_config.total_rank}")
 
         self.ranks_int = generate_mrlora_ranks(mrlora_config.total_rank)
-        print('self.rank_int', self.ranks_int)
-        print('total_rank', mrlora_config.total_rank)
+        # print('self.rank_int', self.ranks_int)
+        # print('total_rank', mrlora_config.total_rank)
         self.ranks_str = list(map(str, self.ranks_int))
+        mrlora_A = nn.ModuleDict()
+        mrlora_B = nn.ModuleDict()
         for r_str, r_int in zip(self.ranks_str, self.ranks_int):
-            self.mrlora_A[r_str] = nn.Linear(in_features=self.in_features, out_features=r_int, bias=mrlora_config.use_bias)
-            self.mrlora_B[r_str] = nn.Linear(in_features=r_int, out_features=self.out_features, bias=mrlora_config.use_bias)
-        print('mrlora_config.use_lcoef', mrlora_config.use_lcoef)
-        
+            mrlora_A[r_str] = nn.Linear(in_features=self.in_features, out_features=r_int, bias=mrlora_config.use_bias)
+            mrlora_B[r_str] = nn.Linear(in_features=r_int, out_features=self.out_features, bias=mrlora_config.use_bias)
+
+        # print('mrlora_config.use_lcoef', mrlora_config.use_lcoef)
+        self.mrlora_A.update(nn.ModuleDict(dict(default=mrlora_A)))
+        self.mrlora_B.update(nn.ModuleDict(dict(default=mrlora_B)))
         self.mrlora_lambdas.update(dict(default=nn.Parameter(torch.ones(len(self.ranks_int)),
                                            requires_grad=mrlora_config.use_lcoef)))
         
@@ -145,9 +153,9 @@ class MrLoraLayer(BaseTunerLayer):
 
     def reset_mr_parameters_standard(self):
         # Kaiming init for A, Zeros for B (ensures adapter starts as identity-zero)
-        for a in self.mrlora_A.values():
+        for a in self.mrlora_A['default'].values():
             nn.init.kaiming_uniform_(a.weight, a=math.sqrt(5))
-        for b in self.mrlora_B.values():
+        for b in self.mrlora_B['default'].values():
             nn.init.zeros_(b.weight)
 
 
@@ -170,7 +178,7 @@ class Linear(nn.Module, MrLoraLayer):
             result = self.base_layer(x, *args, **kwargs)
         else:
             result = self.base_layer(x, *args, **kwargs)
-
+            mrlora_B, mrlora_A = self.mrlora_B['default'], self.mrlora_A['default']
             ranks_str = self.ranks_str
             # 2. Optimized Mr. LoRA forward
             # Apply dropout once to the input to save compute and improve consistency
@@ -180,7 +188,7 @@ class Linear(nn.Module, MrLoraLayer):
             # List comprehension is still necessary for ModuleDict access,
             # but torch.stack moves the subsequent math to a vectorized kernel.
             rank_outputs = torch.stack([
-                self.mrlora_B[r_str](self.mrlora_A[r_str](x_dropped))
+                mrlora_B[r_str](mrlora_A[r_str](x_dropped))
                 for r_str in ranks_str
             ])  # Shape: [num_ranks, batch, seq, out_features]
 
@@ -232,18 +240,16 @@ class Linear(nn.Module, MrLoraLayer):
 
     def get_delta_weight(self, adapter=None) -> torch.Tensor:
         """计算所有 rank 组合后的 ΔW"""
-        device = self.mrlora_lambdas.device
-        dtype = self.mrlora_A[self.ranks_str[0]].weight.dtype
-        out_features, in_features = self.get_base_layer().weight.shape
+        mrlora_B, mrlora_A = self.mrlora_B['default'], self.mrlora_A['default']
         mrlora_lambdas = self.mrlora_lambdas['default']
         scaling_factors = self.scaling_factors['default']
         
         # 初始化一个全零的 ΔW
-        total_delta_w = torch.zeros(out_features, in_features, device=device, dtype=dtype)
+        total_delta_w = torch.zeros_like(self.base_layer.weight)
 
         for i, r_str in enumerate(self.ranks_str):
             # W = B @ A
-            delta_w = self.mrlora_B[r_str].weight @ self.mrlora_A[r_str].weight
+            delta_w = mrlora_B[r_str].weight @ mrlora_A[r_str].weight
             # Apply alpha and pre-computed scaling
             total_delta_w += mrlora_lambdas[i] * scaling_factors[i] * delta_w
 

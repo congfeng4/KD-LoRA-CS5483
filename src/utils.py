@@ -85,6 +85,18 @@ def get_target_modules(model_name):
     return target_modules
 
 
+def print_trainable_parameters_detail(model):
+    trainable_params = 0
+    all_param = 0
+    for name, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+            print(f"Layer: {name} | Size: {param.numel()} | Shape: {list(param.shape)}")
+
+    print(f"\nTotal Trainable: {trainable_params}")
+
+
 def get_peft_config(args, model_name, peft_method):
     target_modules = get_target_modules(model_name)
 

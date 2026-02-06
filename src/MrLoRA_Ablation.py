@@ -16,22 +16,17 @@ from utils import *
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
-# Hyperparameter search space (rank)
-# KD-LoRA paper uses rank 8,16,32,64 with alpha = rank, but we fix alpha = 16
-RANK_VALUES = [16]
-# ALPHA_VALUES kept for reference (alpha is fixed at 16)
+RANK_VALUES = [8]
 seed_list = [42]
-GLUE_TASKS = ['qqp']
-# GLUE_TASKS = ['rte']
+GLUE_TASKS = ['qqp', 'cola']
 MODEL_FAMILY = {
     'roberta': {
         'teacher': 'roberta-base',
         'student': 'distilroberta-base',
     },
 }
-PEFT_FAMILY = ['mrlora']#, 'lora']
-MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef', '-bias']
-# MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef', '-bias']
+PEFT_FAMILY = ['mrlora-lcoef']
+MRLORA_VARIANTS = ['-olora', '-rs',]# '-lcoef', '-bias']
 
 for i in range(len(MRLORA_VARIANTS)):
     PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
