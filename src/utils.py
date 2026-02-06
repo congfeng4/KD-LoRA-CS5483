@@ -166,6 +166,7 @@ def get_peft_config(args, model_name, peft_method):
         args.use_rslora = '-rs' in peft_method
         args.use_olora = '-olora' in peft_method
         args.use_lcoef = '-lcoef' in peft_method
+        args.use_bias = '-bias' in peft_method
 
         mrlora_config = MrLoraConfig(
             total_rank=args.rank,
@@ -176,6 +177,7 @@ def get_peft_config(args, model_name, peft_method):
             use_rslora=args.use_rslora,
             use_olora=args.use_olora,
             use_lcoef=args.use_lcoef,
+            use_bias=args.use_bias,
         )
         return mrlora_config
 

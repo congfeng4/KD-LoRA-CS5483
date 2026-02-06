@@ -54,8 +54,8 @@ class MrLoraLayer(BaseTunerLayer):
         self.ranks_int = generate_mrlora_ranks(mrlora_config.total_rank)
         self.ranks_str = list(map(str, self.ranks_int))
         for r_str, r_int in zip(self.ranks_str, self.ranks_int):
-            self.mrlora_A[r_str] = nn.Linear(in_features=self.in_features, out_features=r_int, bias=False)
-            self.mrlora_B[r_str] = nn.Linear(in_features=r_int, out_features=self.out_features, bias=False)
+            self.mrlora_A[r_str] = nn.Linear(in_features=self.in_features, out_features=r_int, bias=mrlora_config.use_bias)
+            self.mrlora_B[r_str] = nn.Linear(in_features=r_int, out_features=self.out_features, bias=mrlora_config.use_bias)
         
         self.mrlora_lambdas.update(dict(default=nn.Parameter(torch.ones(len(self.ranks_int)),
                                            requires_grad=mrlora_config.use_lcoef)))

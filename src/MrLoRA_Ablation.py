@@ -30,7 +30,7 @@ MODEL_FAMILY = {
     },
 }
 PEFT_FAMILY = ['mrlora']#, 'lora']
-MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef']
+MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef', '-bias']
 
 for i in range(len(MRLORA_VARIANTS)):
     PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
