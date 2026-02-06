@@ -293,15 +293,33 @@ class BertDistillPipeline:
             return
         # 3. Teacher LoRA
         print("Begin Teacher LoRA...")
+
+        peft_config = get_peft_config(args, args.teacher_model_name, args.peft)
+        teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name, lora_config=peft_config)
+              
+        print('#param', get_trainable_param_count(teacher_lora_model))
+        def print_trainable_parameters_detail(model):
+            trainable_params = 0
+            all_param = 0
+            for name, param in model.named_parameters():
+                all_param += param.numel()
+                if param.requires_grad:
+                    trainable_params += param.numel()
+                    print(f"Layer: {name} | Size: {param.numel()} | Shape: {list(param.shape)}")
+            
+            print(f"\nTotal Trainable: {trainable_params}")
+
+        print_trainable_parameters_detail(teacher_lora_model)
+
+        raise SystemExit
+    
         teacher_dataset = self.load_dataset()
         tokenized_teacher_dataset = self.tokenize_teacher_dataset(teacher_dataset)
         teacher_train_dataset, teacher_eval_dataset = self.split_dataset(tokenized_teacher_dataset)
 
-        peft_config = get_peft_config(args, args.teacher_model_name, args.peft)
-        teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name, lora_config=peft_config)
         print('Loaded dataset & model', '#train', len(teacher_train_dataset), '#eval', len(teacher_eval_dataset),
               '#param', get_trainable_param_count(teacher_lora_model))
-
+    
         teacher_lora_trainer, train_metrics = self.train_model(teacher_lora_model, teacher_train_dataset,
                                                                teacher_eval_dataset,
                                                                ckpt_dir,
