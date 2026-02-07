@@ -105,6 +105,7 @@ class MrLoraLayer(BaseTunerLayer):
         if self.use_lcoef:
             nn.init.ones_(self.mrlora_lambdas['default'])
 
+    @torch.no_grad()
     def reset_mr_parameters_olora(self):
         scaling_factors = self.scaling_factors['default']
         """
@@ -112,41 +113,42 @@ class MrLoraLayer(BaseTunerLayer):
         1. 对原始权重 W 进行 SVD 分解。
         2. 按奇异值从高到低，将对应的正交基分配给 Rank 4, 2, 1 等矩阵。
         """
+        mrlora_B, mrlora_A = self.mrlora_B['default'], self.mrlora_A['default']
+
         # 1. 获取基础层的权重数据
-        with torch.no_grad():
-            # 获取 base_layer 权重 [out_features, in_features]
-            weight = self.get_base_layer().weight.data.float()
+        # 获取 base_layer 权重 [out_features, in_features]
+        weight = self.get_base_layer().weight.data.float()
 
-            # 2. 执行 SVD 分解
-            # U: [out_features, K], S: [K], Vh: [K, in_features]
-            # 这里 K = min(out_features, in_features)
-            U, S, Vh = torch.linalg.svd(weight, full_matrices=False)
+        # 2. 执行 SVD 分解
+        # U: [out_features, K], S: [K], Vh: [K, in_features]
+        # 这里 K = min(out_features, in_features)
+        U, S, Vh = torch.linalg.svd(weight, full_matrices=False)
 
-            # 3. 按照你的计划进行“能量切片”分配
-            current_idx = 0
-            for i, r_str in enumerate(self.ranks_str):
-                r_int = self.ranks_int[i]
+        # 3. 按照你的计划进行“能量切片”分配
+        current_idx = 0
+        for i, r_str in enumerate(self.ranks_str):
+            r_int = self.ranks_int[i]
 
-                # 在 SVD 结果中提取对应的分量
-                # 取出第 current_idx 到 current_idx + r_int 个奇异向量
-                u_slice = U[:, current_idx: current_idx + r_int]
-                s_slice = S[current_idx: current_idx + r_int]
-                vh_slice = Vh[current_idx: current_idx + r_int, :]
+            # 在 SVD 结果中提取对应的分量
+            # 取出第 current_idx 到 current_idx + r_int 个奇异向量
+            u_slice = U[:, current_idx: current_idx + r_int]
+            s_slice = S[current_idx: current_idx + r_int]
+            vh_slice = Vh[current_idx: current_idx + r_int, :]
 
-                # 4. 初始化 A：分配右奇异向量 (正交基)
-                # mrlora_A 的形状通常是 [r, in_features]
-                self.mrlora_A[r_str].weight.data.copy_(vh_slice.to(self.mrlora_A[r_str].weight.dtype))
+            # 4. 初始化 A：分配右奇异向量 (正交基)
+            # mrlora_A 的形状通常是 [r, in_features]
+            mrlora_A[r_str].weight.data.copy_(vh_slice.to(mrlora_A[r_str].weight.dtype))
 
-                # 5. 初始化 B：分配左奇异向量并结合奇异值
-                # 理论上 AB = u_slice @ diag(s_slice) @ vh_slice
-                # 为了抵消 forward 中的 scaling_factor，这里需要除以它
-                b_init = u_slice @ torch.diag(s_slice)
-                b_init = b_init / scaling_factors[i]
+            # 5. 初始化 B：分配左奇异向量并结合奇异值
+            # 理论上 AB = u_slice @ diag(s_slice) @ vh_slice
+            # 为了抵消 forward 中的 scaling_factor，这里需要除以它
+            b_init = u_slice @ torch.diag(s_slice)
+            b_init = b_init / scaling_factors[i]
 
-                self.mrlora_B[r_str].weight.data.copy_(b_init.to(self.mrlora_B[r_str].weight.dtype))
+            mrlora_B[r_str].weight.data.copy_(b_init.to(mrlora_B[r_str].weight.dtype))
 
-                # 索引递增，确保下一个分支拿到的是更小的奇异值对应的正交基
-                current_idx += r_int
+            # 索引递增，确保下一个分支拿到的是更小的奇异值对应的正交基
+            current_idx += r_int
 
         # 显式清理大矩阵占用的内存
         del U, S, Vh, weight
