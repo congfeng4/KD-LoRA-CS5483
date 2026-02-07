@@ -298,8 +298,7 @@ class BertDistillPipeline:
         teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name, lora_config=peft_config)
               
         print('#param', get_trainable_param_count(teacher_lora_model))
-        print_trainable_parameters_detail(teacher_lora_model)
-        raise SystemExit
+        # print_trainable_parameters_detail(teacher_lora_model)
 
         teacher_dataset = self.load_dataset()
         tokenized_teacher_dataset = self.tokenize_teacher_dataset(teacher_dataset)

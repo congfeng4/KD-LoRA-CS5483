@@ -16,7 +16,7 @@ from utils import *
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
-RANK_VALUES = [8]
+RANK_VALUES = [8, 16]
 seed_list = [42]
 GLUE_TASKS = ['qqp', 'cola']
 MODEL_FAMILY = {
@@ -25,8 +25,8 @@ MODEL_FAMILY = {
         'student': 'distilroberta-base',
     },
 }
-PEFT_FAMILY = ['mrlora-lcoef']
-MRLORA_VARIANTS = ['-olora', '-rs',]# '-lcoef', '-bias']
+PEFT_FAMILY = ['mrlora']
+MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef', '-bias']
 
 for i in range(len(MRLORA_VARIANTS)):
     PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
