@@ -80,13 +80,16 @@ class MrLoraLayer(BaseTunerLayer):
 
         # # 1. Pre-compute scaling factors to avoid math in the forward pass
         use_rslora = mrlora_config.use_rslora
-        lora_alpha = mrlora_config.lora_alpha
+        # Assume fixed alpha/rank ratio for all ranks.
+        lora_alpha_ratio = mrlora_config.lora_alpha / self.ranks_int[0]
+        print("lora_alpha_ratio", lora_alpha_ratio)
+
         if use_rslora:
             # RS-LoRA: alpha / sqrt(r)
-            scalings = [lora_alpha / math.sqrt(r) for r in self.ranks_int]
+            scalings = [lora_alpha_ratio * r / math.sqrt(r) for r in self.ranks_int]
         else:
             # Standard LoRA usually uses alpha / r.
-            scalings = [lora_alpha / r for r in self.ranks_int]
+            scalings = [lora_alpha_ratio * r / r for r in self.ranks_int]
 
         self.scaling_factors.update(dict(
             default=torch.nn.Parameter(torch.tensor(scalings), requires_grad=False)))

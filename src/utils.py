@@ -53,8 +53,6 @@ PEFT_FAMILY = [
     "olora",  # orthonormal lora
     "dora",  # weight decomposed lora
     "rslora",  # Rank stablized lora
-    # "adalora",
-    "mrlora-rs-olora", # Multi-Rank LoRA with rank-stabilized scaling
 ]
 
 

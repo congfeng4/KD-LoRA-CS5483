@@ -10,21 +10,13 @@ from pathlib import Path
 
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, EarlyStoppingCallback
 from peft import get_peft_model
-from BERT_Distill_LoRA import BertDistillPipeline
+from BERT_Distill_LoRA import *
 from utils import *
 
 # Suppress tokenizer warning about overflowing tokens not returned for 'longest_first' truncation strategy
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
-RANK_VALUES = [8, 16]
-seed_list = [42]
-GLUE_TASKS = ['qqp', 'cola']
-MODEL_FAMILY = {
-    'roberta': {
-        'teacher': 'roberta-base',
-        'student': 'distilroberta-base',
-    },
-}
+RANK_VALUES = [8]
 PEFT_FAMILY = ['mrlora']
 MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef']#, '-bias']
 
@@ -40,7 +32,6 @@ def main_lora(args, is_student: bool):
             for task in GLUE_TASKS:
                 for model_family in MODEL_FAMILY.keys():
                     for peft_method in PEFT_FAMILY:
-                        # Set alpha = 16 (fixed) as per our experimental setup
                         set_seed(seed, deterministic=False)
                         config = args.__dict__.copy()
                         config['model_family'] = model_family
@@ -80,6 +71,7 @@ if __name__ == "__main__":
                         help='Use rank-stabilized scaling for MrLoRA (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))')
     parser.add_argument('--use_olora', action='store_true',
                         help='Use orthonormal initialization for MrLoRA')
+    parser.add_argument("--lora_alpha", type=float, default=16, help="Number of training epochs")
 
     # Learning rates for teacher and student
     parser.add_argument("--teacher_learning_rate", type=float, default=2e-5, help="Learning rate for the teacher model")
