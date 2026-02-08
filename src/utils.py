@@ -13,7 +13,7 @@ from transformers.trainer_utils import set_seed
 
 GLUE_TASKS = [
     "rte", "qnli",
-    # "mrpc", "qqp", "stsb",
+    "mrpc", "qqp", "stsb",
     "mnli", "cola", "sst2",
 ]
 

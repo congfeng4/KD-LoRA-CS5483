@@ -20,7 +20,7 @@ RANK_VALUES = [8]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024, 2026, 999]
 MAX_EPOCHS = 100
-EVAL_STEPS = 100
+EVAL_STEPS = 200
 PATIENT = 5
 # If 1000 steps no improvement, then stop.
 
@@ -334,8 +334,15 @@ class BertDistillPipeline:
 
     def load_teacher_labels(self):
         args = self.args
+        ori_peft = args.peft
+        args.peft = 'lora'
+        ori_dir = self.dir
+        self.dir = Path('results')
+        teacher_fft_dir = self.teacher_fft_dir
+        args.peft = ori_peft
+        self.dir = ori_dir
         # Teacher labels are not related to lora settings.
-        teacher_fft_dir = self.teacher_fft_dir.parent  # last level is lora config
+        teacher_fft_dir = teacher_fft_dir.parent  # last level is lora config
         teacher_soft_labels_path = next(teacher_fft_dir.rglob('teacher_soft_labels.pth'))
         teacher_soft_labels = torch.load(teacher_soft_labels_path, weights_only=False)
         print('Loaded teacher soft-labels.', args.task, teacher_soft_labels_path, teacher_soft_labels.shape)
@@ -347,10 +354,6 @@ class BertDistillPipeline:
         args = self.args
         ckpt_dir = student_lora_dir / 'ckpt'
 
-        ori_peft = args.peft
-        args.peft = 'lora'
-        teacher_fft_dir = self.teacher_fft_dir
-        args.peft = ori_peft
         metrics_file = student_lora_dir / 'metrics.json'
         if metrics_file.exists():
             return
