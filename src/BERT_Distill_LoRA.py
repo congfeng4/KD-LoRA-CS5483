@@ -423,7 +423,7 @@ def main_lora(args, is_student: bool):
                         config['peft'] = peft_method
                         config['seed'] = seed
                         config['rank'] = rank
-                        config['lora_alpha'] = 2 * rank
+                        config['lora_alpha'] = rank
 
                         add_model_name_to_config(model_family, config)
                         pipe = BertDistillPipeline(**config)

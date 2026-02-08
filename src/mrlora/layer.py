@@ -81,7 +81,7 @@ class MrLoraLayer(BaseTunerLayer):
         # # 1. Pre-compute scaling factors to avoid math in the forward pass
         use_rslora = mrlora_config.use_rslora
         # Assume fixed alpha/rank ratio for all ranks.
-        lora_alpha_ratio = mrlora_config.lora_alpha / self.ranks_int[0]
+        lora_alpha_ratio = mrlora_config.lora_alpha / mrlora_config.total_rank
         print("lora_alpha_ratio", lora_alpha_ratio)
 
         if use_rslora:
