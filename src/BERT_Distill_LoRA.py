@@ -20,7 +20,7 @@ RANK_VALUES = [8]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024, 2026, 999]
 MAX_EPOCHS = 100
-EVAL_STEPS = 200
+EVAL_STEPS = 100
 PATIENT = 5
 # If 1000 steps no improvement, then stop.
 
