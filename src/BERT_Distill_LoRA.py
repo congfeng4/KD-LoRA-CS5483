@@ -15,7 +15,8 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 
 # Hyperparameter search space (rank)
 # KD-LoRA paper uses rank 8,16,32,64 with alpha = rank, but we fix alpha = 16
-RANK_VALUES = [8, 16, 32, 64]
+RANK_VALUES = [8]
+# RANK_VALUES = [8, 16, 32, 64]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024, 2026, 999]
 MAX_EPOCHS = 100
