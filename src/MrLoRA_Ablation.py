@@ -18,7 +18,8 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 
 RANK_VALUES = [8]
 PEFT_FAMILY = ['mrlora']
-MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef']#, '-bias']
+MRLORA_VARIANTS = ['-rs']#, '-bias']
+# MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef']#, '-bias']
 
 for i in range(len(MRLORA_VARIANTS)):
     PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_batch_size", type=int, default=32, help="Evaluation batch size")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
 
-    parser.add_argument("--dir_name", type=str, default="./ablation", help="Directory name for saving models")
+    parser.add_argument("--dir_name", type=str, default="./ablation2", help="Directory name for saving models")
 
     # LoRA parameters
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
@@ -80,4 +81,4 @@ if __name__ == "__main__":
 
     args_cmd = parser.parse_args()
     
-    main_lora(args_cmd, is_student=True)
+    main_lora(args_cmd, is_student=False)
