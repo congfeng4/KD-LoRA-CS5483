@@ -50,9 +50,9 @@ MODEL_FAMILY = {
 
 PEFT_FAMILY = [
     "lora",  # Vanilla lora
-    "olora",  # orthonormal lora
-    "dora",  # weight decomposed lora
-    "rslora",  # Rank stablized lora
+    # "olora",  # orthonormal lora
+    # "dora",  # weight decomposed lora
+    # "rslora",  # Rank stablized lora
 ]
 
 
