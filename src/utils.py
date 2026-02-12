@@ -34,14 +34,14 @@ def get_tokenizer(model_name, use_fast=False):
 
 
 MODEL_FAMILY = {
-    # 'bert': {
-    #     'teacher': 'bert-base-uncased',
-    #     'student': 'distilbert-base-uncased',
-    # },
-    # 'roberta': {
-    #     'teacher': 'roberta-base',
-    #     'student': 'distilroberta-base',
-    # },
+    'bert': {
+        'teacher': 'bert-base-uncased',
+        'student': 'distilbert-base-uncased',
+    },
+    'roberta': {
+        'teacher': 'roberta-base',
+        'student': 'distilroberta-base',
+    },
     'deberta': {
         'teacher': 'deberta-v3-base',
         'student': 'deberta-v3-small',
