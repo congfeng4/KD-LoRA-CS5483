@@ -26,6 +26,7 @@ seed_list = [42]
 #     "mnli", "cola", "sst2",
 # ]
 GLUE_TASKS = ['cola']
+
 MODEL_FAMILY = {
     'deberta': {
         'teacher': 'deberta-v3-base',

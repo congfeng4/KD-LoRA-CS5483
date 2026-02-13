@@ -8,16 +8,18 @@ from peft.tuners.tuners_utils import BaseTunerLayer
 
 
 def generate_mrlora_ranks(total_rank: int):
+    # TODO: Merge rank 1.
     # total_rank=8: 1,2,5
     assert total_rank % 2 == 0, total_rank
 
     highest_rank = total_rank//2 + 1
     ranks = []
     r = highest_rank
-    while r >= 1:
+    while r > 1:
         ranks.append(r)
         r = r // 2
 
+    ranks[-1] += 1
     assert sum(ranks) == total_rank, (ranks, total_rank)
     return ranks
 
@@ -26,7 +28,7 @@ class MrLoraLayer(BaseTunerLayer):
     # All names of layers that may contain (trainable) adapter weights
     adapter_layer_names = ("mrlora_A", "mrlora_B")
     # All names of other parameters that may contain adapter-related parameters
-    other_param_names = ("ranks_int", "ranks_str", "mrlora_lambdas", "scaling_factors")
+    other_param_names = ("ranks_int", "ranks_str", "mrlora_lambdas",)
 
     def __init__(self, base_layer: nn.Module, **kwargs) -> None:
         self.base_layer = base_layer
@@ -36,7 +38,6 @@ class MrLoraLayer(BaseTunerLayer):
         self.mrlora_A = nn.ModuleDict()
         self.mrlora_B = nn.ModuleDict()
         self.mrlora_lambdas = nn.ParameterDict()
-        self.scaling_factors = nn.ParameterDict()
         self.use_lcoef = False
 
         base_layer = self.get_base_layer()
@@ -57,7 +58,7 @@ class MrLoraLayer(BaseTunerLayer):
 
         self.ranks_int = generate_mrlora_ranks(mrlora_config.total_rank)
         print('self.rank_int', self.ranks_int)
-        print('total_rank', mrlora_config.total_rank)
+        # print('total_rank', mrlora_config.total_rank)
         self.ranks_str = list(map(str, self.ranks_int))
         mrlora_A = nn.ModuleDict()
         mrlora_B = nn.ModuleDict()
@@ -78,24 +79,6 @@ class MrLoraLayer(BaseTunerLayer):
             lora_dropout_layer = nn.Identity()
         self.lora_dropout = lora_dropout_layer
 
-        # # 1. Pre-compute scaling factors to avoid math in the forward pass
-        use_rslora = mrlora_config.use_rslora
-        # Assume fixed alpha/rank ratio for all ranks.
-        # lora_alpha_ratio = mrlora_config.lora_alpha / mrlora_config.total_rank
-        lora_alpha = mrlora_config.lora_alpha
-        # print("lora_alpha_ratio", lora_alpha_ratio)
-
-        if use_rslora:
-            # RS-LoRA: alpha / sqrt(r)
-            scalings = [lora_alpha * r / math.sqrt(r) for r in self.ranks_int]
-            # print('use_rslora', scalings)
-        else:
-            # Standard LoRA usually uses alpha / r.
-            scalings = [lora_alpha * r / r for r in self.ranks_int]
-
-        self.scaling_factors.update(dict(
-            default=torch.nn.Parameter(torch.tensor(scalings), requires_grad=False)))
-
         self.reset_mr_parameters(adapter_name, use_olora=mrlora_config.use_olora)
         self._move_adapter_to_device_of_base_layer(adapter_name)
         self.set_adapter(self.active_adapters)
@@ -110,7 +93,6 @@ class MrLoraLayer(BaseTunerLayer):
 
     @torch.no_grad()
     def reset_mr_parameters_olora(self):
-        # scaling_factors = self.scaling_factors['default']
         """
         实现基于 OLoRA 思想的 SVD 能量切片初始化：
         1. 对原始权重 W 进行 SVD 分解。
@@ -145,9 +127,7 @@ class MrLoraLayer(BaseTunerLayer):
 
             # 5. 初始化 B：分配左奇异向量并结合奇异值
             # 理论上 AB = u_slice @ diag(s_slice) @ vh_slice
-            # 为了抵消 forward 中的 scaling_factor，这里需要除以它
             b_init = u_slice @ torch.diag(s_slice)
-            # b_init = b_init / scaling_factors[i]
 
             mrlora_B[r_str].weight.data.copy_(b_init.to(mrlora_B[r_str].weight.dtype))
 
@@ -200,10 +180,13 @@ class Linear(nn.Module, MrLoraLayer):
             ])  # Shape: [num_ranks, batch, seq, out_features]
 
             # Alternative to stack + sum
-            # combined_scale = self.mrlora_lambdas['default'] * self.scaling_factors['default']
-            result += torch.einsum('rbsh,r->bsh', rank_outputs, self.scaling_factors['default'])
+            combined_scale = self.mrlora_lambdas['default']
+            delta_x = torch.einsum('rbsh,r->bsh', rank_outputs, combined_scale)
+            # print('delta_x', delta_x.min(), delta_x.max())
+            result += delta_x
 
         result = result.to(previous_dtype)
+        # print('result', result)
         return result
 
     def merge(self, safe_merge: bool = False, adapter_names = None) -> None:
@@ -249,7 +232,6 @@ class Linear(nn.Module, MrLoraLayer):
         """计算所有 rank 组合后的 ΔW"""
         mrlora_B, mrlora_A = self.mrlora_B['default'], self.mrlora_A['default']
         mrlora_lambdas = self.mrlora_lambdas['default']
-        scaling_factors = self.scaling_factors['default']
         
         # 初始化一个全零的 ΔW
         total_delta_w = torch.zeros_like(self.base_layer.weight)
@@ -257,8 +239,7 @@ class Linear(nn.Module, MrLoraLayer):
         for i, r_str in enumerate(self.ranks_str):
             # W = B @ A
             delta_w = mrlora_B[r_str].weight @ mrlora_A[r_str].weight
-            # Apply alpha and pre-computed scaling
-            total_delta_w += mrlora_lambdas[i] * scaling_factors[i] * delta_w
+            total_delta_w += mrlora_lambdas[i] * delta_w
 
         return total_delta_w
 
