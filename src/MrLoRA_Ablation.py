@@ -17,14 +17,29 @@ from utils import *
 logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR)
 
 RANK_VALUES = [8]
-PEFT_FAMILY = ['mrlora']
-MRLORA_VARIANTS = ['-rs']#, '-bias']
+seed_list = [42]
+
 # MRLORA_VARIANTS = ['-olora', '-rs', '-lcoef']#, '-bias']
+# GLUE_TASKS = [
+#     "rte", "qnli",
+#     "mrpc", "qqp", "stsb",
+#     "mnli", "cola", "sst2",
+# ]
+GLUE_TASKS = ['cola']
+MODEL_FAMILY = {
+    'deberta': {
+        'teacher': 'deberta-v3-base',
+        'student': 'deberta-v3-small',
+    }
+}
 
-for i in range(len(MRLORA_VARIANTS)):
-    PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
+# MRLORA_VARIANTS = ['-rs']#, '-bias']
+PEFT_FAMILY = ['mrlora-rs']
 
-print(PEFT_FAMILY)
+# for i in range(len(MRLORA_VARIANTS)):
+#     PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
+#
+# print(PEFT_FAMILY)
 
 
 def main_lora(args, is_student: bool):

@@ -81,21 +81,22 @@ class MrLoraLayer(BaseTunerLayer):
         # # 1. Pre-compute scaling factors to avoid math in the forward pass
         use_rslora = mrlora_config.use_rslora
         # Assume fixed alpha/rank ratio for all ranks.
-        lora_alpha_ratio = mrlora_config.lora_alpha / mrlora_config.total_rank
-        print("lora_alpha_ratio", lora_alpha_ratio)
+        # lora_alpha_ratio = mrlora_config.lora_alpha / mrlora_config.total_rank
+        lora_alpha = mrlora_config.lora_alpha
+        # print("lora_alpha_ratio", lora_alpha_ratio)
 
         if use_rslora:
             # RS-LoRA: alpha / sqrt(r)
-            scalings = [lora_alpha_ratio * r / math.sqrt(r) for r in self.ranks_int]
+            scalings = [lora_alpha * r / math.sqrt(r) for r in self.ranks_int]
+            print('use_rslora', scalings)
         else:
             # Standard LoRA usually uses alpha / r.
-            scalings = [lora_alpha_ratio * r / r for r in self.ranks_int]
+            scalings = [lora_alpha * r / r for r in self.ranks_int]
 
         self.scaling_factors.update(dict(
             default=torch.nn.Parameter(torch.tensor(scalings), requires_grad=False)))
 
         self.reset_mr_parameters(adapter_name, use_olora=mrlora_config.use_olora)
-
         self._move_adapter_to_device_of_base_layer(adapter_name)
         self.set_adapter(self.active_adapters)
 
@@ -103,14 +104,13 @@ class MrLoraLayer(BaseTunerLayer):
         if use_olora:
             self.reset_mr_parameters_olora()
         else:
-            self.reset_mr_parameters_standard()
+            self.reset_mr_parameters_lora()
 
-        if self.use_lcoef:
-            nn.init.ones_(self.mrlora_lambdas['default'])
+        nn.init.ones_(self.mrlora_lambdas['default'])
 
     @torch.no_grad()
     def reset_mr_parameters_olora(self):
-        scaling_factors = self.scaling_factors['default']
+        # scaling_factors = self.scaling_factors['default']
         """
         实现基于 OLoRA 思想的 SVD 能量切片初始化：
         1. 对原始权重 W 进行 SVD 分解。
@@ -129,6 +129,7 @@ class MrLoraLayer(BaseTunerLayer):
 
         # 3. 按照你的计划进行“能量切片”分配
         current_idx = 0
+        # TODO: W -= QR!!
         for i, r_str in enumerate(self.ranks_str):
             r_int = self.ranks_int[i]
 
@@ -146,22 +147,22 @@ class MrLoraLayer(BaseTunerLayer):
             # 理论上 AB = u_slice @ diag(s_slice) @ vh_slice
             # 为了抵消 forward 中的 scaling_factor，这里需要除以它
             b_init = u_slice @ torch.diag(s_slice)
-            b_init = b_init / scaling_factors[i]
+            # b_init = b_init / scaling_factors[i]
 
             mrlora_B[r_str].weight.data.copy_(b_init.to(mrlora_B[r_str].weight.dtype))
 
             # 索引递增，确保下一个分支拿到的是更小的奇异值对应的正交基
             current_idx += r_int
+            self.get_base_layer().weight -= mrlora_B[r_str].weight @ mrlora_A[r_str].weight
 
         # 显式清理大矩阵占用的内存
         del U, S, Vh, weight
 
-    def reset_mr_parameters_standard(self):
-        # Kaiming init for A, Zeros for B (ensures adapter starts as identity-zero)
+    def reset_mr_parameters_lora(self):
         for a in self.mrlora_A['default'].values():
-            nn.init.kaiming_uniform_(a.weight, a=math.sqrt(5))
+            nn.init.zeros_(a.weight)
         for b in self.mrlora_B['default'].values():
-            nn.init.zeros_(b.weight)
+            nn.init.normal_(b.weight)
 
 
 class Linear(nn.Module, MrLoraLayer):
@@ -198,8 +199,8 @@ class Linear(nn.Module, MrLoraLayer):
             ])  # Shape: [num_ranks, batch, seq, out_features]
 
             # Alternative to stack + sum
-            combined_scale = self.mrlora_lambdas['default'] * self.scaling_factors['default']
-            result += torch.einsum('rbsh,r->bsh', rank_outputs, combined_scale)
+            # combined_scale = self.mrlora_lambdas['default'] * self.scaling_factors['default']
+            result += torch.einsum('rbsh,r->bsh', rank_outputs, self.scaling_factors['default'])
 
         result = result.to(previous_dtype)
         return result
