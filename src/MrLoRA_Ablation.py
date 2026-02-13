@@ -103,4 +103,4 @@ if __name__ == "__main__":
 
     args_cmd = parser.parse_args()
     
-    main_lora(args_cmd, is_student=False)
+    main_lora(args_cmd, is_student=True)
