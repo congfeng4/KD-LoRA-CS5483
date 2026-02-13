@@ -16,7 +16,7 @@ class MrLoraConfig(PeftConfig):
     bias: Literal["none", "all", "lora_only"] = field(
         default="none", metadata={"help": "Bias type for Lora. Can be 'none', 'all' or 'lora_only'"}
     )
-    modules_to_save: Optional[List[str]] = field(default=None, metadata={
+    modules_to_save: Optional[List[str]] = field(default_factory=lambda: ['classifier', 'score'], metadata={
         "help": "List of modules apart from LoRA layers to be set as trainable"})
     use_rslora: bool = field(default=False, metadata={
         "help": "When True, uses rank-stabilized scaling (lora_alpha/sqrt(r) instead of lora_alpha/max(ranks))"})

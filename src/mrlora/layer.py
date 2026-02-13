@@ -56,8 +56,8 @@ class MrLoraLayer(BaseTunerLayer):
             raise ValueError(f"`total_rank` should be an even integer value but the value passed is {mrlora_config.total_rank}")
 
         self.ranks_int = generate_mrlora_ranks(mrlora_config.total_rank)
-        # print('self.rank_int', self.ranks_int)
-        # print('total_rank', mrlora_config.total_rank)
+        print('self.rank_int', self.ranks_int)
+        print('total_rank', mrlora_config.total_rank)
         self.ranks_str = list(map(str, self.ranks_int))
         mrlora_A = nn.ModuleDict()
         mrlora_B = nn.ModuleDict()
@@ -88,7 +88,7 @@ class MrLoraLayer(BaseTunerLayer):
         if use_rslora:
             # RS-LoRA: alpha / sqrt(r)
             scalings = [lora_alpha * r / math.sqrt(r) for r in self.ranks_int]
-            print('use_rslora', scalings)
+            # print('use_rslora', scalings)
         else:
             # Standard LoRA usually uses alpha / r.
             scalings = [lora_alpha * r / r for r in self.ranks_int]
@@ -159,6 +159,7 @@ class MrLoraLayer(BaseTunerLayer):
         del U, S, Vh, weight
 
     def reset_mr_parameters_lora(self):
+        print('reset_mr_parameters_lora')
         for a in self.mrlora_A['default'].values():
             nn.init.zeros_(a.weight)
         for b in self.mrlora_B['default'].values():

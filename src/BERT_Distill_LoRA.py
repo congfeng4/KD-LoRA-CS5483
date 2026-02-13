@@ -296,6 +296,7 @@ class BertDistillPipeline:
         print("Begin Teacher LoRA...")
 
         peft_config = get_peft_config(args, args.teacher_model_name, args.peft)
+        print('peft_config', peft_config)
         teacher_lora_model = self.load_pretrained_model_lora(args.teacher_model_name, lora_config=peft_config)
               
         print('#param', get_trainable_param_count(teacher_lora_model))
@@ -316,7 +317,7 @@ class BertDistillPipeline:
 
         teacher_lora_results = self.evaluate_model(teacher_lora_trainer, teacher_eval_dataset)
         self.patch_results(teacher_lora_results, args, train_metrics, 'lora')
-        print(f"teacher lora results: {teacher_lora_results}")
+        # print(f"teacher lora results: {teacher_lora_results}")
 
         if teacher_lora_trainer.is_world_process_zero():
             with open(metrics_file, 'w', encoding='utf-8') as f:
@@ -376,7 +377,7 @@ class BertDistillPipeline:
 
         student_lora_results = self.evaluate_model(student_trainer, student_eval_dataset)
         self.patch_results(student_lora_results, args, train_metrics, 'kd-lora')
-        print(f"student lora results: {student_lora_results}")
+        # print(f"student lora results: {student_lora_results}")
 
         if student_trainer.is_world_process_zero():
             with open(metrics_file, 'w', encoding='utf-8') as f:

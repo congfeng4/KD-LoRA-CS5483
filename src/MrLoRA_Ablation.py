@@ -34,6 +34,7 @@ MODEL_FAMILY = {
 }
 
 # MRLORA_VARIANTS = ['-rs']#, '-bias']
+# PEFT_FAMILY = ['lora']
 PEFT_FAMILY = ['mrlora-rs']
 
 # for i in range(len(MRLORA_VARIANTS)):
@@ -44,10 +45,15 @@ PEFT_FAMILY = ['mrlora-rs']
 
 def main_lora(args, is_student: bool):
     for rank in RANK_VALUES:
+        print('rank', rank)
         for seed in seed_list:
+            print('seed', seed)
             for task in GLUE_TASKS:
+                print('task', task)
                 for model_family in MODEL_FAMILY.keys():
+                    print('family', model_family)
                     for peft_method in PEFT_FAMILY:
+                        print('peft', peft_method)
                         set_seed(seed, deterministic=False)
                         config = args.__dict__.copy()
                         config['model_family'] = model_family
@@ -79,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval_batch_size", type=int, default=32, help="Evaluation batch size")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
 
-    parser.add_argument("--dir_name", type=str, default="./ablation2", help="Directory name for saving models")
+    parser.add_argument("--dir_name", type=str, default="./ablation3", help="Directory name for saving models")
 
     # LoRA parameters
     parser.add_argument("--lora_dropout", type=float, default=0.05, help="Dropout rate for LoRA layers")
