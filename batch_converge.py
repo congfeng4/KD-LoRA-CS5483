@@ -75,7 +75,7 @@ def plot_metrics(json_path):
 # Execute rglob search
 if __name__ == "__main__":
     # Change "." to your results root directory if needed
-    for metrics_file in Path("./results").rglob("metrics.json"):
+    for metrics_file in Path("./ablation3").rglob("metrics.json"):
         try:
             plot_metrics(metrics_file)
         except Exception as e:

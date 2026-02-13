@@ -25,7 +25,7 @@ seed_list = [42]
 #     "mrpc", "qqp", "stsb",
 #     "mnli", "cola", "sst2",
 # ]
-GLUE_TASKS = ['cola', 'qnli']
+GLUE_TASKS = ['cola', 'qnli', 'rte']
 
 MODEL_FAMILY = {
     'deberta': {

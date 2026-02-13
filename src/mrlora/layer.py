@@ -56,7 +56,7 @@ class MrLoraLayer(BaseTunerLayer):
             raise ValueError(f"`total_rank` should be an even integer value but the value passed is {mrlora_config.total_rank}")
 
         self.ranks_int = generate_mrlora_ranks(mrlora_config.total_rank)
-        print('self.rank_int', self.ranks_int)
+        # print('self.rank_int', self.ranks_int)
         # print('total_rank', mrlora_config.total_rank)
         self.ranks_str = list(map(str, self.ranks_int))
         mrlora_A = nn.ModuleDict()
@@ -78,7 +78,7 @@ class MrLoraLayer(BaseTunerLayer):
             # Standard LoRA usually uses alpha / r.
             scalings = [1 / r for r in self.ranks_int]
 
-        print('scalings', scalings)
+        # print('scalings', scalings)
         self.mrlora_scaling_factors.update(dict(
             default=torch.nn.Parameter(torch.tensor(scalings), requires_grad=False)))
         
@@ -149,7 +149,7 @@ class MrLoraLayer(BaseTunerLayer):
         del U, S, Vh, weight
 
     def reset_mr_parameters_lora(self):
-        print('reset_mr_parameters_lora')
+        # print('reset_mr_parameters_lora')
         for a in self.mrlora_A['default'].values():
             nn.init.zeros_(a.weight)
         for b in self.mrlora_B['default'].values():
@@ -214,7 +214,7 @@ class Linear(nn.Module, MrLoraLayer):
         """
 
         base_layer = self.get_base_layer()
-        print('Merge!!!')
+        # print('Merge!!!')
         if safe_merge:
             # Note that safe_merge will be slower than the normal merge
             # because of the copy operation.

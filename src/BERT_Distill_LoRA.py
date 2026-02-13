@@ -19,7 +19,7 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 RANK_VALUES = [8, 16, 32, 64]
 # ALPHA_VALUES kept for reference (alpha is fixed at 16)
 seed_list = [42, 123, 2024, 2026, 999]
-MAX_EPOCHS = 100
+MAX_EPOCHS = 200
 EVAL_STEPS = 200
 PATIENT = 5
 # If 1000 steps no improvement, then stop.
