@@ -366,6 +366,8 @@ class BertDistillPipeline:
 
         tokenized_student_dataset = self.tokenize_student_dataset(teacher_dataset)
         student_model = self.load_pretrained_model_lora(args.student_model_name, lora_config=peft_config)
+        print_trainable_parameters_detail(student_model)
+
         student_train_dataset, student_eval_dataset = self.split_dataset(tokenized_student_dataset)
         print('Loaded dataset & model', '#train', len(student_train_dataset), '#eval', len(student_eval_dataset),
               '#param', get_trainable_param_count(student_model))

@@ -94,12 +94,12 @@ class MrLoraLayer(BaseTunerLayer):
         self.set_adapter(self.active_adapters)
 
     def reset_mr_parameters(self, adapter_name, use_olora: bool):
+        nn.init.ones_(self.mrlora_lambdas['default'])
+
         if use_olora:
             self.reset_mr_parameters_olora()
         else:
             self.reset_mr_parameters_lora()
-
-        nn.init.ones_(self.mrlora_lambdas['default'])
 
     @torch.no_grad()
     def reset_mr_parameters_olora(self):
@@ -109,6 +109,7 @@ class MrLoraLayer(BaseTunerLayer):
         2. 按奇异值从高到低，将对应的正交基分配给 Rank 4, 2, 1 等矩阵。
         """
         mrlora_B, mrlora_A = self.mrlora_B['default'], self.mrlora_A['default']
+        combined_scale = self.mrlora_lambdas['default'] * self.mrlora_scaling_factors['default']
 
         # 1. 获取基础层的权重数据
         # 获取 base_layer 权重 [out_features, in_features]
@@ -143,7 +144,8 @@ class MrLoraLayer(BaseTunerLayer):
 
             # 索引递增，确保下一个分支拿到的是更小的奇异值对应的正交基
             current_idx += r_int
-            self.get_base_layer().weight -= mrlora_B[r_str].weight @ mrlora_A[r_str].weight
+            # TODO: Consider the lambda & scalling!!
+            self.get_base_layer().weight -= mrlora_B[r_str].weight @ mrlora_A[r_str].weight * combined_scale[i]
 
         # 显式清理大矩阵占用的内存
         del U, S, Vh, weight
