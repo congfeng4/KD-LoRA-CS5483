@@ -36,13 +36,15 @@ MODEL_FAMILY = {
 
 # MRLORA_VARIANTS = ['-rs']#, '-bias']
 # PEFT_FAMILY = ['lora']
-PEFT_FAMILY = ['mrlora-rs']
+
+PEFT_FAMILY = ['mrlora-lcoef-olora-rs']
 
 # for i in range(len(MRLORA_VARIANTS)):
 #     PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
 #
 # print(PEFT_FAMILY)
 
+#TODO: load_best not effective!!!
 
 def main_lora(args, is_student: bool):
     for rank in RANK_VALUES:

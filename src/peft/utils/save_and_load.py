@@ -358,6 +358,7 @@ def set_peft_model_state_dict(
         PeftType.FOURIERFT,
         PeftType.HRA,
         PeftType.VBLORA,
+        PeftType.MR_LORA,
     ):
         peft_model_state_dict = {}
         parameter_prefix = {
@@ -374,6 +375,7 @@ def set_peft_model_state_dict(
             PeftType.FOURIERFT: "fourierft_",
             PeftType.HRA: "hra_",
             PeftType.VBLORA: "vblora_",
+            PeftType.MR_LORA: "mrlora_",
         }[config.peft_type]
         if config.peft_type == PeftType.VBLORA and config.save_only_topk_weights:
             num_vectors, _ = model.vblora_vector_bank[adapter_name].shape
