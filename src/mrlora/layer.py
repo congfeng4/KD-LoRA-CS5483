@@ -28,7 +28,7 @@ class MrLoraLayer(BaseTunerLayer):
     # All names of layers that may contain (trainable) adapter weights
     adapter_layer_names = ("mrlora_A", "mrlora_B")
     # All names of other parameters that may contain adapter-related parameters
-    other_param_names = ("ranks_int", "ranks_str", "mrlora_lambdas", "mrlora_scaling_factors")
+    other_param_names = ("ranks_int", "ranks_str", "mrlora_lambdas",)
 
     def __init__(self, base_layer: nn.Module, **kwargs) -> None:
         self.base_layer = base_layer
@@ -38,7 +38,6 @@ class MrLoraLayer(BaseTunerLayer):
         self.mrlora_A = nn.ModuleDict()
         self.mrlora_B = nn.ModuleDict()
         self.mrlora_lambdas = nn.ParameterDict()
-        self.mrlora_scaling_factors = nn.ParameterDict()
 
         base_layer = self.get_base_layer()
         if isinstance(base_layer, nn.Linear):
@@ -71,20 +70,7 @@ class MrLoraLayer(BaseTunerLayer):
         self.mrlora_B.update(nn.ModuleDict(dict(default=mrlora_B)))
         self.mrlora_lambdas.update(dict(default=nn.Parameter(torch.ones(len(self.ranks_int)),
                                            requires_grad=mrlora_config.use_lcoef)))
-        # Since we have multiple ranks in one layer, if the n
-        # if mrlora_config.use_rslora:
-            # RS-LoRA: alpha / sqrt(r)
-        # scalings = [math.sqrt(r) for r in self.ranks_int]
-            # print('use_rslora', scalings)
-        scalings = [ r for r in self.ranks_int]
 
-        # scalings = [1 for r in self.ranks_int]
-        print('scalings', scalings)
-
-        # print('scalings', scalings)
-        self.mrlora_scaling_factors.update(dict(
-            default=torch.nn.Parameter(torch.tensor(scalings), requires_grad=False)))
-        
         lora_dropout = mrlora_config.lora_dropout
         if lora_dropout > 0.0:
             lora_dropout_layer = nn.Dropout(p=lora_dropout)
@@ -112,7 +98,7 @@ class MrLoraLayer(BaseTunerLayer):
         2. 按奇异值从高到低，将对应的正交基分配给 Rank 4, 2, 1 等矩阵。
         """
         mrlora_B, mrlora_A = self.mrlora_B['default'], self.mrlora_A['default']
-        combined_scale = self.mrlora_lambdas['default'] * self.mrlora_scaling_factors['default']
+        combined_scale = self.mrlora_lambdas['default']
 
         # 1. 获取基础层的权重数据
         # 获取 base_layer 权重 [out_features, in_features]
@@ -195,7 +181,7 @@ class Linear(nn.Module, MrLoraLayer):
             ])  # Shape: [num_ranks, batch, seq, out_features]
 
             # Alternative to stack + sum
-            combined_scale = self.mrlora_lambdas['default'] * self.mrlora_scaling_factors['default']
+            combined_scale = self.mrlora_lambdas['default']
             delta_x = torch.einsum('rbsh,r->bsh', rank_outputs, combined_scale)
             # print('delta_x', delta_x.min(), delta_x.max())
             result += delta_x
@@ -247,7 +233,7 @@ class Linear(nn.Module, MrLoraLayer):
     def get_delta_weight(self, adapter=None) -> torch.Tensor:
         """计算所有 rank 组合后的 ΔW"""
         mrlora_B, mrlora_A = self.mrlora_B['default'], self.mrlora_A['default']
-        combined_scales = self.mrlora_lambdas['default'] * self.mrlora_scaling_factors['default']
+        combined_scales = self.mrlora_lambdas['default']
 
         # 初始化一个全零的 ΔW
         total_delta_w = torch.zeros_like(self.base_layer.weight)

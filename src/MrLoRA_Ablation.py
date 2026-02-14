@@ -19,12 +19,12 @@ logging.getLogger("transformers.tokenization_utils_base").setLevel(logging.ERROR
 RANK_VALUES = [8]
 seed_list = [42]
 
-# GLUE_TASKS = [
-#     "rte", "qnli",
-#     "mrpc", "qqp", "stsb",
-#     "mnli", "cola", "sst2",
-# ]
-GLUE_TASKS = ['qnli']
+GLUE_TASKS = [
+    "rte", "qnli",
+    "mrpc", "qqp", "stsb",
+    "mnli", "cola", "sst2",
+]
+# GLUE_TASKS = ['qnli']
 
 MODEL_FAMILY = {
     'deberta': {
@@ -33,14 +33,14 @@ MODEL_FAMILY = {
     }
 }
 
-MRLORA_VARIANTS = []
+MRLORA_VARIANTS = ['-lcoef', '-olora']
 
 PEFT_FAMILY = ['mrlora']
 
-# for i in range(len(MRLORA_VARIANTS)):
-#     PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
+for i in range(len(MRLORA_VARIANTS)):
+    PEFT_FAMILY.extend('mrlora' + "".join(item) for item in itertools.combinations(MRLORA_VARIANTS, i+1))
 
-# print(PEFT_FAMILY)
+print(PEFT_FAMILY)
 
 
 def main_lora(args, is_student: bool):
