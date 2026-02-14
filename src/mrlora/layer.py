@@ -77,8 +77,6 @@ class MrLoraLayer(BaseTunerLayer):
         else:
             # Standard LoRA usually uses alpha / r.
             scalings = [1 / r for r in self.ranks_int]
-        
-        scalings = [ 1 for r in self.ranks_int]
 
         # print('scalings', scalings)
         self.mrlora_scaling_factors.update(dict(
