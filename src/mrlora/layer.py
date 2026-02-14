@@ -71,13 +71,12 @@ class MrLoraLayer(BaseTunerLayer):
         self.mrlora_B.update(nn.ModuleDict(dict(default=mrlora_B)))
         self.mrlora_lambdas.update(dict(default=nn.Parameter(torch.ones(len(self.ranks_int)),
                                            requires_grad=mrlora_config.use_lcoef)))
+        # Since we have multiple ranks in one layer, if the n
         # if mrlora_config.use_rslora:
             # RS-LoRA: alpha / sqrt(r)
-        scalings = [1 / math.sqrt(r) for r in self.ranks_int]
+        # scalings = [math.sqrt(r) for r in self.ranks_int]
             # print('use_rslora', scalings)
-        # else:
-            # Standard LoRA usually uses alpha / r.
-        # scalings = [1 / r for r in self.ranks_int]
+        scalings = [ r for r in self.ranks_int]
 
         # scalings = [1 for r in self.ranks_int]
         print('scalings', scalings)
