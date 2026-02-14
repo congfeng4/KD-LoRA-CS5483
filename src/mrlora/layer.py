@@ -66,17 +66,21 @@ class MrLoraLayer(BaseTunerLayer):
             mrlora_B[r_str] = nn.Linear(in_features=r_int, out_features=self.out_features, bias=mrlora_config.use_bias)
 
         # print('mrlora_config.use_lcoef', mrlora_config.use_lcoef)
+        mrlora_config.use_lcoef = False
         self.mrlora_A.update(nn.ModuleDict(dict(default=mrlora_A)))
         self.mrlora_B.update(nn.ModuleDict(dict(default=mrlora_B)))
         self.mrlora_lambdas.update(dict(default=nn.Parameter(torch.ones(len(self.ranks_int)),
                                            requires_grad=mrlora_config.use_lcoef)))
-        if mrlora_config.use_rslora:
+        # if mrlora_config.use_rslora:
             # RS-LoRA: alpha / sqrt(r)
-            scalings = [1 / math.sqrt(r) for r in self.ranks_int]
+        scalings = [1 / math.sqrt(r) for r in self.ranks_int]
             # print('use_rslora', scalings)
-        else:
+        # else:
             # Standard LoRA usually uses alpha / r.
-            scalings = [1 / r for r in self.ranks_int]
+        # scalings = [1 / r for r in self.ranks_int]
+
+        # scalings = [1 for r in self.ranks_int]
+        print('scalings', scalings)
 
         # print('scalings', scalings)
         self.mrlora_scaling_factors.update(dict(
